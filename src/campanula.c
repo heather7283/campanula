@@ -74,12 +74,22 @@ callback.
 #include <unistd.h>
 
 #include <curl/curl.h>
+#define POLLEN_IMPLEMENTATION
+#define POLLEN_LOG_DEBUG(fmt, ...) \
+    fprintf(stderr, "\033[2mevent loop: " fmt "\033[m\n", ##__VA_ARGS__)
+#define POLLEN_LOG_INFO(fmt, ...) \
+    fprintf(stderr, "\033[32mevent loop: " fmt "\033[m\n", ##__VA_ARGS__)
+#define POLLEN_LOG_WARN(fmt, ...) \
+    fprintf(stderr, "\033[33mevent loop: " fmt "\033[m\n", ##__VA_ARGS__)
+#define POLLEN_LOG_ERR(fmt, ...) \
+    fprintf(stderr, "\033[31mevent loop: " fmt "\033[m\n", ##__VA_ARGS__)
+#include <pollen.h>
 
 #define MSG_OUT stdout /* Send info to stdout, change to stderr if you want */
 
 /* Global information, common to all connections */
 struct GlobalInfo {
-    int epfd;   /* epoll filedescriptor */
+    struct pollen_loop *loop;
     int tfd;    /* timer filedescriptor */
     int fifofd; /* fifo filedescriptor */
     CURLM *multi;
@@ -97,6 +107,7 @@ struct ConnInfo {
 
 /* Information associated with a specific socket */
 struct SockInfo {
+    struct pollen_callback *callback;
     curl_socket_t sockfd;
     CURL *easy;
     int action;
@@ -104,8 +115,8 @@ struct SockInfo {
     struct GlobalInfo *global;
 };
 
-#define mycase(code)                                                           \
-    case code:                                                                 \
+#define mycase(code) \
+    case code: \
         s = __STRING(code)
 
 /* Die if we get a bad CURLMcode somewhere */
@@ -138,7 +149,7 @@ static void mcode_or_die(const char *where, CURLMcode code) {
     }
 }
 
-static void timer_cb(struct GlobalInfo *g, int revents);
+static int timer_cb(struct pollen_callback *callback, int fd, unsigned int events, void *data);
 
 /* Update the timer after curl_multi library does its thing. Curl informs the
  * application through this callback what it wants the new timeout to be,
@@ -196,12 +207,13 @@ static void check_multi_info(struct GlobalInfo *g) {
 }
 
 /* Called by libevent when we get action on a multi socket filedescriptor */
-static void event_cb(struct GlobalInfo *g, int fd, int revents) {
+static int event_cb(struct pollen_callback *callback, int fd, uint32_t events, void *data) {
+    struct GlobalInfo *g = data;
     CURLMcode rc;
     struct itimerspec its;
 
-    int action = ((revents & EPOLLIN) ? CURL_CSELECT_IN : 0) |
-                 ((revents & EPOLLOUT) ? CURL_CSELECT_OUT : 0);
+    int action = ((events & EPOLLIN) ? CURL_CSELECT_IN : 0) |
+                 ((events & EPOLLOUT) ? CURL_CSELECT_OUT : 0);
 
     rc = curl_multi_socket_action(g->multi, fd, action, &g->still_running);
     mcode_or_die("event_cb: curl_multi_socket_action", rc);
@@ -212,15 +224,18 @@ static void event_cb(struct GlobalInfo *g, int fd, int revents) {
         memset(&its, 0, sizeof(its));
         timerfd_settime(g->tfd, 0, &its, NULL);
     }
+
+    return 0;
 }
 
 /* Called by main loop when our timeout expires */
-static void timer_cb(struct GlobalInfo *g, int revents) {
+static int timer_cb(struct pollen_callback *callback, int fd, unsigned int events, void *data) {
+    struct GlobalInfo *g = data;
     CURLMcode rc;
     uint64_t count = 0;
     ssize_t err = 0;
 
-    err = read(g->tfd, &count, sizeof(uint64_t));
+    err = read(fd, &count, sizeof(count));
     if (err == -1) {
         /* Note that we may call the timer callback even if the timerfd is not
          * readable. It's possible that there are multiple events stored in the
@@ -229,10 +244,10 @@ static void timer_cb(struct GlobalInfo *g, int revents) {
          * epoll buffer fails to read from the timer. */
         if (errno == EAGAIN) {
             fprintf(MSG_OUT, "EAGAIN on tfd %d\n", g->tfd);
-            return;
+            return 0;
         }
     }
-    if (err != sizeof(uint64_t)) {
+    if (err != sizeof(count)) {
         fprintf(stderr, "read(tfd) == %ld", err);
         perror("read(tfd)");
     }
@@ -241,15 +256,14 @@ static void timer_cb(struct GlobalInfo *g, int revents) {
                                   &g->still_running);
     mcode_or_die("timer_cb: curl_multi_socket_action", rc);
     check_multi_info(g);
+    return 0;
 }
 
 /* Clean up the SockInfo structure */
 static void remsock(struct SockInfo *f, struct GlobalInfo *g) {
     if (f) {
-        if (f->sockfd) {
-            if (epoll_ctl(g->epfd, EPOLL_CTL_DEL, f->sockfd, NULL))
-                fprintf(stderr, "EPOLL_CTL_DEL failed for fd: %d : %s\n",
-                        f->sockfd, strerror(errno));
+        if (f->callback) {
+            pollen_loop_remove_callback(f->callback);
         }
         free(f);
     }
@@ -258,32 +272,23 @@ static void remsock(struct SockInfo *f, struct GlobalInfo *g) {
 /* Assign information to a SockInfo structure */
 static void setsock(struct SockInfo *f, curl_socket_t s, CURL *e, int act,
                     struct GlobalInfo *g) {
-    struct epoll_event ev;
     int kind = ((act & CURL_POLL_IN) ? EPOLLIN : 0) |
                ((act & CURL_POLL_OUT) ? EPOLLOUT : 0);
 
-    if (f->sockfd) {
-        if (epoll_ctl(g->epfd, EPOLL_CTL_DEL, f->sockfd, NULL))
-            fprintf(stderr, "EPOLL_CTL_DEL failed for fd: %d : %s\n", f->sockfd,
-                    strerror(errno));
+    if (f->callback) {
+        pollen_loop_remove_callback(f->callback);
     }
 
     f->sockfd = s;
     f->action = act;
     f->easy = e;
-
-    ev.events = kind;
-    ev.data.fd = s;
-    if (epoll_ctl(g->epfd, EPOLL_CTL_ADD, s, &ev))
-        fprintf(stderr, "EPOLL_CTL_ADD failed for fd: %d : %s\n", s,
-                strerror(errno));
+    f->callback = pollen_loop_add_fd(g->loop, s, kind, false, event_cb, g);
 }
 
 /* Initialize a new SockInfo structure */
 static void addsock(curl_socket_t s, CURL *easy, int action,
                     struct GlobalInfo *g) {
-    struct SockInfo *fdp =
-        (struct SockInfo *)calloc(1, sizeof(struct SockInfo));
+    struct SockInfo *fdp = calloc(1, sizeof(struct SockInfo));
 
     fdp->global = g;
     setsock(fdp, s, easy, action, g);
@@ -369,7 +374,8 @@ static void new_conn(const char *url, struct GlobalInfo *g) {
 }
 
 /* This gets called whenever data is received from the fifo */
-static void fifo_cb(struct GlobalInfo *g, int revents) {
+static int fifo_cb(struct pollen_callback *callback, int fd, uint32_t events, void *data) {
+    struct GlobalInfo *g = data;
     char s[1024];
     long int rv = 0;
     int n = 0;
@@ -380,9 +386,12 @@ static void fifo_cb(struct GlobalInfo *g, int revents) {
         s[n] = '\0';
         if (n && s[0]) {
             new_conn(s, g); /* if we read a URL, go get it! */
-        } else
+        } else {
             break;
+        }
     } while (rv != EOF);
+
+    return 0;
 }
 
 /* Create a named pipe and tell libevent to monitor it */
@@ -390,7 +399,6 @@ static const char *fifo = "hiper.fifo";
 static int init_fifo(struct GlobalInfo *g) {
     struct stat st;
     curl_socket_t sockfd;
-    struct epoll_event epev;
 
     fprintf(MSG_OUT, "Creating named pipe \"%s\"\n", fifo);
     if (lstat(fifo, &st) == 0) {
@@ -414,41 +422,27 @@ static int init_fifo(struct GlobalInfo *g) {
     g->fifofd = sockfd;
     g->input = fdopen(sockfd, "r");
 
-    epev.events = EPOLLIN;
-    epev.data.fd = sockfd;
-    epoll_ctl(g->epfd, EPOLL_CTL_ADD, sockfd, &epev);
+    pollen_loop_add_fd(g->loop, sockfd, EPOLLIN, false, fifo_cb, g);
 
     fprintf(MSG_OUT, "Now, pipe some URL's into > %s\n", fifo);
     return 0;
 }
 
 static void clean_fifo(struct GlobalInfo *g) {
-    epoll_ctl(g->epfd, EPOLL_CTL_DEL, g->fifofd, NULL);
     fclose(g->input);
     unlink(fifo);
 }
 
-int g_should_exit_ = 0;
-
-void sigint_handler(int signo) { g_should_exit_ = 1; }
+int sigint_handler(struct pollen_callback *callback, int signum, void *data) {
+    pollen_loop_quit(pollen_callback_get_loop(callback), 0);
+    return 0;
+}
 
 int main(int argc, char **argv) {
     struct GlobalInfo g;
     struct itimerspec its;
-    struct epoll_event ev;
-    struct epoll_event events[10];
-    (void)argc;
-    (void)argv;
-
-    g_should_exit_ = 0;
-    signal(SIGINT, sigint_handler);
 
     memset(&g, 0, sizeof(g));
-    g.epfd = epoll_create1(EPOLL_CLOEXEC);
-    if (g.epfd == -1) {
-        perror("epoll_create1 failed");
-        return 1;
-    }
 
     g.tfd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
     if (g.tfd == -1) {
@@ -461,12 +455,13 @@ int main(int argc, char **argv) {
     its.it_value.tv_sec = 1;
     timerfd_settime(g.tfd, 0, &its, NULL);
 
-    ev.events = EPOLLIN;
-    ev.data.fd = g.tfd;
-    epoll_ctl(g.epfd, EPOLL_CTL_ADD, g.tfd, &ev);
+    g.loop = pollen_loop_create();
+    pollen_loop_add_signal(g.loop, SIGINT, sigint_handler, &g);
+    pollen_loop_add_fd(g.loop, g.tfd, EPOLLIN, false, timer_cb, &g);
 
-    if (init_fifo(&g))
+    if (init_fifo(&g) != 0) {
         return 1;
+    }
     g.multi = curl_multi_init();
 
     /* setup the generic multi interface options we want */
@@ -480,37 +475,15 @@ int main(int argc, char **argv) {
 
     fprintf(MSG_OUT, "Entering wait loop\n");
     fflush(MSG_OUT);
-    while (!g_should_exit_) {
-        int idx;
-        int err = epoll_wait(
-            g.epfd, events, sizeof(events) / sizeof(struct epoll_event), 10000);
-        if (err == -1) {
-            /* !checksrc! disable ERRNOVAR 1 */
-            if (errno == EINTR) {
-                fprintf(MSG_OUT, "note: wait interrupted\n");
-                continue;
-            } else {
-                perror("epoll_wait");
-                return 1;
-            }
-        }
 
-        for (idx = 0; idx < err; ++idx) {
-            if (events[idx].data.fd == g.fifofd) {
-                fifo_cb(&g, events[idx].events);
-            } else if (events[idx].data.fd == g.tfd) {
-                timer_cb(&g, events[idx].events);
-            } else {
-                event_cb(&g, events[idx].data.fd, events[idx].events);
-            }
-        }
-    }
+    pollen_loop_run(g.loop);
 
     fprintf(MSG_OUT, "Exiting normally.\n");
     fflush(MSG_OUT);
 
     curl_multi_cleanup(g.multi);
     clean_fifo(&g);
+    pollen_loop_cleanup(g.loop);
     return 0;
 }
 
