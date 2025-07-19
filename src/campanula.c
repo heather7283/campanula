@@ -76,13 +76,13 @@ callback.
 #include <curl/curl.h>
 #define POLLEN_IMPLEMENTATION
 #define POLLEN_LOG_DEBUG(fmt, ...) \
-    fprintf(stderr, "\033[2mevent loop: " fmt "\033[m\n", ##__VA_ARGS__)
+    fprintf(stderr, "\033[2mevent loop: " fmt "\033[m\n" __VA_OPT__(,) __VA_ARGS__)
 #define POLLEN_LOG_INFO(fmt, ...) \
-    fprintf(stderr, "\033[32mevent loop: " fmt "\033[m\n", ##__VA_ARGS__)
+    fprintf(stderr, "\033[32mevent loop: " fmt "\033[m\n" __VA_OPT__(,) __VA_ARGS__)
 #define POLLEN_LOG_WARN(fmt, ...) \
-    fprintf(stderr, "\033[33mevent loop: " fmt "\033[m\n", ##__VA_ARGS__)
+    fprintf(stderr, "\033[33mevent loop: " fmt "\033[m\n" __VA_OPT__(,) __VA_ARGS__)
 #define POLLEN_LOG_ERR(fmt, ...) \
-    fprintf(stderr, "\033[31mevent loop: " fmt "\033[m\n", ##__VA_ARGS__)
+    fprintf(stderr, "\033[31mevent loop: " fmt "\033[m\n" __VA_OPT__(,) __VA_ARGS__)
 #include <pollen.h>
 
 #define MSG_OUT stdout /* Send info to stdout, change to stderr if you want */
