@@ -8,7 +8,7 @@ add_project_arguments('-Wno-unused-parameter', language: 'c')
 
 libmpv_dep = dependency('mpv')
 libcurl_dep = dependency('libcurl')
-pollen_dep = dependency('pollen')
+pollen_dep = dependency('pollen', version: '>=2.0.0')
 
 dependencies = [
   libmpv_dep,

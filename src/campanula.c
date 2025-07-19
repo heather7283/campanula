@@ -81,7 +81,7 @@ callback.
 /* Global information, common to all connections */
 struct GlobalInfo {
     struct pollen_loop *loop;
-    int tfd;    /* timer filedescriptor */
+    struct pollen_callback *timer;
     int fifofd; /* fifo filedescriptor */
     CURLM *multi;
     int still_running;
@@ -140,34 +140,25 @@ static void mcode_or_die(const char *where, CURLMcode code) {
     }
 }
 
-static int timer_cb(struct pollen_callback *callback, int fd, unsigned int events, void *data);
+static int timer_cb(struct pollen_callback *callback, void *data);
 
 /* Update the timer after curl_multi library does its thing. Curl informs the
  * application through this callback what it wants the new timeout to be,
  * after it does some work. */
 static int multi_timer_cb(CURLM *multi, long timeout_ms, struct GlobalInfo *g) {
-    struct itimerspec its;
-
     fprintf(MSG_OUT, "multi_timer_cb: Setting timeout to %ld ms\n", timeout_ms);
 
     if (timeout_ms > 0) {
-        its.it_interval.tv_sec = 0;
-        its.it_interval.tv_nsec = 0;
-        its.it_value.tv_sec = timeout_ms / 1000;
-        its.it_value.tv_nsec = (timeout_ms % 1000) * 1000 * 1000;
+        pollen_timer_arm(g->timer, timeout_ms, 0);
     } else if (timeout_ms == 0) {
         /* libcurl wants us to timeout now, however setting both fields of
          * new_value.it_value to zero disarms the timer. The closest we can
          * do is to schedule the timer to fire in 1 ns. */
-        its.it_interval.tv_sec = 0;
-        its.it_interval.tv_nsec = 0;
-        its.it_value.tv_sec = 0;
-        its.it_value.tv_nsec = 1;
+        pollen_timer_arm_ns(g->timer, 1, 0);
     } else {
-        memset(&its, 0, sizeof(its));
+        pollen_timer_disarm(g->timer);
     }
 
-    timerfd_settime(g->tfd, /* flags= */ 0, &its, NULL);
     return 0;
 }
 
@@ -201,7 +192,6 @@ static void check_multi_info(struct GlobalInfo *g) {
 static int event_cb(struct pollen_callback *callback, int fd, uint32_t events, void *data) {
     struct GlobalInfo *g = data;
     CURLMcode rc;
-    struct itimerspec its;
 
     int action = ((events & EPOLLIN) ? CURL_CSELECT_IN : 0) |
                  ((events & EPOLLOUT) ? CURL_CSELECT_OUT : 0);
@@ -212,36 +202,16 @@ static int event_cb(struct pollen_callback *callback, int fd, uint32_t events, v
     check_multi_info(g);
     if (g->still_running <= 0) {
         fprintf(MSG_OUT, "last transfer done, kill timeout\n");
-        memset(&its, 0, sizeof(its));
-        timerfd_settime(g->tfd, 0, &its, NULL);
+        pollen_timer_disarm(g->timer);
     }
 
     return 0;
 }
 
 /* Called by main loop when our timeout expires */
-static int timer_cb(struct pollen_callback *callback, int fd, unsigned int events, void *data) {
+static int timer_cb(struct pollen_callback *callback, void *data) {
     struct GlobalInfo *g = data;
     CURLMcode rc;
-    uint64_t count = 0;
-    ssize_t err = 0;
-
-    err = read(fd, &count, sizeof(count));
-    if (err == -1) {
-        /* Note that we may call the timer callback even if the timerfd is not
-         * readable. It's possible that there are multiple events stored in the
-         * epoll buffer (i.e. the timer may have fired multiple times). The
-         * event count is cleared after the first call so future events in the
-         * epoll buffer fails to read from the timer. */
-        if (errno == EAGAIN) {
-            fprintf(MSG_OUT, "EAGAIN on tfd %d\n", g->tfd);
-            return 0;
-        }
-    }
-    if (err != sizeof(count)) {
-        fprintf(stderr, "read(tfd) == %ld", err);
-        perror("read(tfd)");
-    }
 
     rc = curl_multi_socket_action(g->multi, CURL_SOCKET_TIMEOUT, 0,
                                   &g->still_running);
@@ -419,24 +389,14 @@ int sigint_handler(struct pollen_callback *callback, int signum, void *data) {
 
 int main(int argc, char **argv) {
     struct GlobalInfo g;
-    struct itimerspec its;
 
     memset(&g, 0, sizeof(g));
 
-    g.tfd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC);
-    if (g.tfd == -1) {
-        perror("timerfd_create failed");
-        return 1;
-    }
-
-    memset(&its, 0, sizeof(its));
-    its.it_interval.tv_sec = 0;
-    its.it_value.tv_sec = 1;
-    timerfd_settime(g.tfd, 0, &its, NULL);
-
     g.loop = pollen_loop_create();
     pollen_loop_add_signal(g.loop, SIGINT, sigint_handler, &g);
-    pollen_loop_add_fd(g.loop, g.tfd, EPOLLIN, false, timer_cb, &g);
+
+    g.timer = pollen_loop_add_timer(g.loop, timer_cb, &g);
+    pollen_timer_arm(g.timer, 1000, 0);
 
     if (init_fifo(&g) != 0) {
         return 1;
