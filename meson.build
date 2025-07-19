@@ -19,6 +19,7 @@ dependencies = [
 sources = [
   'src/campanula.c',
   'src/xmalloc.c',
+  'src/pollen_impl.c',
 ]
 
 executable('campanula',

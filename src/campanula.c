@@ -74,15 +74,6 @@ callback.
 #include <unistd.h>
 
 #include <curl/curl.h>
-#define POLLEN_IMPLEMENTATION
-#define POLLEN_LOG_DEBUG(fmt, ...) \
-    fprintf(stderr, "\033[2mevent loop: " fmt "\033[m\n" __VA_OPT__(,) __VA_ARGS__)
-#define POLLEN_LOG_INFO(fmt, ...) \
-    fprintf(stderr, "\033[32mevent loop: " fmt "\033[m\n" __VA_OPT__(,) __VA_ARGS__)
-#define POLLEN_LOG_WARN(fmt, ...) \
-    fprintf(stderr, "\033[33mevent loop: " fmt "\033[m\n" __VA_OPT__(,) __VA_ARGS__)
-#define POLLEN_LOG_ERR(fmt, ...) \
-    fprintf(stderr, "\033[31mevent loop: " fmt "\033[m\n" __VA_OPT__(,) __VA_ARGS__)
 #include <pollen.h>
 
 #define MSG_OUT stdout /* Send info to stdout, change to stderr if you want */
@@ -326,17 +317,6 @@ static size_t write_cb(void *ptr, size_t size, size_t nmemb, void *data) {
     return size * nmemb;
 }
 
-/* CURLOPT_PROGRESSFUNCTION */
-static int prog_cb(void *p, double dltotal, double dlnow, double ult,
-                   double uln) {
-    struct ConnInfo *conn = (struct ConnInfo *)p;
-    (void)ult;
-    (void)uln;
-
-    fprintf(MSG_OUT, "Progress: %s (%g/%g)\n", conn->url, dlnow, dltotal);
-    return 0;
-}
-
 /* Create a new easy handle, and add it to the global curl_multi */
 static void new_conn(const char *url, struct GlobalInfo *g) {
     struct ConnInfo *conn;
@@ -359,7 +339,6 @@ static void new_conn(const char *url, struct GlobalInfo *g) {
     curl_easy_setopt(conn->easy, CURLOPT_ERRORBUFFER, conn->error);
     curl_easy_setopt(conn->easy, CURLOPT_PRIVATE, conn);
     curl_easy_setopt(conn->easy, CURLOPT_NOPROGRESS, 0L);
-    curl_easy_setopt(conn->easy, CURLOPT_PROGRESSFUNCTION, prog_cb);
     curl_easy_setopt(conn->easy, CURLOPT_PROGRESSDATA, conn);
     curl_easy_setopt(conn->easy, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_TIME, 3L);
