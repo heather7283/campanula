@@ -213,6 +213,16 @@ static size_t write_cb(void *ptr, size_t size, size_t nmemb, void *data) {
     return size * nmemb;
 }
 
+/* CURLOPT_PROGRESSFUNCTION */
+static int prog_cb(void *p, curl_off_t dltotal, curl_off_t dlnow, curl_off_t ult, curl_off_t uln) {
+    struct conn_info *conn = (struct conn_info *)p;
+    (void)ult;
+    (void)uln;
+
+    fprintf(MSG_OUT, "Progress: %s (%li/%li)\n", conn->url, dlnow, dltotal);
+    return 0;
+}
+
 /* Create a new easy handle, and add it to the global curl_multi */
 static void new_conn(const char *url, struct global_info *g) {
     struct conn_info *conn;
@@ -231,6 +241,8 @@ static void new_conn(const char *url, struct global_info *g) {
     curl_easy_setopt(conn->easy, CURLOPT_URL, conn->url);
     curl_easy_setopt(conn->easy, CURLOPT_WRITEFUNCTION, write_cb);
     curl_easy_setopt(conn->easy, CURLOPT_WRITEDATA, conn);
+    curl_easy_setopt(conn->easy, CURLOPT_XFERINFOFUNCTION, prog_cb);
+    curl_easy_setopt(conn->easy, CURLOPT_XFERINFODATA, conn);
     curl_easy_setopt(conn->easy, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(conn->easy, CURLOPT_ERRORBUFFER, conn->error);
     curl_easy_setopt(conn->easy, CURLOPT_PRIVATE, conn);
