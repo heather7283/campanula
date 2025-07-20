@@ -11,13 +11,19 @@ add_project_arguments([
 
 libmpv_dep = dependency('mpv')
 libcurl_dep = dependency('libcurl')
+libopenssl_dep = dependency('OpenSSL') # needed for md5, curl links against it anyway
 pollen_dep = dependency('pollen', version: '>=2.0.0')
 
 dependencies = [
   libmpv_dep,
   libcurl_dep,
+  libopenssl_dep,
   pollen_dep,
 ]
+
+include_dirs = include_directories([
+  'src',
+])
 
 sources = [
   'src/campanula.c',
@@ -27,6 +33,9 @@ sources = [
 ]
 
 executable('campanula', sources,
+           include_directories: include_dirs,
            dependencies: dependencies,
            install: true)
+
+subdir('test')
 
