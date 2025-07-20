@@ -4,7 +4,7 @@ project('campanula', 'c',
         default_options: ['warning_level=3', 'c_std=c23'])
 
 add_project_arguments([
-  '-D_GNU_SOURCE'
+  '-D_GNU_SOURCE',
   '-Wno-unused-parameter',
 ], language: 'c')
 
