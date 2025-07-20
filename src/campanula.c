@@ -6,6 +6,8 @@
 #include <curl/curl.h>
 #include <pollen.h>
 
+#include "collections.h"
+
 #define MSG_OUT stdout /* Send info to stdout, change to stderr if you want */
 
 /* Global information, common to all connections */
@@ -22,6 +24,7 @@ struct conn_info {
     CURL *easy;
     char *url;
     struct global_info *global;
+    ARRAY(uint8_t) received;
     char error[CURL_ERROR_SIZE];
 };
 
@@ -113,6 +116,14 @@ static void check_multi_info(struct global_info *g) {
             curl_multi_remove_handle(g->multi, easy);
             free(conn->url);
             curl_easy_cleanup(easy);
+
+            FILE *f = fopen("received", "wb");
+            if (f) {
+                fwrite(ARRAY_DATA(&conn->received), 1, ARRAY_SIZE(&conn->received), f);
+                fclose(f);
+            }
+            ARRAY_FREE(&conn->received);
+
             free(conn);
         }
     }
@@ -208,8 +219,9 @@ static int sock_callback(CURL *e, curl_socket_t s, int what, void *cbp, void *so
 
 /* CURLOPT_WRITEFUNCTION */
 static size_t write_cb(void *ptr, size_t size, size_t nmemb, void *data) {
-    (void)ptr;
-    (void)data;
+    struct conn_info *info = data;
+    ARRAY_EXTEND(&info->received, (uint8_t *)ptr, nmemb);
+
     return size * nmemb;
 }
 
@@ -228,7 +240,7 @@ static void new_conn(const char *url, struct global_info *g) {
     struct conn_info *conn;
     CURLMcode rc;
 
-    conn = (struct conn_info *)calloc(1, sizeof(*conn));
+    conn = calloc(1, sizeof(*conn));
     conn->error[0] = '\0';
 
     conn->easy = curl_easy_init();
@@ -241,13 +253,11 @@ static void new_conn(const char *url, struct global_info *g) {
     curl_easy_setopt(conn->easy, CURLOPT_URL, conn->url);
     curl_easy_setopt(conn->easy, CURLOPT_WRITEFUNCTION, write_cb);
     curl_easy_setopt(conn->easy, CURLOPT_WRITEDATA, conn);
+    curl_easy_setopt(conn->easy, CURLOPT_NOPROGRESS, 0L);
     curl_easy_setopt(conn->easy, CURLOPT_XFERINFOFUNCTION, prog_cb);
     curl_easy_setopt(conn->easy, CURLOPT_XFERINFODATA, conn);
-    curl_easy_setopt(conn->easy, CURLOPT_VERBOSE, 1L);
     curl_easy_setopt(conn->easy, CURLOPT_ERRORBUFFER, conn->error);
     curl_easy_setopt(conn->easy, CURLOPT_PRIVATE, conn);
-    curl_easy_setopt(conn->easy, CURLOPT_NOPROGRESS, 0L);
-    curl_easy_setopt(conn->easy, CURLOPT_PROGRESSDATA, conn);
     curl_easy_setopt(conn->easy, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_TIME, 3L);
     curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_LIMIT, 10L);

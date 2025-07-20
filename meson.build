@@ -5,6 +5,7 @@ project('campanula', 'c',
 
 add_project_arguments([
   '-D_GNU_SOURCE',
+  '-Wno-pedantic',
   '-Wno-unused-parameter',
 ], language: 'c')
 
@@ -21,6 +22,7 @@ dependencies = [
 sources = [
   'src/campanula.c',
   'src/xmalloc.c',
+  'src/collections.c',
   'src/pollen_impl.c',
 ]
 
