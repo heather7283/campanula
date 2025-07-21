@@ -28,9 +28,10 @@ include_dirs = include_directories([
 
 sources = [
   'src/campanula.c',
-  'src/xmalloc.c',
+  'src/requests.c',
   'src/collections.c',
   'src/log.c',
+  'src/xmalloc.c',
   'src/pollen_impl.c',
 ]
 

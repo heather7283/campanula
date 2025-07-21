@@ -9,6 +9,8 @@
 #define POLLEN_CALLOC(n, size) xcalloc(n, size)
 #define POLLEN_FREE(ptr) free(ptr)
 
+#define POLLEN_EPOLL_MAX_EVENTS 256
+
 #define POLLEN_IMPLEMENTATION
 #include <pollen.h>
 
