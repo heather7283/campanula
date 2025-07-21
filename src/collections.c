@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "collections.h"
+#include "urlencode.h"
 #include "xmalloc.h"
 
 #define GROWTH_FACTOR 1.5
@@ -63,6 +64,17 @@ size_t string_append(struct string *str, const char *suffix) {
     str->str[str->len] = '\0';
 
     return len;
+}
+
+size_t sring_append_urlencode(struct string *str, const char *suffix) {
+    size_t suffix_len = strlen(suffix);
+
+    string_ensure_capacity(str, str->len + (suffix_len * 3) + 1);
+
+    size_t url_len = urlencode(str->str + str->len, suffix, suffix_len);
+    str->len += url_len;
+
+    return url_len;
 }
 
 int string_appendf(struct string *str, const char *fmt, ...) {

@@ -1,6 +1,6 @@
 test_sources = [
-  ['array_test.c', ['../src/collections.c', '../src/xmalloc.c']],
-  ['string_test.c', ['../src/collections.c', '../src/xmalloc.c']],
+  ['array_test.c', ['../src/collections.c', '../src/xmalloc.c', '../src/urlencode.c']],
+  ['string_test.c', ['../src/collections.c', '../src/xmalloc.c', '../src/urlencode.c']],
   ['auth_test.c', ['../src/auth.c']],
 ]
 
