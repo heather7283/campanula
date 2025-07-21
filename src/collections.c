@@ -66,7 +66,7 @@ size_t string_append(struct string *str, const char *suffix) {
     return len;
 }
 
-size_t sring_append_urlencode(struct string *str, const char *suffix) {
+size_t string_append_urlencode(struct string *str, const char *suffix) {
     size_t suffix_len = strlen(suffix);
 
     string_ensure_capacity(str, str->len + (suffix_len * 3) + 1);
