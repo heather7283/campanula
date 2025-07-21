@@ -3,6 +3,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 /* malloc, but aborts on alloc fail */
 [[gnu::malloc,gnu::returns_nonnull,gnu::warn_unused_result]]

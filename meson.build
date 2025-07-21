@@ -32,6 +32,7 @@ sources = [
   'src/api.c',
   'src/auth.c',
   'src/config.c',
+  'src/urlencode.c',
   'src/collections.c',
   'src/log.c',
   'src/xmalloc.c',

@@ -13,12 +13,6 @@ static const char fifo_name[] = "hiper.fifo";
 
 struct pollen_loop *event_loop;
 
-static void request_callback(CURLcode res, const void *response, void *data) {
-    const ARRAY(uint8_t) *response_data = response;
-    INFO("request_callback: request finished with result %d, recevied %lu bytes",
-         res, ARRAY_SIZE(response_data));
-}
-
 /* This gets called whenever data is received from the fifo */
 static int fifo_callback(struct pollen_callback *callback, int fd, uint32_t events, void *data) {
     FILE *fifo = data;
@@ -32,7 +26,7 @@ static int fifo_callback(struct pollen_callback *callback, int fd, uint32_t even
         s[n] = '\0';
         if (n && s[0]) {
             //make_request(s, request_callback, NULL);
-            api_ping();
+            api_get_random_songs(0, NULL, 0, 0, NULL, NULL, NULL);
         } else {
             break;
         }
