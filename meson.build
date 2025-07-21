@@ -12,7 +12,7 @@ add_project_arguments([
 libmpv_dep = dependency('mpv')
 libcurl_dep = dependency('libcurl')
 libopenssl_dep = dependency('OpenSSL') # needed for md5, curl links against it anyway
-pollen_dep = dependency('pollen', version: '>=2.0.0')
+pollen_dep = dependency('pollen', version: '>=2.1.0')
 
 dependencies = [
   libmpv_dep,
@@ -29,6 +29,7 @@ sources = [
   'src/campanula.c',
   'src/xmalloc.c',
   'src/collections.c',
+  'src/log.c',
   'src/pollen_impl.c',
 ]
 
