@@ -5,8 +5,9 @@
 
 #include "collections.h"
 #include "requests.h"
+#include "config.h"
 #include "log.h"
-#include "xmalloc.h"
+#include "api.h"
 
 static const char fifo_name[] = "hiper.fifo";
 
@@ -30,7 +31,8 @@ static int fifo_callback(struct pollen_callback *callback, int fd, uint32_t even
         rv = fscanf(fifo, "%1023s%n", s, &n);
         s[n] = '\0';
         if (n && s[0]) {
-            make_request(s, request_callback, NULL);
+            //make_request(s, request_callback, NULL);
+            api_ping();
         } else {
             break;
         }
@@ -79,6 +81,13 @@ int sigint_handler(struct pollen_callback *callback, int signum, void *data) {
 int main(int argc, char **argv) {
     log_init(stderr, LOG_TRACE, false);
 
+    char *password = getenv("CAMPANULA_PASSWORD");
+    if (password == NULL) {
+        ERROR("CAMPANULA_PASSWORD is unset");
+        return 1;
+    }
+    config.password = password;
+
     FILE *fifo = fifo_init(fifo_name);
     if (fifo == NULL) {
         return 1;
@@ -97,6 +106,7 @@ int main(int argc, char **argv) {
     curl_cleanup();
     fifo_cleanup(fifo, fifo_name);
     pollen_loop_cleanup(event_loop);
+
     return 0;
 }
 

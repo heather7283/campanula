@@ -29,6 +29,9 @@ include_dirs = include_directories([
 sources = [
   'src/campanula.c',
   'src/requests.c',
+  'src/api.c',
+  'src/auth.c',
+  'src/config.c',
   'src/collections.c',
   'src/log.c',
   'src/xmalloc.c',

@@ -16,6 +16,8 @@
         1; \
     })
 
+/* ############################## ARRAY ############################## */
+
 struct array_generic {
     size_t size, capacity;
     void *data;
@@ -68,6 +70,21 @@ void array_free_generic(struct array_generic *arr);
     })
 
 #define ARRAY_FOREACH(parray, iter) for (size_t iter = 0; iter < (parray)->size; iter++)
+
+/* ############################## STRING ############################## */
+
+struct string {
+    size_t len; /* without null terminator */
+    size_t capacity; /* with null terminator */
+    char *str; /* always null terminated (unless NULL) */
+};
+
+void string_clear(struct string *str);
+void string_free(struct string *str);
+
+size_t string_append(struct string *str, const char *suffix);
+[[gnu::format(printf, 2, 3)]]
+int string_appendf(struct string *str, const char *fmt, ...);
 
 #endif /* #ifndef SRC_COLLECTIONS_H */
 
