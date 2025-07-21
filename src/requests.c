@@ -188,7 +188,7 @@ bool make_request(const char *url, request_callback_t callback, void *callback_d
     curl_easy_setopt(conn->easy, CURLOPT_WRITEFUNCTION, easy_writefunction);
     curl_easy_setopt(conn->easy, CURLOPT_WRITEDATA, conn);
     /* setup progress callback */
-    curl_easy_setopt(conn->easy, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(conn->easy, CURLOPT_NOPROGRESS, 1L);
     curl_easy_setopt(conn->easy, CURLOPT_XFERINFOFUNCTION, easy_xferinfofunction);
     curl_easy_setopt(conn->easy, CURLOPT_XFERINFODATA, conn);
     /* setup buffer for storing error messages */
