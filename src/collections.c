@@ -9,16 +9,25 @@
 
 #define GROWTH_FACTOR 1.5
 
+static void array_ensure_capacity(struct array_generic *arr, size_t elem_size, size_t cap) {
+    if (cap > arr->capacity) {
+        const size_t new_cap = MAX(cap, arr->capacity * GROWTH_FACTOR);
+        arr->data = xreallocarray(arr->data, new_cap, elem_size);
+        arr->capacity = new_cap;
+    }
+}
+
 void array_extend_generic(struct array_generic *arr, void *elems,
                           size_t elem_size, size_t elem_count) {
-    if ((arr->size + elem_count) > arr->capacity) {
-        size_t new_capacity = MAX((arr->size + elem_count), arr->capacity * GROWTH_FACTOR);
-        arr->data = xreallocarray(arr->data, new_capacity, elem_size);
-        arr->capacity = new_capacity;
-    }
+    array_ensure_capacity(arr, elem_size, arr->size + elem_count);
 
     memcpy((char *)arr->data + (arr->size * elem_size), elems, elem_size * elem_count);
     arr->size += elem_count;
+}
+
+void *array_emplace_generic(struct array_generic *arr, size_t elem_size) {
+    array_ensure_capacity(arr, elem_size, arr->size + 1);
+    return &((char *)arr->data)[elem_size * arr->size++];
 }
 
 void array_clear_generic(struct array_generic *arr) {
@@ -48,9 +57,9 @@ void string_free(struct string *str) {
 
 static void string_ensure_capacity(struct string *str, size_t cap) {
     if (str->capacity < cap) {
-        size_t new_cap = MAX(cap, str->capacity * GROWTH_FACTOR);
+        const size_t new_cap = MAX(cap, str->capacity * GROWTH_FACTOR);
         str->str = xrealloc(str->str, new_cap);
-        str->capacity = cap;
+        str->capacity = new_cap;
     }
 }
 
