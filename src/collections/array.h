@@ -47,13 +47,20 @@ void array_extend_generic(struct array_generic *arr, void *elem,
 
 #define ARRAY_APPEND(parray, pelem) ARRAY_EXTEND(parray, pelem, 1)
 
-void *array_emplace_generic(struct array_generic *arr, size_t elem_size);
+void *array_emplace_generic(struct array_generic *arr, size_t elem_size, bool zero_init);
 
 #define ARRAY_EMPLACE(parray) \
     ({ \
         TYPECHECK_ARRAY(parray); \
         (TYPEOF((parray)->data))array_emplace_generic((struct array_generic *)(parray), \
-                                                      sizeof(*(parray)->data)); \
+                                                      sizeof(*(parray)->data), false); \
+    })
+
+#define ARRAY_EMPLACE_ZEROED(parray) \
+    ({ \
+        TYPECHECK_ARRAY(parray); \
+        (TYPEOF((parray)->data))array_emplace_generic((struct array_generic *)(parray), \
+                                                      sizeof(*(parray)->data), true); \
     })
 
 void array_clear_generic(struct array_generic *arr);

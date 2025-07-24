@@ -23,7 +23,13 @@ int main(void) {
     snprintf(new->name, sizeof(new->name), "Neru");
     new->age = 99;
 
-    assert(ARRAY_SIZE(&arr) == 3);
+    struct person *new_zeroed = ARRAY_EMPLACE_ZEROED(&arr);
+    assert(new_zeroed->age == 0);
+    for (size_t i = 0; i < sizeof(new_zeroed->name); i++) {
+        assert(new_zeroed->name[i] == '\0');
+    }
+
+    assert(ARRAY_SIZE(&arr) == 4);
 
     print_person(&ARRAY_AT(&arr, 0));
     assert(ARRAY_AT(&arr, 0).age == 31);

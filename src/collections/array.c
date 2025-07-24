@@ -22,8 +22,13 @@ void array_extend_generic(struct array_generic *arr, void *elems,
     arr->size += elem_count;
 }
 
-void *array_emplace_generic(struct array_generic *arr, size_t elem_size) {
+void *array_emplace_generic(struct array_generic *arr, size_t elem_size, bool zero_init) {
     array_ensure_capacity(arr, elem_size, arr->size + 1);
+
+    if (zero_init) {
+        memset(&((char *)arr->data)[elem_size * arr->size], '\0', elem_size);
+    }
+
     return &((char *)arr->data)[elem_size * arr->size++];
 }
 
