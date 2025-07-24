@@ -13,12 +13,14 @@ add_project_arguments([
 libmpv_dep = dependency('mpv')
 libcurl_dep = dependency('libcurl')
 libopenssl_dep = dependency('OpenSSL') # needed for md5, curl links against it anyway
+libjsonc_dep = dependency('json-c')
 pollen_dep = dependency('pollen', version: '>=2.1.0')
 
 dependencies = [
   libmpv_dep,
   libcurl_dep,
   libopenssl_dep,
+  libjsonc_dep,
   pollen_dep,
 ]
 
@@ -28,14 +30,16 @@ include_dirs = include_directories([
 
 sources = [
   'src/campanula.c',
-  'src/requests.c',
-  'src/api.c',
+  'src/network.c',
   'src/auth.c',
   'src/config.c',
   'src/urlencode.c',
   'src/collections.c',
   'src/log.c',
   'src/xmalloc.c',
+  'src/api/requests.c',
+  'src/api/json.c',
+  'src/api/types.c',
   'src/pollen_impl.c',
 ]
 

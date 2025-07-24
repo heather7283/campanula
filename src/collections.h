@@ -31,6 +31,12 @@ struct array_generic {
 
 #define ARRAY_INITALISER {0}
 
+#define ARRAY_INIT(parray) \
+    do { \
+        (parray)->size = (parray)->capacity = 0; \
+        (parray)->data = NULL; \
+    } while (0)
+
 #define TYPECHECK_ARRAY(parray) \
     ({ \
         (void)(parray)->size; (void)(parray)->capacity; (void)(parray)->data; 1; \

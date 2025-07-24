@@ -3,11 +3,10 @@
 
 #include <pollen.h>
 
-#include "collections.h"
-#include "requests.h"
+#include "network.h"
 #include "config.h"
 #include "log.h"
-#include "api.h"
+#include "api/requests.h"
 
 static const char fifo_name[] = "hiper.fifo";
 
@@ -26,7 +25,7 @@ static int fifo_callback(struct pollen_callback *callback, int fd, uint32_t even
         s[n] = '\0';
         if (n && s[0]) {
             //make_request(s, request_callback, NULL);
-            api_get_random_songs(0, NULL, 0, 0, NULL, NULL, NULL);
+            api_get_random_songs(1, NULL, 0, 0, NULL, NULL, NULL);
         } else {
             break;
         }

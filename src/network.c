@@ -1,5 +1,5 @@
 #include "collections.h"
-#include "requests.h"
+#include "network.h"
 #include "campanula.h"
 #include "xmalloc.h"
 #include "log.h"
@@ -59,7 +59,8 @@ static void check_multi_info(struct curl_global_data *global_data) {
             curl_multi_remove_handle(global_data->multi, easy);
             curl_easy_cleanup(easy);
 
-            conn->callback(res, &conn->received, conn->callback_data);
+            conn->callback(res, (char *)ARRAY_DATA(&conn->received),
+                           ARRAY_SIZE(&conn->received), conn->callback_data);
 
             ARRAY_FREE(&conn->received);
             free(conn->url);
