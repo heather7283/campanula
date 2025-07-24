@@ -6,9 +6,25 @@ static void free_error(struct api_type_error *o) {
     free(o->message);
 }
 
+static void free_child(struct api_type_child *c) {
+    free(c->id);
+    free(c->title);
+
+    free(c->parent);
+    free(c->album);
+    free(c->artist);
+    free(c->content_type);
+    free(c->suffix);
+    free(c->album_id);
+    free(c->artist_id);
+}
+
 static void free_songs(struct api_type_songs *o) {
+    ARRAY_FOREACH(&o->song, i) {
+        struct api_type_child *c = &ARRAY_AT(&o->song, i);
+        free_child(c);
+    }
     ARRAY_FREE(&o->song);
-    /* TODO: free elements too */
 }
 
 /* I heckin love C man. What a great language */
