@@ -39,18 +39,21 @@
         if (!json_object_object_get_ex((obj), (key), &tmp)) { \
             if (fail) { \
                 JSON_ERROR("did not find key \"%s\"", (key)); \
+                goto err; \
             } else { \
                 JSON_WARN("did not find key \"%s\"", (key)); \
             } \
-        } \
-        const enum json_type t = json_object_get_type(tmp); \
-        if (t != json_type_##type) { \
-            if (fail) { \
-                JSON_ERROR("\"%s\" is of unexpected type %s, %s expected", \
-                           (key), json_type_to_name(t), json_type_to_name(json_type_##type)); \
-            } else { \
-                JSON_WARN("\"%s\" is of unexpected type %s, %s expected", \
-                          (key), json_type_to_name(t), json_type_to_name(json_type_##type)); \
+        } else { \
+            const enum json_type t = json_object_get_type(tmp); \
+            if (t != json_type_##type) { \
+                if (fail) { \
+                    JSON_ERROR("\"%s\" is of unexpected type %s, %s expected", \
+                               (key), json_type_to_name(t), json_type_to_name(json_type_##type)); \
+                    goto err; \
+                } else { \
+                    JSON_WARN("\"%s\" is of unexpected type %s, %s expected", \
+                              (key), json_type_to_name(t), json_type_to_name(json_type_##type)); \
+                } \
             } \
         } \
         tmp; \
