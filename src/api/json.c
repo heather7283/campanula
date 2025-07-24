@@ -110,7 +110,7 @@ static bool api_parse_songs(struct api_type_songs *songs, const struct json_obje
         const struct json_object *elem = json_object_array_get_idx(song, i);
         JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-        struct api_type_child *child = ARRAY_EMPLACE(&songs->song);
+        struct api_type_child *child = ARRAY_EMPLACE_ZEROED(&songs->song);
         if (!parse_child(child, elem)) {
             return false;
         }
