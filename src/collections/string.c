@@ -1,46 +1,44 @@
 #include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include "collections.h"
-#include "urlencode.h"
+#include "collections/string.h"
+#include "macros.h"
 #include "xmalloc.h"
 
 #define GROWTH_FACTOR 1.5
 
-static void array_ensure_capacity(struct array_generic *arr, size_t elem_size, size_t cap) {
-    if (cap > arr->capacity) {
-        const size_t new_cap = MAX(cap, arr->capacity * GROWTH_FACTOR);
-        arr->data = xreallocarray(arr->data, new_cap, elem_size);
-        arr->capacity = new_cap;
+/*
+ * If you stumbled upon this code, try putting this function into godbolt with gcc -O3
+ * and look at assembly it generates. Isn't it crazy how smart compilers are?
+ */
+static bool needs_url_encoding(char c) {
+    return !((c >= 'a' && c <= 'z')
+             || (c >= 'A' && c <= 'Z')
+             || (c >= '0' && c <= '9')
+             || c == '-' || c == '_' || c == '~' || c == '.');
+}
+
+/*
+ * Null-terminates dst, returns length without null terimnator.
+ * Make sure that dst is at least (src_len * 3) + 1 bytes in size.
+ */
+static size_t urlencode(char dst[], const char src[], size_t src_len) {
+    size_t out_len = 0;
+    for (size_t i = 0; i < src_len; i++) {
+        const unsigned char c = src[i];
+        if (needs_url_encoding(c)) {
+            const unsigned char low = (c & 0x0F);
+            const unsigned char high = (c >> 4);
+            dst[out_len++] = '%';
+            dst[out_len++] = (high < 10) ? (high + '0') : (high - 10 + 'A');
+            dst[out_len++] = (low < 10) ? (low + '0') : (low - 10 + 'A');
+        } else {
+            dst[out_len++] = c;
+        }
     }
+
+    return out_len;
 }
-
-void array_extend_generic(struct array_generic *arr, void *elems,
-                          size_t elem_size, size_t elem_count) {
-    array_ensure_capacity(arr, elem_size, arr->size + elem_count);
-
-    memcpy((char *)arr->data + (arr->size * elem_size), elems, elem_size * elem_count);
-    arr->size += elem_count;
-}
-
-void *array_emplace_generic(struct array_generic *arr, size_t elem_size) {
-    array_ensure_capacity(arr, elem_size, arr->size + 1);
-    return &((char *)arr->data)[elem_size * arr->size++];
-}
-
-void array_clear_generic(struct array_generic *arr) {
-    arr->size = 0;
-}
-
-void array_free_generic(struct array_generic *arr) {
-    arr->size = 0;
-    arr->capacity = 0;
-    free(arr->data);
-    arr->data = NULL;
-}
-
 
 void string_clear(struct string *str) {
     str->len = 0;

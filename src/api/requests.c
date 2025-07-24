@@ -3,9 +3,9 @@
 
 #include "api/requests.h"
 #include "api/json.h"
+#include "collections/string.h"
 #include "xmalloc.h"
 #include "config.h"
-#include "collections.h"
 #include "auth.h"
 #include "network.h"
 

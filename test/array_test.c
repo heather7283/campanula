@@ -2,7 +2,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "collections.h"
+#include "collections/array.h"
 
 struct person {
     char name[32];

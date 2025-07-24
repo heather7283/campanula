@@ -1,7 +1,6 @@
 #include <stdlib.h>
 
 #include "api/types.h"
-#include "collections.h"
 
 static void free_error(struct api_type_error *o) {
     free(o->message);

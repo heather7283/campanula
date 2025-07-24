@@ -2,7 +2,7 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "collections.h"
+#include "collections/string.h"
 
 #define STREQ(a, b) (strcmp((a), (b)) == 0)
 

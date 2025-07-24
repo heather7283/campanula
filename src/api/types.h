@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "collections.h"
+#include "collections/array.h"
 
 /*
  * Types here are more or less direct translation of subsonic schema into C,

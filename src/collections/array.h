@@ -1,22 +1,9 @@
-#ifndef SRC_COLLECTIONS_H
-#define SRC_COLLECTIONS_H
+#ifndef SRC_COLLECTIONS_ARRAY_H
+#define SRC_COLLECTIONS_ARRAY_H
 
 #include <stddef.h>
 
-#define MAX(a, b) ({ typeof(a) _a = (a); typeof(b) _b = (b); _a > _b ? _a : _b; })
-#define MIN(a, b) ({ typeof(a) _a = (a); typeof(b) _b = (b); _a < _b ? _a : _b; })
-
-#define TYPEOF(x) __typeof__(x)
-
-#define TYPECHECK(type, x) \
-    ({ \
-        type dummy; \
-        TYPEOF(x) dummy2; \
-        (void)(&dummy == &dummy2); \
-        1; \
-    })
-
-/* ############################## ARRAY ############################## */
+#include "macros.h"
 
 struct array_generic {
     size_t size, capacity;
@@ -54,7 +41,8 @@ void array_extend_generic(struct array_generic *arr, void *elem,
     ({ \
         TYPECHECK_ARRAY(parray); \
         TYPECHECK(TYPEOF(*(parray)->data), *(pelem)); \
-        array_extend_generic((struct array_generic *)(parray), (pelem), sizeof(*(pelem)), (nelem)); \
+        array_extend_generic((struct array_generic *)(parray), (pelem), \
+                             sizeof(*(pelem)), (nelem)); \
     })
 
 #define ARRAY_APPEND(parray, pelem) ARRAY_EXTEND(parray, pelem, 1)
@@ -86,21 +74,5 @@ void array_free_generic(struct array_generic *arr);
 
 #define ARRAY_FOREACH(parray, iter) for (size_t iter = 0; iter < (parray)->size; iter++)
 
-/* ############################## STRING ############################## */
-
-struct string {
-    size_t len; /* without null terminator */
-    size_t capacity; /* with null terminator */
-    char *str; /* always null terminated (unless NULL) */
-};
-
-void string_clear(struct string *str);
-void string_free(struct string *str);
-
-size_t string_append(struct string *str, const char *suffix);
-size_t string_append_urlencode(struct string *str, const char *suffix);
-[[gnu::format(printf, 2, 3)]]
-int string_appendf(struct string *str, const char *fmt, ...);
-
-#endif /* #ifndef SRC_COLLECTIONS_H */
+#endif /* #ifndef SRC_COLLECTIONS_ARRAY_H */
 

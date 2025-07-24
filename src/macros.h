@@ -5,5 +5,18 @@
 
 #define SIZEOF_ARRAY(arr) (sizeof(arr) / sizeof((arr)[0]))
 
+#define TYPEOF(x) __typeof__(x)
+
+#define MAX(a, b) ({ typeof(a) _a = (a); typeof(b) _b = (b); _a > _b ? _a : _b; })
+#define MIN(a, b) ({ typeof(a) _a = (a); typeof(b) _b = (b); _a < _b ? _a : _b; })
+
+#define TYPECHECK(type, x) \
+    ({ \
+        type dummy; \
+        TYPEOF(x) dummy2; \
+        (void)(&dummy == &dummy2); \
+        1; \
+    })
+
 #endif /* #ifndef SRC_MACROS_H */
 

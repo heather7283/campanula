@@ -1,4 +1,4 @@
-#include "collections.h"
+#include "collections/array.h"
 #include "network.h"
 #include "campanula.h"
 #include "xmalloc.h"

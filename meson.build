@@ -33,13 +33,13 @@ sources = [
   'src/network.c',
   'src/auth.c',
   'src/config.c',
-  'src/urlencode.c',
-  'src/collections.c',
   'src/log.c',
   'src/xmalloc.c',
   'src/api/requests.c',
   'src/api/json.c',
   'src/api/types.c',
+  'src/collections/string.c',
+  'src/collections/array.c',
   'src/pollen_impl.c',
 ]
 
