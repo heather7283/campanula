@@ -165,6 +165,8 @@ struct subsonic_response *api_parse_response(enum api_request_type request,
 
     const struct json_object *root = JSON_GET_OR_FAIL(json, object, "subsonic-response");
 
+    resp->version = xstrdup(JSON_GET_VALUE_OR_FAIL(root, string, "version"));
+
     const char *status_str = JSON_GET_VALUE_OR_FAIL(root, string, "status");
     if (STREQ(status_str, "failed")) {
         resp->status = RESPONSE_STATUS_FAILED;

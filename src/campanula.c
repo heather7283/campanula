@@ -8,62 +8,25 @@
 #include "log.h"
 #include "api/requests.h"
 
-static const char fifo_name[] = "hiper.fifo";
-
 struct pollen_loop *event_loop;
 
-/* This gets called whenever data is received from the fifo */
-static int fifo_callback(struct pollen_callback *callback, int fd, uint32_t events, void *data) {
-    FILE *fifo = data;
-    char s[1024];
-    long int rv = 0;
-    int n = 0;
+static void api_callback(const char *errmsg, const struct subsonic_response *response, void *data) {
+    if (response == NULL) {
+        ERROR("api request failed: %s", errmsg);
+        return;
+    }
 
-    do {
-        s[0] = '\0';
-        rv = fscanf(fifo, "%1023s%n", s, &n);
-        s[n] = '\0';
-        if (n && s[0]) {
-            //make_request(s, request_callback, NULL);
-            api_get_random_songs(1, NULL, 0, 0, NULL, NULL, NULL);
-        } else {
-            break;
+    INFO("got api response, status %d, version %s", response->status, response->version);
+    switch (response->inner_object_type) {
+    case API_TYPE_SONGS:
+        const struct api_type_songs *songs = &response->inner_object.random_songs;
+        ARRAY_FOREACH(&songs->song, i) {
+            const struct api_type_child *c = &ARRAY_AT(&songs->song, i);
+            DEBUG("[%zu] %s/%s/%d. %s", i, c->artist, c->album, c->track, c->title);
         }
-    } while (rv != EOF);
-
-    return 0;
-}
-
-/* Create a named pipe and tell libevent to monitor it */
-static FILE *fifo_init(const char *name) {
-    INFO("creating named pipe at %s", name);
-
-    struct stat st;
-    if (lstat(name, &st) == 0) {
-        if ((st.st_mode & S_IFMT) == S_IFREG) {
-            ERROR("%s already exists", name);
-            return NULL;
-        }
+    default:
+        return;
     }
-    unlink(name);
-    if (mkfifo(name, 0600) < 0) {
-        ERROR("failed to create fifo: %m");
-        return NULL;
-    }
-    int fd = open(name, O_RDWR | O_NONBLOCK, 0);
-    if (fd == -1) {
-        ERROR("failed to open fifo: %m");
-        return NULL;
-    }
-
-    FILE *f = fdopen(fd, "r");
-    INFO("now, pipe some URL's into > %s", name);
-    return f;
-}
-
-static void fifo_cleanup(FILE *stream, const char *name) {
-    fclose(stream);
-    unlink(name);
 }
 
 int sigint_handler(struct pollen_callback *callback, int signum, void *data) {
@@ -81,23 +44,18 @@ int main(int argc, char **argv) {
     }
     config.password = password;
 
-    FILE *fifo = fifo_init(fifo_name);
-    if (fifo == NULL) {
-        return 1;
-    }
-
     event_loop = pollen_loop_create();
     pollen_loop_add_signal(event_loop, SIGINT, sigint_handler, &event_loop);
-    pollen_loop_add_fd(event_loop, fileno(fifo), EPOLLIN, false, fifo_callback, fifo);
 
     if (!curl_init()) {
         return 1;
     }
 
+    api_get_random_songs(5, NULL, 0, 0, NULL, api_callback, NULL);
+
     pollen_loop_run(event_loop);
 
     curl_cleanup();
-    fifo_cleanup(fifo, fifo_name);
     pollen_loop_cleanup(event_loop);
 
     return 0;

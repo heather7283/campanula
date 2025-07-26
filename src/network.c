@@ -50,21 +50,31 @@ static void check_multi_info(struct curl_global_data *global_data) {
             CURL *easy = msg->easy_handle;
             CURLcode res = msg->data.result;
 
-            struct connection_data *conn;
+            struct connection_data *conn_data;
             const char *effective_url;
-            curl_easy_getinfo(easy, CURLINFO_PRIVATE, &conn);
+            curl_easy_getinfo(easy, CURLINFO_PRIVATE, &conn_data);
             curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &effective_url);
-            INFO("DONE: %s => (%d) %s", effective_url, res, conn->error);
+
+            const char *errmsg = NULL;
+            if (res != CURLE_OK) {
+                if (conn_data->error[0] == '\0') {
+                    errmsg = curl_easy_strerror(res);
+                } else {
+                    errmsg = conn_data->error;
+                }
+
+                conn_data->callback(errmsg, NULL, 0, conn_data->callback_data);
+            } else {
+                conn_data->callback(NULL, (char *)ARRAY_DATA(&conn_data->received),
+                                    ARRAY_SIZE(&conn_data->received), conn_data->callback_data);
+            }
 
             curl_multi_remove_handle(global_data->multi, easy);
             curl_easy_cleanup(easy);
 
-            conn->callback(res, (char *)ARRAY_DATA(&conn->received),
-                           ARRAY_SIZE(&conn->received), conn->callback_data);
-
-            ARRAY_FREE(&conn->received);
-            free(conn->url);
-            free(conn);
+            ARRAY_FREE(&conn_data->received);
+            free(conn_data->url);
+            free(conn_data);
         }
     }
 }
@@ -85,7 +95,6 @@ static int socket_callback(struct pollen_callback *callback, int fd, uint32_t ev
     }
 
     if (remaining <= 0) {
-        DEBUG("last transfer done, removing timeout");
         pollen_timer_disarm(global_data->timer);
     }
 
@@ -115,17 +124,14 @@ static int multi_timerfunction(CURLM *multi, long timeout_ms, void *multi_timerd
 
     if (timeout_ms > 0) {
         /* curl wants us to update timer timeout */
-        DEBUG("multi_timerfunction: setting timeout to %ld ms", timeout_ms);
         pollen_timer_arm(global_data->timer, timeout_ms, 0);
     } else if (timeout_ms == 0) {
         /* curl wants us to trigger timeout immediately,
          * but setting timeout to 0 disarms the timer.
          * Schedule the timer to fire in 1 ns instead. */
-        DEBUG("multi_timerfunction: setting timeout to fire immediately");
         pollen_timer_arm_ns(global_data->timer, 1, 0);
     } else {
         /* curl wants us to disarm our timer */
-        DEBUG("multi_timerfunction: removing timeout");
         pollen_timer_disarm(global_data->timer);
     }
 
@@ -136,14 +142,9 @@ static int multi_socketfunction(CURL *easy, int fd, int what,
                                 void *multi_socketdata, void *private_socket_data) {
     struct curl_global_data *global_data = multi_socketdata;
     struct socket_data *socket_data = private_socket_data;
-    const char *whatstr[] = {"none", "IN", "OUT", "INOUT", "REMOVE"};
-
-    DEBUG("multi_socketfunction: fd %d %s ", fd, whatstr[what]);
 
     if (what == CURL_POLL_REMOVE) {
         /* curl wants us to stop monitoring fd */
-        DEBUG("multi_socketfunction: removing fd %d", fd);
-
         pollen_loop_remove_callback(socket_data->callback);
         free(socket_data);
     } else {
@@ -152,8 +153,6 @@ static int multi_socketfunction(CURL *easy, int fd, int what,
 
         if (socket_data == NULL) {
             /* curl notifies us about new fd we need to start monitorign */
-            DEBUG("multi_socketfunction: setting up callback for fd %d", fd);
-
             socket_data = xcalloc(1, sizeof(*socket_data));
             socket_data->sock_fd = fd;
             socket_data->callback = pollen_loop_add_fd(event_loop, fd, events, false,
@@ -162,8 +161,6 @@ static int multi_socketfunction(CURL *easy, int fd, int what,
             curl_multi_assign(global_data->multi, fd, socket_data);
         } else {
             /* we are already monitoring this fd, so just change event mask here */
-            DEBUG("multi_socketfunction: changing action for fd %d to %s", fd, whatstr[what]);
-
             pollen_fd_modify_events(socket_data->callback, events);
         }
     }
@@ -200,7 +197,6 @@ bool make_request(const char *url, request_callback_t callback, void *callback_d
     curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_TIME, 3L);
     curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_LIMIT, 10L);
 
-    TRACE("Adding easy with url %s to multi", url);
     CURLMcode rc = curl_multi_add_handle(curl_global.multi, conn->easy);
     if (rc != CURLM_OK) {
         ERROR("curl_multi_add_handle() failed: %s", curl_multi_strerror(rc));

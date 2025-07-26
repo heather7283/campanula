@@ -29,6 +29,10 @@ static void free_songs(struct api_type_songs *o) {
 
 /* I heckin love C man. What a great language */
 void subsonic_response_free(struct subsonic_response *response) {
+    if (response == NULL) {
+        return;
+    }
+
     switch (response->inner_object_type) {
     case API_TYPE_ERROR:
         free_error(&response->inner_object.error);
