@@ -33,7 +33,8 @@ typedef void (*api_response_callback_t)(const char *errmsg,
  * musicFolderId No                     Only return songs in the music folder with the given ID.
  */
 bool api_get_random_songs(uint32_t size, const char *genre,
-                          uint32_t from_year, uint32_t to_year, const char *music_folder_id,
+                          uint32_t from_year, uint32_t to_year,
+                          const char *music_folder_id,
                           api_response_callback_t callback, void *callback_data);
 
 #endif /* #ifndef SRC_API_REQUESTS_H */

@@ -7,6 +7,7 @@
 #include "config.h"
 #include "log.h"
 #include "api/requests.h"
+#include "player/init.h"
 
 struct pollen_loop *event_loop;
 
@@ -50,11 +51,15 @@ int main(int argc, char **argv) {
     if (!curl_init()) {
         return 1;
     }
+    if (!player_init()) {
+        return 1;
+    }
 
     api_get_random_songs(5, NULL, 0, 0, NULL, api_callback, NULL);
 
     pollen_loop_run(event_loop);
 
+    player_cleanup();
     curl_cleanup();
     pollen_loop_cleanup(event_loop);
 
