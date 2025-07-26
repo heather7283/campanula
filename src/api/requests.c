@@ -10,6 +10,12 @@
 #include "log.h"
 #include "network.h"
 
+static const char *api_endpoints[] = {
+    [API_REQUEST_GET_RANDOM_SONGS] = "getRandomSongs",
+    [API_REQUEST_GET_ALBUM_LIST] = "getAlbumList",
+};
+static_assert(SIZEOF_ARRAY(api_endpoints) == API_REQUEST_TYPE_COUNT);
+
 struct url_arg {
     const char *key;
     enum { STRING, NUMBER } type;
@@ -156,5 +162,24 @@ bool api_get_random_songs(uint32_t size, const char *genre,
                             args.args, args.count,
                             callback, callback_data);
 
+}
+
+bool api_get_album_list(const char *type,
+                        uint32_t size, uint32_t offset,
+                        uint32_t from_year, uint32_t to_year,
+                        const char *genre, const char *music_folder_id,
+                        api_response_callback_t callback, void *callback_data) {
+    ARG_BUILDER(7) args = {0};
+    if (type != NULL) ARG_BUILDER_ADD_STR(args, "type", type);
+    if (size > 0) ARG_BUILDER_ADD_INT(args, "size", size);
+    if (offset > 0) ARG_BUILDER_ADD_INT(args, "offset", offset);
+    if (from_year > 0) ARG_BUILDER_ADD_INT(args, "fromYear", from_year);
+    if (to_year > 0) ARG_BUILDER_ADD_INT(args, "toYear", to_year);
+    if (genre != NULL) ARG_BUILDER_ADD_STR(args, "genre", genre);
+    if (music_folder_id != NULL) ARG_BUILDER_ADD_STR(args, "musicFolderId", music_folder_id);
+
+    return api_make_request(API_REQUEST_GET_ALBUM_LIST,
+                            args.args, args.count,
+                            callback, callback_data);
 }
 

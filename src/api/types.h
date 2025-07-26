@@ -41,9 +41,14 @@ struct api_type_songs {
     ARRAY(struct api_type_child) song;
 };
 
+struct api_type_album_list {
+    ARRAY(struct api_type_child) album;
+};
+
 enum subsonic_response_inner_object_type {
     API_TYPE_ERROR,
     API_TYPE_SONGS,
+    API_TYPE_ALBUM_LIST,
 };
 
 enum subsonic_response_status {
@@ -59,6 +64,7 @@ struct subsonic_response {
     union {
         struct api_type_error error;
         struct api_type_songs random_songs;
+        struct api_type_album_list album_list;
     } inner_object;
 };
 

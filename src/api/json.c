@@ -40,8 +40,6 @@
             if (fail) { \
                 JSON_ERROR("did not find key \"%s\"", (key)); \
                 goto err; \
-            } else { \
-                JSON_WARN("did not find key \"%s\"", (key)); \
             } \
         } else { \
             const enum json_type t = json_object_get_type(tmp); \
@@ -50,9 +48,6 @@
                     JSON_ERROR("\"%s\" is of unexpected type %s, %s expected", \
                                (key), json_type_to_name(t), json_type_to_name(json_type_##type)); \
                     goto err; \
-                } else { \
-                    JSON_WARN("\"%s\" is of unexpected type %s, %s expected", \
-                              (key), json_type_to_name(t), json_type_to_name(json_type_##type)); \
                 } \
             } \
         } \
@@ -103,7 +98,8 @@ err:
     return false;
 }
 
-static bool api_parse_songs(struct api_type_songs *songs, const struct json_object *json) {
+static bool parse_type_songs(struct api_type_songs *songs,
+                             const struct json_object *json) {
     const struct json_object *song = JSON_GET_OR_FAIL(json, array, "song");
 
     ARRAY_INIT(&songs->song);
@@ -125,9 +121,39 @@ err:
     return false;
 }
 
-static bool parse_random_songs(struct subsonic_response *resp, const struct json_object *json) {
+static bool parse_type_album_list(struct api_type_album_list *album_list,
+                                  const struct json_object *json) {
+    const struct json_object *album = JSON_GET_OR_FAIL(json, array, "album");
+
+    ARRAY_INIT(&album_list->album);
+
+    const size_t array_len = json_object_array_length(album);
+    for (size_t i = 0; i < array_len; i++) {
+        const struct json_object *elem = json_object_array_get_idx(album, i);
+        JSON_CHECK_TYPE_OR_FAIL(elem, object);
+
+        struct api_type_child *child = ARRAY_EMPLACE_ZEROED(&album_list->album);
+        if (!parse_child(child, elem)) {
+            return false;
+        }
+    }
+
+    return true;
+
+err:
+    return false;
+}
+
+static bool parse_response_random_songs(struct subsonic_response *resp,
+                                        const struct json_object *json) {
     resp->inner_object_type = API_TYPE_SONGS;
-    return api_parse_songs(&resp->inner_object.random_songs, json);
+    return parse_type_songs(&resp->inner_object.random_songs, json);
+}
+
+static bool parse_response_album_list(struct subsonic_response *resp,
+                                      const struct json_object *json) {
+    resp->inner_object_type = API_TYPE_ALBUM_LIST;
+    return parse_type_album_list(&resp->inner_object.album_list, json);
 }
 
 static bool parse_error(struct api_type_error *err, const struct json_object *json) {
@@ -144,12 +170,14 @@ typedef bool (*inner_object_parser_t)(struct subsonic_response *resp,
                                       const struct json_object *json);
 
 static const inner_object_parser_t inner_object_parsers[] = {
-    [API_REQUEST_GET_RANDOM_SONGS] = parse_random_songs,
+    [API_REQUEST_GET_RANDOM_SONGS] = parse_response_random_songs,
+    [API_REQUEST_GET_ALBUM_LIST] = parse_response_album_list,
 };
 static_assert(SIZEOF_ARRAY(inner_object_parsers) == API_REQUEST_TYPE_COUNT);
 
 static const char *inner_object_names[] = {
     [API_REQUEST_GET_RANDOM_SONGS] = "randomSongs",
+    [API_REQUEST_GET_ALBUM_LIST] = "albumList",
 };
 static_assert(SIZEOF_ARRAY(inner_object_names) == API_REQUEST_TYPE_COUNT);
 

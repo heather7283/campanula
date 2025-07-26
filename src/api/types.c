@@ -27,6 +27,14 @@ static void free_songs(struct api_type_songs *o) {
     ARRAY_FREE(&o->song);
 }
 
+static void free_album_list(struct api_type_album_list *l) {
+    ARRAY_FOREACH(&l->album, i) {
+        struct api_type_child *c = &ARRAY_AT(&l->album, i);
+        free_child(c);
+    }
+    ARRAY_FREE(&l->album);
+}
+
 /* I heckin love C man. What a great language */
 void subsonic_response_free(struct subsonic_response *response) {
     if (response == NULL) {
@@ -39,6 +47,9 @@ void subsonic_response_free(struct subsonic_response *response) {
         break;
     case API_TYPE_SONGS:
         free_songs(&response->inner_object.random_songs);
+        break;
+    case API_TYPE_ALBUM_LIST:
+        free_album_list(&response->inner_object.album_list);
         break;
     }
 
