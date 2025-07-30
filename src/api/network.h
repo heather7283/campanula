@@ -11,8 +11,8 @@ typedef void (*request_callback_t)(const char *errmsg,
 
 bool make_request(const char *url, request_callback_t callback, void *callback_data);
 
-bool curl_init(void);
-void curl_cleanup(void);
+bool network_init(void);
+void network_cleanup(void);
 
 #endif /* #ifndef SRC_NETWORK_H */
 

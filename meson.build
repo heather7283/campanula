@@ -30,19 +30,23 @@ include_dirs = include_directories([
 
 sources = [
   'src/campanula.c',
-  'src/network.c',
   'src/auth.c',
   'src/config.c',
   'src/log.c',
   'src/xmalloc.c',
   'src/eventloop.c',
+
+  'src/api/network.c',
   'src/api/requests.c',
   'src/api/json.c',
   'src/api/types.c',
+
   'src/player/init.c',
   'src/player/common.c',
+
   'src/collections/string.c',
   'src/collections/array.c',
+
   'src/pollen_impl.c',
 ]
 

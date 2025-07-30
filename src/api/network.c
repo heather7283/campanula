@@ -215,7 +215,7 @@ err:
     return false;
 }
 
-bool curl_init(void) {
+bool network_init(void) {
     CURLcode rc;
 
     rc = curl_global_init_mem(CURL_GLOBAL_ALL, xmalloc, free, xrealloc, xstrdup, xcalloc);
@@ -244,7 +244,7 @@ bool curl_init(void) {
     return true;
 }
 
-void curl_cleanup(void) {
+void network_cleanup(void) {
     curl_multi_cleanup(curl_global.multi);
     pollen_loop_remove_callback(curl_global.timer);
 }

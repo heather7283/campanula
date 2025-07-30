@@ -3,10 +3,10 @@
 
 #include <pollen.h>
 
-#include "network.h"
 #include "config.h"
 #include "log.h"
 #include "eventloop.h"
+#include "api/network.h"
 #include "api/requests.h"
 #include "player/init.h"
 
@@ -60,7 +60,7 @@ int main(int argc, char **argv) {
     event_loop = pollen_loop_create();
     pollen_loop_add_signal(event_loop, SIGINT, sigint_handler, &event_loop);
 
-    if (!curl_init()) {
+    if (!network_init()) {
         return 1;
     }
     if (!player_init()) {
@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
     pollen_loop_run(event_loop);
 
     player_cleanup();
-    curl_cleanup();
+    network_cleanup();
     pollen_loop_cleanup(event_loop);
 
     return 0;
