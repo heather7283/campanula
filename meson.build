@@ -46,8 +46,6 @@ sources = [
 
   'src/collections/string.c',
   'src/collections/array.c',
-
-  'src/pollen_impl.c',
 ]
 
 executable('campanula', sources,
