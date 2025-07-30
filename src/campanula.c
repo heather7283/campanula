@@ -6,10 +6,9 @@
 #include "network.h"
 #include "config.h"
 #include "log.h"
+#include "eventloop.h"
 #include "api/requests.h"
 #include "player/init.h"
-
-struct pollen_loop *event_loop;
 
 static void api_callback(const char *errmsg, const struct subsonic_response *response, void *data) {
     if (response == NULL) {

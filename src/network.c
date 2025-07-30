@@ -1,6 +1,6 @@
 #include "collections/array.h"
 #include "network.h"
-#include "campanula.h"
+#include "eventloop.h"
 #include "xmalloc.h"
 #include "log.h"
 

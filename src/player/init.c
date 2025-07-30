@@ -3,7 +3,7 @@
 
 #include "player/init.h"
 #include "player/common.h"
-#include "campanula.h"
+#include "eventloop.h"
 #include "log.h"
 
 static int player_process_events(struct pollen_callback *, uint64_t, void *) {
