@@ -39,6 +39,7 @@ sources = [
   'src/api/json.c',
   'src/api/types.c',
   'src/player/init.c',
+  'src/player/common.c',
   'src/collections/string.c',
   'src/collections/array.c',
   'src/pollen_impl.c',

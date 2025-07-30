@@ -2,15 +2,11 @@
 #include <pollen.h>
 
 #include "player/init.h"
+#include "player/common.h"
 #include "campanula.h"
 #include "log.h"
 
-struct player_state {
-    struct mpv_handle *mpv_handle;
-    struct pollen_callback *callback;
-} player_state = {0};
-
-static int player_process_events(struct pollen_callback *callback, uint64_t, void *) {
+static int player_process_events(struct pollen_callback *, uint64_t, void *) {
     struct mpv_event *ev = NULL;
     while ((ev = mpv_wait_event(player_state.mpv_handle, 0)), ev->event_id != MPV_EVENT_NONE) {
         TRACE("got mpv event: %s", mpv_event_name(ev->event_id));
@@ -20,7 +16,7 @@ static int player_process_events(struct pollen_callback *callback, uint64_t, voi
 }
 
 static void mpv_wakeup_callback(void *data) {
-    pollen_efd_trigger(player_state.callback, 1);
+    pollen_efd_trigger(player_state.events_callback, 1);
 }
 
 bool player_init(void) {
@@ -32,8 +28,8 @@ bool player_init(void) {
         return false;
     }
 
-    player_state.callback = pollen_loop_add_efd(event_loop, player_process_events, NULL);
-    if (player_state.callback == NULL) {
+    player_state.events_callback = pollen_loop_add_efd(event_loop, player_process_events, NULL);
+    if (player_state.events_callback == NULL) {
         ERROR("failed to set up efd");
         return false;
     }
@@ -67,6 +63,6 @@ void player_cleanup(void) {
     if (player_state.mpv_handle != NULL) {
         mpv_terminate_destroy(player_state.mpv_handle);
     }
-    pollen_loop_remove_callback(player_state.callback);
+    pollen_loop_remove_callback(player_state.events_callback);
 }
 
