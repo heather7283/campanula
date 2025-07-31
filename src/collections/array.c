@@ -14,7 +14,7 @@ static void array_ensure_capacity(struct array_generic *arr, size_t elem_size, s
     }
 }
 
-void array_extend_generic(struct array_generic *arr, void *elems,
+void array_extend_generic(struct array_generic *arr, const void *elems,
                           size_t elem_size, size_t elem_count) {
     array_ensure_capacity(arr, elem_size, arr->size + elem_count);
 

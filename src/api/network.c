@@ -12,8 +12,11 @@ static struct curl_global_data {
 struct connection_data {
     CURL *easy;
     char *url;
-    ARRAY(uint8_t) received;
+    char *content_type;
     char error[CURL_ERROR_SIZE];
+
+    bool stream;
+    ARRAY(uint8_t) received;
 
     request_callback_t callback;
     void *callback_data;
@@ -25,8 +28,22 @@ struct socket_data {
 };
 
 static size_t easy_writefunction(void *ptr, size_t size, size_t nmemb, void *data) {
-    struct connection_data *conn = data;
-    ARRAY_EXTEND(&conn->received, (uint8_t *)ptr, nmemb);
+    struct connection_data *conn_data = data;
+
+    if (conn_data->content_type == NULL) {
+        struct curl_header *h;
+        curl_easy_header(conn_data->easy, "Content-Type", 0, CURLH_HEADER, -1, &h);
+        conn_data->content_type = xstrdup(h->value);
+        TRACE("got Content-Type: %s", h->value);
+    }
+
+    if (!conn_data->stream) {
+        ARRAY_EXTEND(&conn_data->received, (uint8_t *)ptr, size * nmemb);
+    } else if (!conn_data->callback(NULL, conn_data->content_type,
+                                    ptr, size * nmemb,
+                                    conn_data->callback_data)) {
+        return CURL_WRITEFUNC_ERROR;
+    }
 
     return size * nmemb;
 }
@@ -55,18 +72,29 @@ static void check_multi_info(struct curl_global_data *global_data) {
             curl_easy_getinfo(easy, CURLINFO_PRIVATE, &conn_data);
             curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &effective_url);
 
-            const char *errmsg = NULL;
             if (res != CURLE_OK) {
+                const char *errmsg = NULL;
                 if (conn_data->error[0] == '\0') {
                     errmsg = curl_easy_strerror(res);
                 } else {
                     errmsg = conn_data->error;
                 }
 
-                conn_data->callback(errmsg, NULL, 0, conn_data->callback_data);
+                /* error, both stream and regular */
+                conn_data->callback(errmsg, conn_data->content_type,
+                                    NULL, -1,
+                                    conn_data->callback_data);
+            } else if (conn_data->stream) {
+                /* EOF, stream callback */
+                conn_data->callback(NULL, conn_data->content_type,
+                                    NULL, 0,
+                                    conn_data->callback_data);
             } else {
-                conn_data->callback(NULL, (char *)ARRAY_DATA(&conn_data->received),
-                                    ARRAY_SIZE(&conn_data->received), conn_data->callback_data);
+                /* EOF, regular callback */
+                conn_data->callback(NULL, conn_data->content_type,
+                                    ARRAY_DATA(&conn_data->received),
+                                    ARRAY_SIZE(&conn_data->received),
+                                    conn_data->callback_data);
             }
 
             curl_multi_remove_handle(global_data->multi, easy);
@@ -74,6 +102,7 @@ static void check_multi_info(struct curl_global_data *global_data) {
 
             ARRAY_FREE(&conn_data->received);
             free(conn_data->url);
+            free(conn_data->content_type);
             free(conn_data);
         }
     }
@@ -116,6 +145,7 @@ static int timer_callback(struct pollen_callback *callback, void *data) {
     }
 
     check_multi_info(global_data);
+
     return 0;
 }
 
@@ -168,11 +198,12 @@ static int multi_socketfunction(CURL *easy, int fd, int what,
     return 0;
 }
 
-bool make_request(const char *url, request_callback_t callback, void *callback_data) {
+bool make_request(const char *url, bool stream, request_callback_t callback, void *callback_data) {
     struct connection_data *conn = xcalloc(1, sizeof(*conn));
     conn->callback_data = callback_data;
     conn->callback = callback;
     conn->url = xstrdup(url);
+    conn->stream = stream;
 
     conn->easy = curl_easy_init();
     if (conn->easy == NULL) {

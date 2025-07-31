@@ -15,6 +15,7 @@ GNU General Public License for more details.
 ## References
 - https://curl.se/libcurl/c/ephiperfifo.html
 - https://www.subsonic.org/pages/api.jsp
+- https://opensubsonic.netlify.app/docs
 - https://github.com/mpv-player/mpv/blob/master/DOCS/man/libmpv.rst
 - https://github.com/mpv-player/mpv-examples/tree/master/libmpv
 

@@ -1,3 +1,4 @@
+#include <string.h>
 #include <inttypes.h>
 #include <assert.h>
 
@@ -13,15 +14,17 @@
 static const char *api_endpoints[] = {
     [API_REQUEST_GET_RANDOM_SONGS] = "getRandomSongs",
     [API_REQUEST_GET_ALBUM_LIST] = "getAlbumList",
+    [API_REQUEST_STREAM] = "stream",
 };
 static_assert(SIZEOF_ARRAY(api_endpoints) == API_REQUEST_TYPE_COUNT);
 
 struct url_arg {
     const char *key;
-    enum { STRING, NUMBER } type;
+    enum { STRING, NUMBER, BOOLEAN } type;
     union {
         const char *str;
         int64_t num;
+        bool boolean;
     } val;
 };
 
@@ -47,6 +50,14 @@ struct url_arg {
         }; \
     } while (0)
 
+#define ARG_BUILDER_ADD_BOOL(builder, k, v) \
+    do { \
+        assert(builder.count < SIZEOF_ARRAY(builder.args)); \
+        builder.args[builder.count++] = (struct url_arg){ \
+            .key = (k), .type = BOOLEAN, .val.boolean = (v), \
+        }; \
+    } while (0)
+
 static void url_append_key_value_str(struct string *str, const char *k, const char *v) {
     string_append(str, k);
     string_append(str, "=");
@@ -61,6 +72,17 @@ static void url_append_key_value_int(struct string *str, const char *k, int64_t 
 struct api_request_callback_data {
     enum api_request_type request_type;
     api_response_callback_t callback;
+    void *callback_data;
+};
+
+struct api_stream_callback_data {
+    enum api_request_type request_type;
+
+    bool checked_content_type;
+    bool error;
+    ARRAY(char) error_data;
+
+    api_stream_callback_t callback;
     void *callback_data;
 };
 
@@ -79,7 +101,65 @@ static const char *error_code_to_string(int32_t code) {
     }
 }
 
-static void on_api_request_done(const char *errmsg, const char *data, size_t size, void *userdata) {
+static bool on_api_stream_data(const char *errmsg, const char *content_type,
+                               const void *data, ssize_t size, void *userdata) {
+    struct api_stream_callback_data *d = userdata;
+
+    switch (size) {
+    case -1: /* error */
+        d->callback(errmsg, NULL, -1, d->callback_data);
+
+        goto out_free;
+    case 0: /* EOF */
+        if (d->error) {
+            struct subsonic_response *r = api_parse_response(d->request_type,
+                                                             ARRAY_DATA(&d->error_data),
+                                                             ARRAY_SIZE(&d->error_data));
+
+            if (r == NULL || r->inner_object_type != API_TYPE_ERROR) {
+                d->callback("Failed to parse server response", NULL, -1, d->callback_data);
+            } else {
+                const struct api_type_error *err = &r->inner_object.error;
+                const char *errmsg;
+                if (err->message != NULL) {
+                    errmsg = err->message;
+                } else {
+                    errmsg = error_code_to_string(err->code);
+                }
+                d->callback(errmsg, NULL, -1, d->callback_data);
+            }
+
+            subsonic_response_free(r);
+        } else {
+            d->callback(NULL, NULL, 0, d->callback_data);
+        }
+
+        goto out_free;
+    default: /* data */
+        if (!d->checked_content_type) {
+            d->error = STREQ(content_type, "application/json");
+            d->checked_content_type = true;
+        }
+
+        if (d->error) {
+            ARRAY_EXTEND(&d->error_data, (char *)data, size);
+        } else {
+            d->callback(NULL, data, size, d->callback_data);
+        }
+
+        goto out;
+    }
+
+out_free:
+    ARRAY_FREE(&d->error_data);
+    free(d);
+
+out:
+    return true;
+}
+
+static bool on_api_request_done(const char *errmsg, const char *content_type,
+                                const void *data, ssize_t size, void *userdata) {
     struct api_request_callback_data *d = userdata;
 
     if (errmsg != NULL) {
@@ -90,12 +170,16 @@ static void on_api_request_done(const char *errmsg, const char *data, size_t siz
         if (response == NULL) {
             d->callback("failed to parse server response", NULL, d->callback_data);
         } else if (response->inner_object_type == API_TYPE_ERROR) {
-            if (response->inner_object.error.message != NULL) {
-                d->callback(response->inner_object.error.message, NULL, d->callback_data);
+            const struct api_type_error *error = &response->inner_object.error;
+            const char *error_message;
+
+            if (error->message != NULL) {
+                error_message = error->message;
             } else {
-                d->callback(error_code_to_string(response->inner_object.error.code),
-                            NULL, d->callback_data);
+                error_message = error_code_to_string(error->code);
             }
+
+            d->callback(error_message, NULL, d->callback_data);
         } else {
             d->callback(NULL, response, d->callback_data);
         }
@@ -104,11 +188,13 @@ static void on_api_request_done(const char *errmsg, const char *data, size_t siz
     }
 
     free(d);
+    return true;
 }
 
 static bool api_make_request(enum api_request_type request,
                              const struct url_arg *args, int args_count,
-                             api_response_callback_t callback, void *callback_userdata) {
+                             bool stream,
+                             void *callback, void *callback_userdata) {
     struct string url = {0};
 
     string_appendf(&url, "%s/rest/%s?", config.server_address, api_endpoints[request]);
@@ -125,6 +211,9 @@ static bool api_make_request(enum api_request_type request,
         case NUMBER:
             url_append_key_value_int(&url, arg->key, arg->val.num);
             break;
+        case BOOLEAN:
+            url_append_key_value_str(&url, arg->key, arg->val.boolean ? "true" : "false");
+            break;
         }
     }
 
@@ -136,11 +225,22 @@ static bool api_make_request(enum api_request_type request,
     url_append_key_value_str(&url, "t", auth->token);
     url_append_key_value_str(&url, "s", auth->salt);
 
-    struct api_request_callback_data *data = xcalloc(1, sizeof(*data));
-    data->request_type = request;
-    data->callback = callback;
-    data->callback_data = callback_userdata;
-    bool res = make_request(url.str, on_api_request_done, data);
+    bool res;
+    if (!stream) {
+        struct api_request_callback_data *data = xcalloc(1, sizeof(*data));
+        data->request_type = request;
+        data->callback = callback;
+        data->callback_data = callback_userdata;
+
+        res = make_request(url.str, false, on_api_request_done, data);
+    } else {
+        struct api_stream_callback_data *data = xcalloc(1, sizeof(*data));
+        data->request_type = request;
+        data->callback = callback;
+        data->callback_data = callback_userdata;
+
+        res = make_request(url.str, true, on_api_stream_data, data);
+    }
 
     string_free(&url);
 
@@ -160,6 +260,7 @@ bool api_get_random_songs(uint32_t size, const char *genre,
 
     return api_make_request(API_REQUEST_GET_RANDOM_SONGS,
                             args.args, args.count,
+                            false,
                             callback, callback_data);
 
 }
@@ -180,6 +281,30 @@ bool api_get_album_list(const char *type,
 
     return api_make_request(API_REQUEST_GET_ALBUM_LIST,
                             args.args, args.count,
+                            false,
+                            callback, callback_data);
+}
+
+bool api_stream(const char *id, uint32_t max_bit_rate,
+                const char *format, bool estimate_content_length,
+                api_stream_callback_t callback,
+                void *callback_data) {
+    ARG_BUILDER(4) args = {0};
+
+    if (id == NULL || strlen(id) == 0) {
+        ERROR("did not pass required parameter \"id\" to stream api method");
+        return false;
+    }
+    ARG_BUILDER_ADD_STR(args, "id", id);
+
+    if (max_bit_rate > 0) ARG_BUILDER_ADD_INT(args, "maxBitRate", max_bit_rate);
+    if (format != NULL) ARG_BUILDER_ADD_STR(args, "format", format);
+    if (estimate_content_length) ARG_BUILDER_ADD_BOOL(args, "estimateContentLength",
+                                                      estimate_content_length);
+
+    return api_make_request(API_REQUEST_STREAM,
+                            args.args, args.count,
+                            true,
                             callback, callback_data);
 }
 

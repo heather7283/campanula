@@ -34,7 +34,7 @@ struct array_generic {
 #define ARRAY_SIZE(parray) ((parray)->size)
 #define ARRAY_DATA(parray) ((parray)->data)
 
-void array_extend_generic(struct array_generic *arr, void *elem,
+void array_extend_generic(struct array_generic *arr, const void *elem,
                           size_t elem_size, size_t elem_count);
 
 #define ARRAY_EXTEND(parray, pelem, nelem) \

@@ -6,9 +6,47 @@
 #include "config.h"
 #include "log.h"
 #include "eventloop.h"
+#include "xmalloc.h"
+#include "collections/string.h"
 #include "api/network.h"
 #include "api/requests.h"
 #include "player/init.h"
+
+struct api_stream_callback_data {
+    char *id;
+    FILE *f;
+};
+
+static void api_stream_callback(const char *errmsg, const void *data,
+                                ssize_t data_size, void *userdata) {
+    struct api_stream_callback_data *d = userdata;
+
+    if (errmsg != NULL) {
+        ERROR("api_stream_callback: %s", errmsg);
+        goto cleanup;
+    } else if (data_size == 0) {
+        INFO("api_stream_callback: EOF");
+        goto cleanup;
+    }
+
+    if (d->f == NULL) {
+        struct string s = {0};
+        string_appendf(&s, "%s.opus", d->id);
+        d->f = fopen(s.str, "wb");
+        string_free(&s);
+    }
+    TRACE("api_stream_callback: got %zi bytes of data", data_size);
+    fwrite(data, 1, data_size, d->f);
+
+    return;
+
+cleanup:
+    if (d->f != NULL) {
+        fclose(d->f);
+    }
+    free(d->id);
+    free(d);
+}
 
 static void api_callback(const char *errmsg, const struct subsonic_response *response, void *data) {
     if (response == NULL) {
@@ -21,20 +59,30 @@ static void api_callback(const char *errmsg, const struct subsonic_response *res
     case API_TYPE_SONGS: {
         const struct api_type_songs *songs = &response->inner_object.random_songs;
         DEBUG("Got %zu songs:", ARRAY_SIZE(&songs->song));
+
+        const struct api_type_child *c = NULL;
         ARRAY_FOREACH(&songs->song, i) {
-            const struct api_type_child *c = &ARRAY_AT(&songs->song, i);
+            c = &ARRAY_AT(&songs->song, i);
             DEBUG("%zu. %s (%s) / %s (%s) / %d. %s (%s)",
                   i, c->artist, c->artist_id, c->album, c->album_id, c->track, c->title, c->id);
         }
+
+        struct api_stream_callback_data *d = xcalloc(1, sizeof(*d));
+        d->id = xstrdup(c->id);
+
+        api_stream(d->id, 128, "opus", false, api_stream_callback, d);
+
         break;
     }
     case API_TYPE_ALBUM_LIST: {
         const struct api_type_album_list *album_list = &response->inner_object.album_list;
         DEBUG("Got %zu albums:", ARRAY_SIZE(&album_list->album));
+
         ARRAY_FOREACH(&album_list->album, i) {
             const struct api_type_child *c = &ARRAY_AT(&album_list->album, i);
             DEBUG("%zu. %s (%s) / %s (%s)", i, c->artist, c->artist_id, c->album, c->id);
         }
+
         break;
     }
     default:
@@ -68,7 +116,6 @@ int main(int argc, char **argv) {
     }
 
     api_get_random_songs(5, NULL, 0, 0, NULL, api_callback, NULL);
-    api_get_album_list("random", 10, 0, 0, 0, NULL, NULL, api_callback, NULL);
 
     pollen_loop_run(event_loop);
 

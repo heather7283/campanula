@@ -172,12 +172,14 @@ typedef bool (*inner_object_parser_t)(struct subsonic_response *resp,
 static const inner_object_parser_t inner_object_parsers[] = {
     [API_REQUEST_GET_RANDOM_SONGS] = parse_response_random_songs,
     [API_REQUEST_GET_ALBUM_LIST] = parse_response_album_list,
+    [API_REQUEST_STREAM] = NULL, /* special */
 };
 static_assert(SIZEOF_ARRAY(inner_object_parsers) == API_REQUEST_TYPE_COUNT);
 
 static const char *inner_object_names[] = {
     [API_REQUEST_GET_RANDOM_SONGS] = "randomSongs",
     [API_REQUEST_GET_ALBUM_LIST] = "albumList",
+    [API_REQUEST_STREAM] = NULL, /* special */
 };
 static_assert(SIZEOF_ARRAY(inner_object_names) == API_REQUEST_TYPE_COUNT);
 

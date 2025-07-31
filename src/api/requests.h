@@ -1,6 +1,7 @@
 #ifndef SRC_API_REQUESTS_H
 #define SRC_API_REQUESTS_H
 
+#include <sys/types.h>
 #include <assert.h>
 
 #include "api/types.h"
@@ -10,12 +11,19 @@
 enum api_request_type {
     API_REQUEST_GET_RANDOM_SONGS,
     API_REQUEST_GET_ALBUM_LIST,
+    API_REQUEST_STREAM,
+
+    /* put new types before this one */
     API_REQUEST_TYPE_COUNT,
 };
 
 typedef void (*api_response_callback_t)(const char *errmsg,
                                         const struct subsonic_response *response,
                                         void *userdata);
+
+typedef void (*api_stream_callback_t)(const char *errmsg,
+                                      const void *data, ssize_t data_size,
+                                      void *userdata);
 
 /*
  * Returns random songs matching the given criteria.
@@ -52,6 +60,19 @@ bool api_get_album_list(const char *type,
                         uint32_t from_year, uint32_t to_year,
                         const char *genre, const char *music_folder_id,
                         api_response_callback_t callback, void *callback_data);
+
+/*
+ * Streams a given media file.
+ *
+ * Parameter             Required Default Comment
+ * id                    Yes              A string which uniquely identifies the file to stream.
+ * maxBitRate            No               Limit bitrate to this value in kbps (0 for no limit).
+ * format                No               Preferred target format, "raw" for no transcoding.
+ * estimateContentLength No       false   Set Content-Length HTTP header to an estimated value.
+ */
+bool api_stream(const char *id, uint32_t max_bit_rate,
+                const char *format, bool estimate_content_length,
+                api_stream_callback_t callback, void *callback_data);
 
 #endif /* #ifndef SRC_API_REQUESTS_H */
 
