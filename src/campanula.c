@@ -7,46 +7,10 @@
 #include "log.h"
 #include "eventloop.h"
 #include "xmalloc.h"
-#include "collections/string.h"
 #include "api/network.h"
 #include "api/requests.h"
 #include "player/init.h"
-
-struct api_stream_callback_data {
-    char *id;
-    FILE *f;
-};
-
-static void api_stream_callback(const char *errmsg, const void *data,
-                                ssize_t data_size, void *userdata) {
-    struct api_stream_callback_data *d = userdata;
-
-    if (errmsg != NULL) {
-        ERROR("api_stream_callback: %s", errmsg);
-        goto cleanup;
-    } else if (data_size == 0) {
-        INFO("api_stream_callback: EOF");
-        goto cleanup;
-    }
-
-    if (d->f == NULL) {
-        struct string s = {0};
-        string_appendf(&s, "%s.opus", d->id);
-        d->f = fopen(s.str, "wb");
-        string_free(&s);
-    }
-    TRACE("api_stream_callback: got %zi bytes of data", data_size);
-    fwrite(data, 1, data_size, d->f);
-
-    return;
-
-cleanup:
-    if (d->f != NULL) {
-        fclose(d->f);
-    }
-    free(d->id);
-    free(d);
-}
+#include "player/control.h"
 
 static void api_callback(const char *errmsg, const struct subsonic_response *response, void *data) {
     if (response == NULL) {
@@ -67,21 +31,7 @@ static void api_callback(const char *errmsg, const struct subsonic_response *res
                   i, c->artist, c->artist_id, c->album, c->album_id, c->track, c->title, c->id);
         }
 
-        struct api_stream_callback_data *d = xcalloc(1, sizeof(*d));
-        d->id = xstrdup(c->id);
-
-        api_stream(d->id, 128, "opus", false, api_stream_callback, d);
-
-        break;
-    }
-    case API_TYPE_ALBUM_LIST: {
-        const struct api_type_album_list *album_list = &response->inner_object.album_list;
-        DEBUG("Got %zu albums:", ARRAY_SIZE(&album_list->album));
-
-        ARRAY_FOREACH(&album_list->album, i) {
-            const struct api_type_child *c = &ARRAY_AT(&album_list->album, i);
-            DEBUG("%zu. %s (%s) / %s (%s)", i, c->artist, c->artist_id, c->album, c->id);
-        }
+        player_play(c->id);
 
         break;
     }
@@ -96,7 +46,7 @@ int sigint_handler(struct pollen_callback *callback, int signum, void *data) {
 }
 
 int main(int argc, char **argv) {
-    log_init(stderr, LOG_TRACE, false);
+    log_init(fopen("campanula.log", "w"), LOG_TRACE, true);
 
     char *password = getenv("CAMPANULA_PASSWORD");
     if (password == NULL) {

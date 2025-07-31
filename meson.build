@@ -43,6 +43,8 @@ sources = [
 
   'src/player/init.c',
   'src/player/common.c',
+  'src/player/control.c',
+  'src/player/stream.c',
 
   'src/collections/string.c',
   'src/collections/array.c',

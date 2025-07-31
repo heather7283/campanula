@@ -20,41 +20,43 @@ void log_init(FILE *stream, enum log_loglevel level, bool force_colors);
 
 [[gnu::format(printf, 2, 3)]]
 void log_print(enum log_loglevel level, char *msg, ...);
+[[gnu::format(printf, 2, 3)]]
+void log_println(enum log_loglevel level, char *msg, ...);
 
 #define TRACE(fmt, ...) \
     do { \
-        log_print(LOG_TRACE, \
-                  "%s:%-3d " fmt, \
-                  __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
+        log_println(LOG_TRACE, \
+                    "%s:%-3d " fmt, \
+                    __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
     } while (0)
 
 #define DEBUG(fmt, ...) \
     do { \
-        log_print(LOG_DEBUG, \
-                  "%s:%-3d " fmt, \
-                  __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
+        log_println(LOG_DEBUG, \
+                    "%s:%-3d " fmt, \
+                    __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
     } while (0)
 
 #define INFO(fmt, ...) \
     do { \
-        log_print(LOG_INFO, \
-                  "%s:%-3d " fmt, \
-                  __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
+        log_println(LOG_INFO, \
+                    "%s:%-3d " fmt, \
+                    __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
     } while (0)
 
 
 #define WARN(fmt, ...) \
     do { \
-        log_print(LOG_WARN, \
-                  "%s:%-3d " fmt, \
-                  __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
+        log_println(LOG_WARN, \
+                    "%s:%-3d " fmt, \
+                    __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
     } while (0)
 
 #define ERROR(fmt, ...) \
     do { \
-        log_print(LOG_ERROR, \
-                  "%s:%-3d " fmt, \
-                  __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
+        log_println(LOG_ERROR, \
+                    "%s:%-3d " fmt, \
+                    __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
     } while (0)
 
 #undef PRINTF

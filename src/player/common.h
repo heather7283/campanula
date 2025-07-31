@@ -1,6 +1,8 @@
 #ifndef SRC_PLAYER_COMMON_H
 #define SRC_PLAYER_COMMON_H
 
+#define PLAYER_PROTOCOL "campanula"
+
 struct player_state {
     struct mpv_handle *mpv_handle;
     struct pollen_callback *events_callback;

@@ -47,7 +47,7 @@ void log_init(FILE *stream, enum log_loglevel level, bool force_colors) {
     log_config.colors = force_colors ? true : isatty(fileno(stream));
 }
 
-void log_print(enum log_loglevel level, char *message, ...) {
+static void log_print_internal(enum log_loglevel level, bool newline, char *message, va_list args) {
     if (log_config.stream == NULL) {
         return;
     }
@@ -93,16 +93,31 @@ void log_print(enum log_loglevel level, char *message, ...) {
 
     fprintf(log_config.stream, "[%c] ", level_char);
 
-    va_list args;
-    va_start(args, message);
     vfprintf(log_config.stream, message, args);
-    va_end(args);
 
     if (log_config.colors) {
         fprintf(log_config.stream, LOG_ANSI_COLORS_RESET);
     }
-    fprintf(log_config.stream, "\n");
+    if (newline) {
+        fprintf(log_config.stream, "\n");
+    }
 
     fflush(log_config.stream);
+}
+
+void log_print(enum log_loglevel level, char *message, ...) {
+    va_list args;
+
+    va_start(args, message);
+    log_print_internal(level, false, message, args);
+    va_end(args);
+}
+
+void log_println(enum log_loglevel level, char *message, ...) {
+    va_list args;
+
+    va_start(args, message);
+    log_print_internal(level, true, message, args);
+    va_end(args);
 }
 
