@@ -34,57 +34,47 @@ static int64_t stream_read_callback(void *cookie, char *buf, uint64_t nbytes) {
 
     sem_wait(&d->sem);
 
-    TRACE("player/stream/read: requested read of %lu bytes at off %li", nbytes, d->pos);
+    TRACE("read: requested %lu bytes; size %lu off %li eof %d err %d",
+          nbytes, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
 
 again:
     if (d->error) {
-        TRACE("player/stream/read: returning -1 (error)");
         return -1;
     }
 
-    if (d->eof) { /* we don't expect new data to be appended to the buffer */
-        if ((size_t)d->pos >= ARRAY_SIZE(&d->data)) {
-            /* requested read past data end, signal EOF */
-            TRACE("player/stream/read: returning 0 (EOF)");
-            ret = 0;
-            goto out;
-        } else {
-            const uint64_t available = ARRAY_SIZE(&d->data) - d->pos;
-            const uint64_t len = MIN(available, nbytes);
+    if ((size_t)d->pos < ARRAY_SIZE(&d->data)) {
+        /* can return at least 1 byte before hitting end of buffer */
+        const uint64_t available = ARRAY_SIZE(&d->data) - d->pos;
+        const uint64_t len = MIN(available, nbytes);
 
-            memcpy(buf, ARRAY_DATA(&d->data) + d->pos, len);
-            d->pos += len;
+        memcpy(buf, ARRAY_DATA(&d->data) + d->pos, len);
+        d->pos += len;
 
-            TRACE("player/stream/read: returning %li", len);
-            ret = len;
-            goto out;
-        }
-    } else {
-        if ((size_t)d->pos >= ARRAY_SIZE(&d->data)) {
-            /* not at EOF yet, but there's no more data available at the moment.
-             * We need to block until new data arrives. */
-            TRACE("player/stream/read: waiting for more data");
-            sem_post(&d->sem);
-            uint64_t dummy;
-            eventfd_read(d->efd, &dummy);
-            sem_wait(&d->sem);
+        ret = len;
+        goto out;
+    } else if (d->eof) {
+        /* hit end of buffer and there's no more data to be received. Signal EOF */
+        ret = 0;
+        goto out;
+    } else /* if (!d->eof) */ {
+        /* hit end of buffer, but there might be more data to receive.
+         * Need to block until more data arrives and retry */
+        TRACE("read: waiting for more data");
 
-            goto again;
-        } else {
-            const uint64_t available = ARRAY_SIZE(&d->data) - d->pos;
-            const uint64_t len = MIN(available, nbytes);
+        sem_post(&d->sem);
+        uint64_t dummy;
+        eventfd_read(d->efd, &dummy);
+        sem_wait(&d->sem);
 
-            memcpy(buf, ARRAY_DATA(&d->data) + d->pos, len);
-            d->pos += len;
-
-            TRACE("player/stream/read: returning %li", len);
-            ret = len;
-            goto out;
-        }
+        goto again;
     }
 
 out:
+    TRACE("read: returning %lu bytes; size %lu off %li eof %d err %d",
+          ret, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
+
     sem_post(&d->sem);
+
     return ret;
 }
 
@@ -93,14 +83,13 @@ static int64_t stream_seek_callback(void *cookie, int64_t offset) {
 
     sem_wait(&d->sem);
 
-    TRACE("player/stream/seek: requested seek to %li", offset);
-    if ((size_t)offset >= ARRAY_SIZE(&d->data)) {
-        TRACE("player/stream/seek: offset %li past end of data %zu, returning %li",
-              offset, ARRAY_SIZE(&d->data), d->pos);
-        d->pos = ARRAY_SIZE(&d->data);
-    } else {
-        d->pos = offset;
-    }
+    TRACE("seek: requested seek to %li; size %lu off %li eof %d err %d",
+          offset, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
+
+    d->pos = MIN(ARRAY_SIZE(&d->data), (size_t)offset);
+
+    TRACE("seek: returning %li; size %lu off %li eof %d err %d",
+          offset, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
 
     sem_post(&d->sem);
 
@@ -112,7 +101,7 @@ static int64_t stream_size_callback(void *cookie) {
 }
 
 static void stream_close_callback(void *cookie) {
-    TRACE("player/stream/close: destroying stream");
+    TRACE("close: destroying stream");
     stream_data_free(cookie);
 }
 
@@ -128,20 +117,19 @@ static void api_stream_data_callback(const char *errmsg, const void *data,
 
     switch (data_size) {
     case -1: /* error */
-        ERROR("player/stream/data: %s", errmsg);
+        ERROR("data: %s", errmsg);
         d->error = true;
         break;
     case 0: /* EOF */
-        TRACE("player/stream/data: EOF");
+        TRACE("data: EOF");
         d->eof = true;
-        eventfd_write(d->efd, 1);
         break;
     default: /* data */
-        TRACE("player/stream/data: new data arrived, %zu bytes", data_size);
+        TRACE("data: new data arrived, %zu bytes", data_size);
         ARRAY_EXTEND(&d->data, (uint8_t *)data, data_size);
-        eventfd_write(d->efd, 1);
         break;
     }
+    eventfd_write(d->efd, 1);
 
     sem_post(&d->sem);
 
@@ -163,7 +151,7 @@ int player_stream_open(void *userdata, char *uri, struct mpv_stream_cb_info *inf
         goto err;
     }
 
-    if (!api_stream(id, 128, "opus", false, api_stream_data_callback, d)) {
+    if (!api_stream(id, 128, "raw", false, api_stream_data_callback, d)) {
         goto err;
     }
 
