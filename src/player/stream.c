@@ -39,10 +39,9 @@ static int64_t stream_read_callback(void *cookie, char *buf, uint64_t nbytes) {
 
 again:
     if (d->error) {
-        return -1;
-    }
-
-    if ((size_t)d->pos < ARRAY_SIZE(&d->data)) {
+        ret = -1;
+        goto out;
+    } if ((size_t)d->pos < ARRAY_SIZE(&d->data)) {
         /* can return at least 1 byte before hitting end of buffer */
         const uint64_t available = ARRAY_SIZE(&d->data) - d->pos;
         const uint64_t len = MIN(available, nbytes);
