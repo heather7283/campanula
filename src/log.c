@@ -1,3 +1,4 @@
+#include <semaphore.h>
 #include <strings.h>
 #include <unistd.h>
 #include <stdarg.h>
@@ -15,6 +16,7 @@ struct log_config {
     FILE *stream;
     enum log_loglevel loglevel;
     bool colors;
+    sem_t sem;
 };
 
 static struct log_config log_config = {
@@ -45,6 +47,8 @@ void log_init(FILE *stream, enum log_loglevel level, bool force_colors) {
     log_config.stream = stream;
     log_config.loglevel = level;
     log_config.colors = force_colors ? true : isatty(fileno(stream));
+
+    sem_init(&log_config.sem, 0, 1);
 }
 
 static void log_print_internal(enum log_loglevel level, bool newline, char *message, va_list args) {
@@ -55,6 +59,8 @@ static void log_print_internal(enum log_loglevel level, bool newline, char *mess
     if (level > log_config.loglevel) {
         return;
     }
+
+    sem_wait(&log_config.sem);
 
     char level_char = '?';
     switch (level) {
@@ -103,6 +109,8 @@ static void log_print_internal(enum log_loglevel level, bool newline, char *mess
     }
 
     fflush(log_config.stream);
+
+    sem_post(&log_config.sem);
 }
 
 void log_print(enum log_loglevel level, char *message, ...) {
