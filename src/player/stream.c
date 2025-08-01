@@ -1,8 +1,6 @@
-#include <sys/eventfd.h>
-#include <semaphore.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <string.h>
-#include <errno.h>
 
 #include "player/stream.h"
 #include "player/common.h"
@@ -13,38 +11,24 @@
 
 struct stream_data {
     ARRAY(uint8_t) data;
-    bool eof, error;
     int64_t pos;
+    bool eof, error;
 
-    /* TODO: those 2 can most likely be merged to get rid of the spaghetti */
-    int efd; /* for blocking until there's more data */
-    sem_t sem; /* for thread safety */
+    bool new_data;
+    pthread_cond_t cond;
+    pthread_mutex_t mutex;
 };
 
 static void stream_data_free(struct stream_data *d) {
-    close(d->efd);
-    sem_destroy(&d->sem);
     ARRAY_FREE(&d->data);
     free(d);
-}
-
-static void efd_inc(int efd) {
-    uint64_t n = 1;
-    assert(write(efd, &n, sizeof(n)) == sizeof(n));
-    TRACE("efd: inc");
-}
-
-static void efd_wait(int efd) {
-    uint64_t n;
-    assert(read(efd, &n, sizeof(n)) == sizeof(n));
-    TRACE("efd: wait %lu", n);
 }
 
 static int64_t stream_read_callback(void *cookie, char *buf, uint64_t nbytes) {
     struct stream_data *d = cookie;
     int64_t ret = -1;
 
-    sem_wait(&d->sem);
+    pthread_mutex_lock(&d->mutex);
 
     TRACE("vvvvvvvvvvvvvvvvvvvvvvvv ENTERING READ TID %d vvvvvvvvvvvvvvvvvvvvvvvv", gettid());
 
@@ -73,10 +57,10 @@ again:
         /* hit end of buffer, but there might be more data to receive.
          * Need to block until more data arrives and retry */
         TRACE("read: XX waiting for more data");
-
-        sem_post(&d->sem);
-        efd_wait(d->efd);
-        sem_wait(&d->sem);
+        while (!d->new_data) {
+            pthread_cond_wait(&d->cond, &d->mutex);
+        }
+        d->new_data = false;
 
         goto again;
     }
@@ -87,7 +71,7 @@ out:
 
     TRACE("^^^^^^^^^^^^^^^^^^^^^^^^ LEAVING READ TID %d ^^^^^^^^^^^^^^^^^^^^^^^^^", gettid());
 
-    sem_post(&d->sem);
+    pthread_mutex_unlock(&d->mutex);
 
     return ret;
 }
@@ -95,7 +79,7 @@ out:
 static int64_t stream_seek_callback(void *cookie, int64_t offset) {
     struct stream_data *d = cookie;
 
-    sem_wait(&d->sem);
+    pthread_mutex_lock(&d->mutex);
 
     TRACE("vvvvvvvvvvvvvvvvvvvvvvvv ENTERING SEEK TID %d vvvvvvvvvvvvvvvvvvvvvvvv", gettid());
 
@@ -109,21 +93,14 @@ static int64_t stream_seek_callback(void *cookie, int64_t offset) {
 
     TRACE("^^^^^^^^^^^^^^^^^^^^^^^^ LEAVING SEEK TID %d ^^^^^^^^^^^^^^^^^^^^^^^^^", gettid());
 
-    sem_post(&d->sem);
+    pthread_mutex_unlock(&d->mutex);
 
     return d->pos;
 }
 
 static int64_t stream_size_callback(void *cookie) {
     struct stream_data *d = cookie;
-
-    sem_wait(&d->sem);
-
-    const int64_t s = ARRAY_SIZE(&d->data);
-
-    sem_post(&d->sem);
-
-    return s;
+    return ARRAY_SIZE(&d->data);
 }
 
 static void stream_close_callback(void *cookie) {
@@ -139,7 +116,7 @@ static void api_stream_data_callback(const char *errmsg, const void *data,
                                      ssize_t data_size, void *userdata) {
     struct stream_data *d = userdata;
 
-    sem_wait(&d->sem);
+    pthread_mutex_lock(&d->mutex);
 
     TRACE("------------------------ ENTERING DATA TID %d ------------------------", gettid());
 
@@ -160,11 +137,13 @@ static void api_stream_data_callback(const char *errmsg, const void *data,
         ARRAY_EXTEND(&d->data, (uint8_t *)data, data_size);
         break;
     }
-    efd_inc(d->efd);
+
+    d->new_data = true;
+    pthread_cond_signal(&d->cond);
 
     TRACE("------------------------ LEAVING DATA TID %d -------------------------", gettid());
 
-    sem_post(&d->sem);
+    pthread_mutex_unlock(&d->mutex);
 
     return;
 }
@@ -174,15 +153,8 @@ int player_stream_open(void *userdata, char *uri, struct mpv_stream_cb_info *inf
     TRACE("stream_open_callback: uri %s id %s", uri, id);
 
     struct stream_data *d = xcalloc(1, sizeof(*d));
-    d->efd = eventfd(0, EFD_CLOEXEC);
-    if (d->efd < 0) {
-        ERROR("could not create eventfd: %s", strerror(errno));
-        goto err;
-    }
-    if (sem_init(&d->sem, 0, 1) < 0) {
-        ERROR("could not create semaphore: %s", strerror(errno));
-        goto err;
-    }
+    d->cond = (TYPEOF(d->cond))PTHREAD_COND_INITIALIZER;
+    d->mutex = (TYPEOF(d->mutex))PTHREAD_MUTEX_INITIALIZER;
 
     if (!api_stream(id, 128, "raw", false, api_stream_data_callback, d)) {
         goto err;
