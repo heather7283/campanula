@@ -79,12 +79,10 @@ bool player_init(void) {
             } \
         } while (0)
 
+    SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "vid", "no");
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "video", "no");
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "audio-display", "no");
-    SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "ao", "pipewire,");
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "audio-client-name", "campanula");
-
-    SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "force-seekable", "yes");
 
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "input-default-bindings", "yes");
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "input-terminal", "yes");

@@ -28,13 +28,27 @@ static void stream_data_free(struct stream_data *d) {
     free(d);
 }
 
+static void efd_inc(int efd) {
+    uint64_t n = 1;
+    assert(write(efd, &n, sizeof(n)) == sizeof(n));
+    TRACE("efd: inc");
+}
+
+static void efd_wait(int efd) {
+    uint64_t n;
+    assert(read(efd, &n, sizeof(n)) == sizeof(n));
+    TRACE("efd: wait %lu", n);
+}
+
 static int64_t stream_read_callback(void *cookie, char *buf, uint64_t nbytes) {
     struct stream_data *d = cookie;
     int64_t ret = -1;
 
     sem_wait(&d->sem);
 
-    TRACE("read: requested %lu bytes; size %lu off %li eof %d err %d",
+    TRACE("vvvvvvvvvvvvvvvvvvvvvvvv ENTERING READ TID %d vvvvvvvvvvvvvvvvvvvvvvvv", gettid());
+
+    TRACE("read: -> requested %lu bytes; size %lu off %li eof %d err %d",
           nbytes, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
 
 again:
@@ -58,19 +72,20 @@ again:
     } else /* if (!d->eof) */ {
         /* hit end of buffer, but there might be more data to receive.
          * Need to block until more data arrives and retry */
-        TRACE("read: waiting for more data");
+        TRACE("read: XX waiting for more data");
 
         sem_post(&d->sem);
-        uint64_t dummy;
-        eventfd_read(d->efd, &dummy);
+        efd_wait(d->efd);
         sem_wait(&d->sem);
 
         goto again;
     }
 
 out:
-    TRACE("read: returning %lu bytes; size %lu off %li eof %d err %d",
+    TRACE("read: <- returning %lu bytes; size %lu off %li eof %d err %d",
           ret, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
+
+    TRACE("^^^^^^^^^^^^^^^^^^^^^^^^ LEAVING READ TID %d ^^^^^^^^^^^^^^^^^^^^^^^^^", gettid());
 
     sem_post(&d->sem);
 
@@ -82,13 +97,17 @@ static int64_t stream_seek_callback(void *cookie, int64_t offset) {
 
     sem_wait(&d->sem);
 
-    TRACE("seek: requested seek to %li; size %lu off %li eof %d err %d",
+    TRACE("vvvvvvvvvvvvvvvvvvvvvvvv ENTERING SEEK TID %d vvvvvvvvvvvvvvvvvvvvvvvv", gettid());
+
+    TRACE("seek: -> requested seek to %li; size %lu off %li eof %d err %d",
           offset, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
 
     d->pos = MIN(ARRAY_SIZE(&d->data), (size_t)offset);
 
-    TRACE("seek: returning %li; size %lu off %li eof %d err %d",
+    TRACE("seek: <- returning %li; size %lu off %li eof %d err %d",
           offset, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
+
+    TRACE("^^^^^^^^^^^^^^^^^^^^^^^^ LEAVING SEEK TID %d ^^^^^^^^^^^^^^^^^^^^^^^^^", gettid());
 
     sem_post(&d->sem);
 
@@ -96,7 +115,15 @@ static int64_t stream_seek_callback(void *cookie, int64_t offset) {
 }
 
 static int64_t stream_size_callback(void *cookie) {
-    return MPV_ERROR_UNSUPPORTED; /* TODO? */
+    struct stream_data *d = cookie;
+
+    sem_wait(&d->sem);
+
+    const int64_t s = ARRAY_SIZE(&d->data);
+
+    sem_post(&d->sem);
+
+    return s;
 }
 
 static void stream_close_callback(void *cookie) {
@@ -114,21 +141,28 @@ static void api_stream_data_callback(const char *errmsg, const void *data,
 
     sem_wait(&d->sem);
 
+    TRACE("------------------------ ENTERING DATA TID %d ------------------------", gettid());
+
     switch (data_size) {
     case -1: /* error */
-        ERROR("data: %s", errmsg);
+        ERROR("data: %s; size %lu off %li eof %d err %d",
+              errmsg, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
         d->error = true;
         break;
     case 0: /* EOF */
-        TRACE("data: EOF");
+        TRACE("data: EOF; size %lu off %li eof %d err %d",
+              ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
         d->eof = true;
         break;
     default: /* data */
-        TRACE("data: new data arrived, %zu bytes", data_size);
+        TRACE("data: got %li bytes; size %lu off %li eof %d err %d",
+              data_size, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
         ARRAY_EXTEND(&d->data, (uint8_t *)data, data_size);
         break;
     }
-    eventfd_write(d->efd, 1);
+    efd_inc(d->efd);
+
+    TRACE("------------------------ LEAVING DATA TID %d -------------------------", gettid());
 
     sem_post(&d->sem);
 
