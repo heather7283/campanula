@@ -30,11 +30,6 @@ static int64_t stream_read_callback(void *cookie, char *buf, uint64_t nbytes) {
 
     pthread_mutex_lock(&d->mutex);
 
-    TRACE("vvvvvvvvvvvvvvvvvvvvvvvv ENTERING READ TID %d vvvvvvvvvvvvvvvvvvvvvvvv", gettid());
-
-    TRACE("read: -> requested %lu bytes; size %lu off %li eof %d err %d",
-          nbytes, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
-
 again:
     if (d->error) {
         ret = -1;
@@ -56,7 +51,6 @@ again:
     } else /* if (!d->eof) */ {
         /* hit end of buffer, but there might be more data to receive.
          * Need to block until more data arrives and retry */
-        TRACE("read: XX waiting for more data");
         while (!d->new_data) {
             pthread_cond_wait(&d->cond, &d->mutex);
         }
@@ -66,11 +60,6 @@ again:
     }
 
 out:
-    TRACE("read: <- returning %lu bytes; size %lu off %li eof %d err %d",
-          ret, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
-
-    TRACE("^^^^^^^^^^^^^^^^^^^^^^^^ LEAVING READ TID %d ^^^^^^^^^^^^^^^^^^^^^^^^^", gettid());
-
     pthread_mutex_unlock(&d->mutex);
 
     return ret;
@@ -81,17 +70,7 @@ static int64_t stream_seek_callback(void *cookie, int64_t offset) {
 
     pthread_mutex_lock(&d->mutex);
 
-    TRACE("vvvvvvvvvvvvvvvvvvvvvvvv ENTERING SEEK TID %d vvvvvvvvvvvvvvvvvvvvvvvv", gettid());
-
-    TRACE("seek: -> requested seek to %li; size %lu off %li eof %d err %d",
-          offset, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
-
     d->pos = MIN(ARRAY_SIZE(&d->data), (size_t)offset);
-
-    TRACE("seek: <- returning %li; size %lu off %li eof %d err %d",
-          offset, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
-
-    TRACE("^^^^^^^^^^^^^^^^^^^^^^^^ LEAVING SEEK TID %d ^^^^^^^^^^^^^^^^^^^^^^^^^", gettid());
 
     pthread_mutex_unlock(&d->mutex);
 
@@ -118,30 +97,19 @@ static void api_stream_data_callback(const char *errmsg, const void *data,
 
     pthread_mutex_lock(&d->mutex);
 
-    TRACE("------------------------ ENTERING DATA TID %d ------------------------", gettid());
-
     switch (data_size) {
     case -1: /* error */
-        ERROR("data: %s; size %lu off %li eof %d err %d",
-              errmsg, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
         d->error = true;
         break;
     case 0: /* EOF */
-        TRACE("data: EOF; size %lu off %li eof %d err %d",
-              ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
         d->eof = true;
         break;
     default: /* data */
-        TRACE("data: got %li bytes; size %lu off %li eof %d err %d",
-              data_size, ARRAY_SIZE(&d->data), d->pos, d->eof, d->error);
         ARRAY_EXTEND(&d->data, (uint8_t *)data, data_size);
         break;
     }
-
     d->new_data = true;
     pthread_cond_signal(&d->cond);
-
-    TRACE("------------------------ LEAVING DATA TID %d -------------------------", gettid());
 
     pthread_mutex_unlock(&d->mutex);
 
