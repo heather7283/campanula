@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-enum log_loglevel {
+enum log_level {
     LOG_INVALID,
     LOG_QUIET,
     LOG_ERROR,
@@ -14,14 +14,14 @@ enum log_loglevel {
     LOG_TRACE,
 };
 
-enum log_loglevel log_str_to_loglevel(const char *str);
+enum log_level log_str_to_loglevel(const char *str);
 
-void log_init(FILE *stream, enum log_loglevel level, bool force_colors);
+void log_init(FILE *stream, enum log_level level, bool force_colors);
 
 [[gnu::format(printf, 2, 3)]]
-void log_print(enum log_loglevel level, char *msg, ...);
+void log_print(enum log_level level, char *msg, ...);
 [[gnu::format(printf, 2, 3)]]
-void log_println(enum log_loglevel level, char *msg, ...);
+void log_println(enum log_level level, char *msg, ...);
 
 #define TRACE(fmt, ...) \
     do { \

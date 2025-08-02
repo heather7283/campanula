@@ -18,17 +18,13 @@ static void api_callback(const char *errmsg, const struct subsonic_response *res
         return;
     }
 
-    INFO("Got api response, status %d, version %s", response->status, response->version);
     switch (response->inner_object_type) {
     case API_TYPE_SONGS: {
-        const struct api_type_songs *songs = &response->inner_object.random_songs;
-        DEBUG("Got %zu songs:", ARRAY_SIZE(&songs->song));
+        const struct api_type_songs *songs = &response->inner_object.songs;
 
         const struct api_type_child *c = NULL;
         ARRAY_FOREACH(&songs->song, i) {
             c = &ARRAY_AT(&songs->song, i);
-            DEBUG("%zu. %s (%s) / %s (%s) / %d. %s (%s)",
-                  i, c->artist, c->artist_id, c->album, c->album_id, c->track, c->title, c->id);
         }
 
         player_play(c->id);
@@ -65,6 +61,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    api_get_album_list("random", 10, 0, 0, 0, NULL, NULL, api_callback, NULL);
     api_get_random_songs(5, NULL, 0, 0, NULL, api_callback, NULL);
 
     pollen_loop_run(event_loop);

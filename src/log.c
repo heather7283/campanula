@@ -14,7 +14,7 @@
 
 struct log_config {
     FILE *stream;
-    enum log_loglevel loglevel;
+    enum log_level loglevel;
     bool colors;
     sem_t sem;
 };
@@ -25,7 +25,7 @@ static struct log_config log_config = {
     .colors = false,
 };
 
-enum log_loglevel log_str_to_loglevel(const char *str) {
+enum log_level log_str_to_loglevel(const char *str) {
     if (strcasecmp(str, "trace") == 0) {
         return LOG_TRACE;
     } else if (strcasecmp(str, "debug") == 0) {
@@ -43,7 +43,7 @@ enum log_loglevel log_str_to_loglevel(const char *str) {
     }
 }
 
-void log_init(FILE *stream, enum log_loglevel level, bool force_colors) {
+void log_init(FILE *stream, enum log_level level, bool force_colors) {
     log_config.stream = stream;
     log_config.loglevel = level;
     log_config.colors = force_colors ? true : isatty(fileno(stream));
@@ -51,7 +51,7 @@ void log_init(FILE *stream, enum log_loglevel level, bool force_colors) {
     sem_init(&log_config.sem, 0, 1);
 }
 
-static void log_print_internal(enum log_loglevel level, bool newline, char *message, va_list args) {
+static void log_print_internal(enum log_level level, bool newline, char *message, va_list args) {
     if (log_config.stream == NULL) {
         return;
     }
@@ -113,7 +113,7 @@ static void log_print_internal(enum log_loglevel level, bool newline, char *mess
     sem_post(&log_config.sem);
 }
 
-void log_print(enum log_loglevel level, char *message, ...) {
+void log_print(enum log_level level, char *message, ...) {
     va_list args;
 
     va_start(args, message);
@@ -121,7 +121,7 @@ void log_print(enum log_loglevel level, char *message, ...) {
     va_end(args);
 }
 
-void log_println(enum log_loglevel level, char *message, ...) {
+void log_println(enum log_level level, char *message, ...) {
     va_list args;
 
     va_start(args, message);

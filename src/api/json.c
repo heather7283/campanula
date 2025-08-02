@@ -147,7 +147,7 @@ err:
 static bool parse_response_random_songs(struct subsonic_response *resp,
                                         const struct json_object *json) {
     resp->inner_object_type = API_TYPE_SONGS;
-    return parse_type_songs(&resp->inner_object.random_songs, json);
+    return parse_type_songs(&resp->inner_object.songs, json);
 }
 
 static bool parse_response_album_list(struct subsonic_response *resp,

@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "collections/array.h"
+#include "log.h"
 
 /*
  * Types here are more or less direct translation of subsonic schema into C,
@@ -37,6 +38,11 @@ struct api_type_child {
     char *artist_id;
 }; /* why is it called "Child" ????? */
 
+struct api_type_artist {
+    char *id;
+    char *name;
+};
+
 struct api_type_songs {
     ARRAY(struct api_type_child) song;
 };
@@ -45,10 +51,10 @@ struct api_type_album_list {
     ARRAY(struct api_type_child) album;
 };
 
-enum subsonic_response_inner_object_type {
-    API_TYPE_ERROR,
-    API_TYPE_SONGS,
-    API_TYPE_ALBUM_LIST,
+struct api_type_search_result_2 {
+    ARRAY(struct api_type_artist) artist;
+    ARRAY(struct api_type_child) album;
+    ARRAY(struct api_type_child) song;
 };
 
 enum subsonic_response_status {
@@ -56,19 +62,32 @@ enum subsonic_response_status {
     RESPONSE_STATUS_OK,
 };
 
+enum subsonic_response_inner_object_type {
+    API_TYPE_ERROR,
+    API_TYPE_SONGS,
+    API_TYPE_ALBUM_LIST,
+    API_TYPE_SEARCH_RESULT_2,
+
+    SUBSONIC_RESPONSE_INNER_OBJECT_TYPE_COUNT
+};
+
+union subsonic_response_inner_object {
+    struct api_type_error error;
+    struct api_type_songs songs;
+    struct api_type_album_list album_list;
+    struct api_type_search_result_2 search_result_2;
+};
+
 struct subsonic_response {
     enum subsonic_response_status status;
     char *version;
 
     enum subsonic_response_inner_object_type inner_object_type;
-    union {
-        struct api_type_error error;
-        struct api_type_songs random_songs;
-        struct api_type_album_list album_list;
-    } inner_object;
+    union subsonic_response_inner_object inner_object;
 };
 
 void subsonic_response_free(struct subsonic_response *response);
+void subsonic_response_print(const struct subsonic_response *resp, enum log_level lvl);
 
 #endif /* #ifndef SRC_API_TYPES_H */
 
