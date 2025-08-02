@@ -21,7 +21,8 @@ typedef void (*api_response_callback_t)(const char *errmsg,
                                         const struct subsonic_response *response,
                                         void *userdata);
 
-typedef void (*api_stream_callback_t)(const char *errmsg,
+/* return false to cancel transfer, no more callbacks will be called after that */
+typedef bool (*api_stream_callback_t)(const char *errmsg,
                                       const void *data, ssize_t data_size,
                                       void *userdata);
 

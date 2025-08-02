@@ -104,6 +104,7 @@ static const char *error_code_to_string(int32_t code) {
 static bool on_api_stream_data(const char *errmsg, const char *content_type,
                                const void *data, ssize_t size, void *userdata) {
     struct api_stream_callback_data *d = userdata;
+    bool ret = true;
 
     switch (size) {
     case -1: /* error */
@@ -143,8 +144,9 @@ static bool on_api_stream_data(const char *errmsg, const char *content_type,
 
         if (d->error) {
             ARRAY_EXTEND(&d->error_data, (char *)data, size);
-        } else {
-            d->callback(NULL, data, size, d->callback_data);
+        } else if (!d->callback(NULL, data, size, d->callback_data)) {
+            ret = false;
+            goto out_free;
         }
 
         goto out;
@@ -155,7 +157,7 @@ out_free:
     free(d);
 
 out:
-    return true;
+    return ret;
 }
 
 static bool on_api_request_done(const char *errmsg, const char *content_type,

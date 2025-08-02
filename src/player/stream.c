@@ -12,7 +12,7 @@
 struct stream_data {
     ARRAY(uint8_t) data;
     int64_t pos;
-    bool eof, error;
+    bool eof, error, closed;
 
     bool new_data;
     pthread_cond_t cond;
@@ -83,24 +83,44 @@ static int64_t stream_size_callback(void *cookie) {
 }
 
 static void stream_close_callback(void *cookie) {
-    TRACE("close: destroying stream");
-    stream_data_free(cookie);
+    struct stream_data *d = cookie;
+
+    pthread_mutex_lock(&d->mutex);
+
+    TRACE("close; eof %d error %d closed %d", d->eof, d->error, d->closed);
+
+    if (d->eof || d->error) {
+        /* api_stream_data_callback won't be called anymore, can free now */
+        pthread_mutex_unlock(&d->mutex);
+        stream_data_free(d);
+    } else {
+        d->closed = true;
+        pthread_mutex_unlock(&d->mutex);
+    }
 }
 
 static void stream_cancel_callback(void *cookie) {
     /* TODO: what does this even do? */
 }
 
-static void api_stream_data_callback(const char *errmsg, const void *data,
+static bool api_stream_data_callback(const char *errmsg, const void *data,
                                      ssize_t data_size, void *userdata) {
     struct stream_data *d = userdata;
 
     pthread_mutex_lock(&d->mutex);
 
+    if (d->closed) {
+        /* mpv doesn't need this stream anymore */
+        pthread_mutex_unlock(&d->mutex);
+        stream_data_free(d);
+        return false;
+    }
+
     switch (data_size) {
     case -1: /* error */
         d->error = true;
-        break;
+        ERROR("data: %s", errmsg);
+        /* fall through */
     case 0: /* EOF */
         d->eof = true;
         break;
@@ -113,7 +133,7 @@ static void api_stream_data_callback(const char *errmsg, const void *data,
 
     pthread_mutex_unlock(&d->mutex);
 
-    return;
+    return true;
 }
 
 int player_stream_open(void *userdata, char *uri, struct mpv_stream_cb_info *info) {

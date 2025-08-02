@@ -5,6 +5,7 @@
 
 #include <curl/curl.h>
 
+/* for stream, return false to cancel transfer, no more callbacks will be called after that */
 typedef bool (*request_callback_t)(const char *errmsg,
                                    const char *content_type,
                                    const void *data, ssize_t size,

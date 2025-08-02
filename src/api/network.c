@@ -18,6 +18,7 @@ struct connection_data {
     bool stream;
     ARRAY(uint8_t) received;
 
+    bool cancelled;
     request_callback_t callback;
     void *callback_data;
 };
@@ -42,6 +43,7 @@ static size_t easy_writefunction(void *ptr, size_t size, size_t nmemb, void *dat
     } else if (!conn_data->callback(NULL, conn_data->content_type,
                                     ptr, size * nmemb,
                                     conn_data->callback_data)) {
+        conn_data->cancelled = true;
         return CURL_WRITEFUNC_ERROR;
     }
 
@@ -72,7 +74,9 @@ static void check_multi_info(struct curl_global_data *global_data) {
             curl_easy_getinfo(easy, CURLINFO_PRIVATE, &conn_data);
             curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &effective_url);
 
-            if (res != CURLE_OK) {
+            if (conn_data->cancelled) {
+                /* no need to do anything. user doesn't want any more callbacks. */
+            } else if (res != CURLE_OK) {
                 const char *errmsg = NULL;
                 if (conn_data->error[0] == '\0') {
                     errmsg = curl_easy_strerror(res);
