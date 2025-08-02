@@ -61,6 +61,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    api_search2("Void Stranger", 0, 0, 0, 0, 0, 0, NULL, api_callback, NULL);
     api_get_album_list("random", 10, 0, 0, 0, NULL, NULL, api_callback, NULL);
     api_get_random_songs(5, NULL, 0, 0, NULL, api_callback, NULL);
 

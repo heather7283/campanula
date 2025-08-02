@@ -12,8 +12,9 @@ enum api_request_type {
     API_REQUEST_GET_RANDOM_SONGS,
     API_REQUEST_GET_ALBUM_LIST,
     API_REQUEST_STREAM,
+    API_REQUEST_SEARCH2,
 
-    /* put new types before this one */
+    /* put new types before this one, TO THE END OR EVERYTHING WILL EXPLODE */
     API_REQUEST_TYPE_COUNT,
 };
 
@@ -61,6 +62,27 @@ bool api_get_album_list(const char *type,
                         uint32_t from_year, uint32_t to_year,
                         const char *genre, const char *music_folder_id,
                         api_response_callback_t callback, void *callback_data);
+
+/*
+ * Returns albums, artists and songs matching the given search criteria.
+ * Supports paging through the result.
+ *
+ * Parameter     Required Default Comment
+ * query         Yes              Search query.
+ * artistCount   No       20      Maximum number of artists to return.
+ * artistOffset  No       0       Search result offset for artists. Used for paging.
+ * albumCount    No       20      Maximum number of albums to return.
+ * albumOffset   No       0       Search result offset for albums. Used for paging.
+ * songCount     No       20      Maximum number of songs to return.
+ * songOffset    No       0       Search result offset for songs. Used for paging.
+ * musicFolderId No               Self-explanatory.
+ */
+bool api_search2(const char *query,
+                 uint32_t artist_count, uint32_t artist_offset,
+                 uint32_t album_count, uint32_t album_offset,
+                 uint32_t song_count, uint32_t song_offset,
+                 const char *music_folder_id,
+                 api_response_callback_t callback, void *callback_data);
 
 /*
  * Streams a given media file.

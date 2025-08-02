@@ -98,6 +98,17 @@ err:
     return false;
 }
 
+static bool parse_artist(struct api_type_artist *artist, const struct json_object *json) {
+    /* required */
+    artist->id = xstrdup(JSON_GET_VALUE_OR_FAIL(json, string, "id"));
+    artist->name = xstrdup(JSON_GET_VALUE_OR_FAIL(json, string, "name"));
+
+    return true;
+
+err:
+    return false;
+}
+
 static bool parse_type_songs(struct api_type_songs *songs,
                              const struct json_object *json) {
     const struct json_object *song = JSON_GET_OR_FAIL(json, array, "song");
@@ -144,6 +155,63 @@ err:
     return false;
 }
 
+static bool parse_type_search_result_2(struct api_type_search_result_2 *sr2,
+                                       const struct json_object *json) {
+    ARRAY_INIT(&sr2->artist);
+    ARRAY_INIT(&sr2->album);
+    ARRAY_INIT(&sr2->song);
+
+    const struct json_object *artist = NULL;
+    if ((artist = JSON_GET(json, array, "artist"))) {
+        for (size_t i = 0; i < json_object_array_length(artist); i++) {
+            const struct json_object *elem = json_object_array_get_idx(artist, i);
+            JSON_CHECK_TYPE_OR_FAIL(elem, object);
+
+            struct api_type_artist *artist = ARRAY_EMPLACE_ZEROED(&sr2->artist);
+            if (!parse_artist(artist, elem)) {
+                goto err;
+            }
+        }
+    }
+
+    const struct json_object *album = NULL;
+    if ((album = JSON_GET(json, array, "album"))) {
+        for (size_t i = 0; i < json_object_array_length(album); i++) {
+            const struct json_object *elem = json_object_array_get_idx(album, i);
+            JSON_CHECK_TYPE_OR_FAIL(elem, object);
+
+            struct api_type_child *child = ARRAY_EMPLACE_ZEROED(&sr2->album);
+            if (!parse_child(child, elem)) {
+                goto err;
+            }
+        }
+    }
+
+    const struct json_object *song = NULL;
+    if ((song = JSON_GET(json, array, "song"))) {
+        for (size_t i = 0; i < json_object_array_length(song); i++) {
+            const struct json_object *elem = json_object_array_get_idx(song, i);
+            JSON_CHECK_TYPE_OR_FAIL(elem, object);
+
+            struct api_type_child *child = ARRAY_EMPLACE_ZEROED(&sr2->song);
+            if (!parse_child(child, elem)) {
+                goto err;
+            }
+        }
+    }
+
+    return true;
+
+err:
+    return false;
+}
+
+static bool parse_response_search2(struct subsonic_response *resp,
+                                   const struct json_object *json) {
+    resp->inner_object_type = API_TYPE_SEARCH_RESULT_2;
+    return parse_type_search_result_2(&resp->inner_object.search_result_2, json);
+}
+
 static bool parse_response_random_songs(struct subsonic_response *resp,
                                         const struct json_object *json) {
     resp->inner_object_type = API_TYPE_SONGS;
@@ -173,6 +241,7 @@ static const inner_object_parser_t inner_object_parsers[] = {
     [API_REQUEST_GET_RANDOM_SONGS] = parse_response_random_songs,
     [API_REQUEST_GET_ALBUM_LIST] = parse_response_album_list,
     [API_REQUEST_STREAM] = NULL, /* special */
+    [API_REQUEST_SEARCH2] = parse_response_search2,
 };
 static_assert(SIZEOF_ARRAY(inner_object_parsers) == API_REQUEST_TYPE_COUNT);
 
@@ -180,6 +249,7 @@ static const char *inner_object_names[] = {
     [API_REQUEST_GET_RANDOM_SONGS] = "randomSongs",
     [API_REQUEST_GET_ALBUM_LIST] = "albumList",
     [API_REQUEST_STREAM] = NULL, /* special */
+    [API_REQUEST_SEARCH2] = "searchResult2",
 };
 static_assert(SIZEOF_ARRAY(inner_object_names) == API_REQUEST_TYPE_COUNT);
 
@@ -229,6 +299,7 @@ struct subsonic_response *api_parse_response(enum api_request_type request,
     return resp;
 
 err:
+    ERROR("raw json: %.*s", (int)data_size, data);
     json_object_put(json);
     json_tokener_free(parser);
     subsonic_response_free(resp);
