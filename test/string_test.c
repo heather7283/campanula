@@ -29,6 +29,18 @@ int main(void) {
     puts(str.str); fflush(stdout);
     assert(STREQ(str.str, "%D0%93%D0%9E%D0%9E%D0%9E%D0%9E%D0%9E%D0%9E%D0%9E%D0%9E%D0%9E%D0%9B%21%21%21%20%F0%9F%90%BB%E2%9A%BD"));
 
+    string_clear(&str);
+    puts(str.str); fflush(stdout);
+    assert(STREQ(str.str, ""));
+
+    string_append_urlencode(&str, "aboba");
+    puts(str.str); fflush(stdout);
+    assert(STREQ(str.str, "aboba"));
+
+    string_append_urlencode(&str, "абоба");
+    puts(str.str); fflush(stdout);
+    assert(STREQ(str.str, "aboba%D0%B0%D0%B1%D0%BE%D0%B1%D0%B0"));
+
     string_free(&str);
 }
 

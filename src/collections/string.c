@@ -36,6 +36,7 @@ static size_t urlencode(char dst[], const char src[], size_t src_len) {
             dst[out_len++] = c;
         }
     }
+    dst[out_len] = '\0';
 
     return out_len;
 }
