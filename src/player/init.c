@@ -7,7 +7,7 @@
 #include "eventloop.h"
 #include "log.h"
 
-static enum log_loglevel mpv_log_level_to_log_loglevel(enum mpv_log_level l) {
+static enum log_level mpv_log_level_to_log_loglevel(enum mpv_log_level l) {
     switch (l) {
     case MPV_LOG_LEVEL_NONE : return LOG_QUIET;
     case MPV_LOG_LEVEL_FATAL: return LOG_ERROR;
@@ -83,6 +83,7 @@ bool player_init(void) {
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "video", "no");
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "audio-display", "no");
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "audio-client-name", "campanula");
+    SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "title", "${media-title}");
 
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "input-default-bindings", "yes");
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "input-terminal", "yes");
