@@ -83,7 +83,10 @@ bool player_init(void) {
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "video", "no");
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "audio-display", "no");
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "audio-client-name", "campanula");
-    SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "title", "${media-title}");
+    SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "title",
+                                /* "${metadata/by-key/Track:}${?metadata/by-key/Track:. }" */
+                                "${metadata/by-key/Artist:}${?metadata/by-key/Artist: - }"
+                                "${media-title}");
 
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "input-default-bindings", "yes");
     SET_PROPERTY_STRING_OR_FAIL(player_state.mpv_handle, "input-terminal", "yes");
