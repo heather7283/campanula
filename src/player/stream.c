@@ -125,7 +125,7 @@ static bool api_stream_data_callback(const char *errmsg, const void *data,
         d->eof = true;
         break;
     default: /* data */
-        ARRAY_EXTEND(&d->data, (uint8_t *)data, data_size);
+        ARRAY_APPEND_N(&d->data, (uint8_t *)data, data_size);
         break;
     }
     d->new_data = true;

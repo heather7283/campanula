@@ -73,7 +73,7 @@ static void print_error(const union subsonic_response_inner_object *o,
 static void free_songs(union subsonic_response_inner_object *o) {
     struct api_type_songs *s = &o->songs;
     ARRAY_FOREACH(&s->song, i) {
-        struct api_type_child *c = &ARRAY_AT(&s->song, i);
+        struct api_type_child *c = ARRAY_AT(&s->song, i);
         free_child(c);
     }
     ARRAY_FREE(&s->song);
@@ -85,7 +85,7 @@ static void print_songs(const union subsonic_response_inner_object *o,
     log_println(lvl, "%*sSongs {", indent, "");
     log_println(lvl, "%*ssong [", indent + 4, "");
     ARRAY_FOREACH(&s->song, i) {
-        struct api_type_child *c = &ARRAY_AT(&s->song, i);
+        struct api_type_child *c = ARRAY_AT(&s->song, i);
         print_child(c, lvl, indent + 8);
     }
     log_println(lvl, "%*s]", indent + 4, "");
@@ -95,7 +95,7 @@ static void print_songs(const union subsonic_response_inner_object *o,
 static void free_album_list(union subsonic_response_inner_object *o) {
     struct api_type_album_list *l = &o->album_list;
     ARRAY_FOREACH(&l->album, i) {
-        struct api_type_child *c = &ARRAY_AT(&l->album, i);
+        struct api_type_child *c = ARRAY_AT(&l->album, i);
         free_child(c);
     }
     ARRAY_FREE(&l->album);
@@ -107,7 +107,7 @@ static void print_album_list(const union subsonic_response_inner_object *o,
     log_println(lvl, "%*sAlbumList {", indent, "");
     log_println(lvl, "%*salbum [", indent + 4, "");
     ARRAY_FOREACH(&l->album, i) {
-        struct api_type_child *c = &ARRAY_AT(&l->album, i);
+        struct api_type_child *c = ARRAY_AT(&l->album, i);
         print_child(c, lvl, indent + 8);
     }
     log_println(lvl, "%*s]", indent + 4, "");
@@ -117,15 +117,15 @@ static void print_album_list(const union subsonic_response_inner_object *o,
 static void free_search_result_2(union subsonic_response_inner_object *o) {
     struct api_type_search_result_2 *r = &o->search_result_2;
     ARRAY_FOREACH(&r->artist, i) {
-        free_artist(&ARRAY_AT(&r->artist, i));
+        free_artist(ARRAY_AT(&r->artist, i));
     }
     ARRAY_FREE(&r->artist);
     ARRAY_FOREACH(&r->album, i) {
-        free_child(&ARRAY_AT(&r->album, i));
+        free_child(ARRAY_AT(&r->album, i));
     }
     ARRAY_FREE(&r->album);
     ARRAY_FOREACH(&r->song, i) {
-        free_child(&ARRAY_AT(&r->song, i));
+        free_child(ARRAY_AT(&r->song, i));
     }
     ARRAY_FREE(&r->song);
 }
@@ -137,19 +137,19 @@ static void print_search_result_2(const union subsonic_response_inner_object *o,
 
     log_println(lvl, "%*sartist [", indent + 4, "");
     ARRAY_FOREACH(&r->artist, i) {
-        print_artist(&ARRAY_AT(&r->artist, i), lvl, indent + 8);
+        print_artist(ARRAY_AT(&r->artist, i), lvl, indent + 8);
     }
     log_println(lvl, "%*s]", indent + 4, "");
 
     log_println(lvl, "%*salbum [", indent + 4, "");
     ARRAY_FOREACH(&r->album, i) {
-        print_child(&ARRAY_AT(&r->album, i), lvl, indent + 8);
+        print_child(ARRAY_AT(&r->album, i), lvl, indent + 8);
     }
     log_println(lvl, "%*s]", indent + 4, "");
 
     log_println(lvl, "%*ssong [", indent + 4, "");
     ARRAY_FOREACH(&r->song, i) {
-        print_child(&ARRAY_AT(&r->song, i), lvl, indent + 8);
+        print_child(ARRAY_AT(&r->song, i), lvl, indent + 8);
     }
     log_println(lvl, "%*s]", indent + 4, "");
 

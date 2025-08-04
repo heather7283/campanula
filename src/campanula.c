@@ -1,8 +1,4 @@
-#include <fcntl.h>
-#include <sys/stat.h>
-
-#include <pollen.h>
-
+#include "campanula.h"
 #include "config.h"
 #include "log.h"
 #include "eventloop.h"
@@ -24,7 +20,7 @@ static void api_callback(const char *errmsg, const struct subsonic_response *res
 
         const struct api_type_child *c = NULL;
         ARRAY_FOREACH(&songs->song, i) {
-            c = &ARRAY_AT(&songs->song, i);
+            c = ARRAY_AT(&songs->song, i);
         }
 
         player_play(c->id);
@@ -61,9 +57,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    api_search2("Void Stranger", 0, 0, 0, 0, 0, 0, NULL, api_callback, NULL);
-    api_get_album_list("random", 10, 0, 0, 0, NULL, NULL, api_callback, NULL);
     api_get_random_songs(5, NULL, 0, 0, NULL, api_callback, NULL);
+    api_search2("seeyalater stratocaster", 0, 0, 0, 0, 0, 0, NULL, api_callback, NULL);
 
     pollen_loop_run(event_loop);
 

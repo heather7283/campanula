@@ -120,7 +120,7 @@ static bool parse_type_songs(struct api_type_songs *songs,
         const struct json_object *elem = json_object_array_get_idx(song, i);
         JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-        struct api_type_child *child = ARRAY_EMPLACE_ZEROED(&songs->song);
+        struct api_type_child *child = ARRAY_EMPLACE_BACK_ZEROED(&songs->song);
         if (!parse_child(child, elem)) {
             return false;
         }
@@ -143,7 +143,7 @@ static bool parse_type_album_list(struct api_type_album_list *album_list,
         const struct json_object *elem = json_object_array_get_idx(album, i);
         JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-        struct api_type_child *child = ARRAY_EMPLACE_ZEROED(&album_list->album);
+        struct api_type_child *child = ARRAY_EMPLACE_BACK_ZEROED(&album_list->album);
         if (!parse_child(child, elem)) {
             return false;
         }
@@ -167,7 +167,7 @@ static bool parse_type_search_result_2(struct api_type_search_result_2 *sr2,
             const struct json_object *elem = json_object_array_get_idx(artist, i);
             JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-            struct api_type_artist *artist = ARRAY_EMPLACE_ZEROED(&sr2->artist);
+            struct api_type_artist *artist = ARRAY_EMPLACE_BACK_ZEROED(&sr2->artist);
             if (!parse_artist(artist, elem)) {
                 goto err;
             }
@@ -180,7 +180,7 @@ static bool parse_type_search_result_2(struct api_type_search_result_2 *sr2,
             const struct json_object *elem = json_object_array_get_idx(album, i);
             JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-            struct api_type_child *child = ARRAY_EMPLACE_ZEROED(&sr2->album);
+            struct api_type_child *child = ARRAY_EMPLACE_BACK_ZEROED(&sr2->album);
             if (!parse_child(child, elem)) {
                 goto err;
             }
@@ -193,7 +193,7 @@ static bool parse_type_search_result_2(struct api_type_search_result_2 *sr2,
             const struct json_object *elem = json_object_array_get_idx(song, i);
             JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-            struct api_type_child *child = ARRAY_EMPLACE_ZEROED(&sr2->song);
+            struct api_type_child *child = ARRAY_EMPLACE_BACK_ZEROED(&sr2->song);
             if (!parse_child(child, elem)) {
                 goto err;
             }

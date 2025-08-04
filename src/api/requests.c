@@ -144,7 +144,7 @@ static bool on_api_stream_data(const char *errmsg, const char *content_type,
         }
 
         if (d->error) {
-            ARRAY_EXTEND(&d->error_data, (char *)data, size);
+            ARRAY_APPEND_N(&d->error_data, (char *)data, size);
         } else if (!d->callback(NULL, data, size, d->callback_data)) {
             ret = false;
             goto out_free;

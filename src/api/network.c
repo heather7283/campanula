@@ -39,7 +39,7 @@ static size_t easy_writefunction(void *ptr, size_t size, size_t nmemb, void *dat
     }
 
     if (!conn_data->stream) {
-        ARRAY_EXTEND(&conn_data->received, (uint8_t *)ptr, size * nmemb);
+        ARRAY_APPEND_N(&conn_data->received, (uint8_t *)ptr, size * nmemb);
     } else if (!conn_data->callback(NULL, conn_data->content_type,
                                     ptr, size * nmemb,
                                     conn_data->callback_data)) {
