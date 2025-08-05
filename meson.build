@@ -35,6 +35,7 @@ sources = [
   'src/log.c',
   'src/xmalloc.c',
   'src/eventloop.c',
+  'src/signals.c',
 
   'src/api/network.c',
   'src/api/requests.c',

@@ -3,6 +3,7 @@ test_sources = [
   ['array_test.c', ['../src/collections/array.c', '../src/xmalloc.c']],
   ['string_test.c', ['../src/collections/string.c', '../src/xmalloc.c']],
   ['auth_test.c', ['../src/auth.c']],
+  ['signals_test.c', ['../src/signals.c']],
 ]
 
 
