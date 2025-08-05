@@ -1,7 +1,7 @@
 #ifndef SRC_COLLECTIONS_LIST_H
 #define SRC_COLLECTIONS_LIST_H
 
-#include "macros.h"
+#include <stddef.h>
 
 struct list {
     struct list *next;
@@ -17,6 +17,10 @@ struct list {
 #define LIST_IS_EMPTY(phead) ((phead)->next == (phead) && (phead)->prev == (phead))
 #define LIST_IS_FIRST(phead, pelem) ((phead)->next == (pelem))
 #define LIST_IS_LAST(phead, pelem) ((phead)->prev == (pelem))
+
+#define CONTAINER_OF(member_ptr, container_ptr, member_name) \
+    ((__typeof__(container_ptr))((char *)(member_ptr) - \
+     offsetof(__typeof__(*container_ptr), member_name)))
 
 #define LIST_GET(pvar, pelem, member) ((pvar) = CONTAINER_OF(pelem, pvar, member))
 #define LIST_GET_FIRST(pvar, phead, member) ((pvar) = CONTAINER_OF((phead)->next, pvar, member))
