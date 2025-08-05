@@ -9,7 +9,7 @@ enum events {
     THIRD_COSMIC_VELOCITY = 1 << 2,
 };
 
-void first_callback(uint64_t event, struct signal_data *data, void *userdata) {
+void first_callback(uint64_t event, const struct signal_data *data, void *userdata) {
     assert(data->type == SIGNAL_DATA_TYPE_U64);
     assert(data->as.u64 == 7910);
 
@@ -17,7 +17,7 @@ void first_callback(uint64_t event, struct signal_data *data, void *userdata) {
     *(int *)userdata += 1;
 }
 
-void second_callback(uint64_t event, struct signal_data *data, void *userdata) {
+void second_callback(uint64_t event, const struct signal_data *data, void *userdata) {
     assert(data->type == SIGNAL_DATA_TYPE_U64);
     assert(data->as.u64 == 11200);
 
@@ -25,7 +25,7 @@ void second_callback(uint64_t event, struct signal_data *data, void *userdata) {
     *(int *)userdata += 1;
 }
 
-void third_callback(uint64_t event, struct signal_data *data, void *userdata) {
+void third_callback(uint64_t event, const struct signal_data *data, void *userdata) {
     assert(data->type == SIGNAL_DATA_TYPE_U64);
     assert(data->as.u64 == 16650);
 
@@ -33,7 +33,7 @@ void third_callback(uint64_t event, struct signal_data *data, void *userdata) {
     *(int *)userdata += 1;
 }
 
-void generic_callback(uint64_t event, struct signal_data *data, void *userdata) {
+void generic_callback(uint64_t event, const struct signal_data *data, void *userdata) {
     assert(data->type == SIGNAL_DATA_TYPE_U64);
 
     fprintf(stderr, "Got a number: %lu\n", data->as.u64);
