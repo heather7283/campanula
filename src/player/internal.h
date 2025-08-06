@@ -6,6 +6,11 @@
 #include "collections/array.h"
 #include "signals.h"
 
+/*
+ * Basically everything that should not be exposed to users goes here,
+ * idk how else to do that honestly, a bit of a mess but eh whatever
+ */
+
 #define MPV_PROTOCOL "campanula"
 
 struct player {
@@ -27,6 +32,8 @@ extern struct player player;
 int player_stream_open(void *userdata, char *uri, struct mpv_stream_cb_info *info);
 
 void player_process_event(const struct mpv_event *event);
+
+bool player_load_song(const struct song *song);
 
 #endif /* #ifndef SRC_PLAYER_INTERNAL_H */
 

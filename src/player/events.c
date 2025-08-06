@@ -7,3 +7,125 @@ void player_event_subscribe(struct signal_listener *listener, enum player_event 
     signal_subscribe(&player.emitter, listener, events, callback, callback_data);
 }
 
+static enum log_level convert_loglevel(enum mpv_log_level l) {
+    switch (l) {
+    case MPV_LOG_LEVEL_NONE:  return LOG_QUIET;
+    case MPV_LOG_LEVEL_FATAL: return LOG_ERROR;
+    case MPV_LOG_LEVEL_ERROR: return LOG_ERROR;
+    case MPV_LOG_LEVEL_WARN:  return LOG_WARN;
+    case MPV_LOG_LEVEL_INFO:  return LOG_DEBUG;
+    case MPV_LOG_LEVEL_V:     return LOG_TRACE;
+    case MPV_LOG_LEVEL_DEBUG: return LOG_TRACE;
+    case MPV_LOG_LEVEL_TRACE: return LOG_TRACE;
+    default: return LOG_QUIET;
+    }
+}
+
+static const char *property_to_str(enum mpv_format format, const void *data) {
+    static char str[64];
+
+    switch (format) {
+    case MPV_FORMAT_NONE:
+        snprintf(str, sizeof(str), "none");
+        break;
+    case MPV_FORMAT_INT64:
+        snprintf(str, sizeof(str), "i64 %ld", *(int64_t *)data);
+        break;
+    case MPV_FORMAT_DOUBLE:
+        snprintf(str, sizeof(str), "double %f", *(double *)data);
+        break;
+    case MPV_FORMAT_FLAG:
+        snprintf(str, sizeof(str), "flag %d", *(int *)data);
+        break;
+    case MPV_FORMAT_STRING:
+    case MPV_FORMAT_OSD_STRING:
+        snprintf(str, sizeof(str), "str %s", (char *)data);
+        break;
+    case MPV_FORMAT_NODE:
+    case MPV_FORMAT_NODE_MAP:
+    case MPV_FORMAT_NODE_ARRAY:
+    case MPV_FORMAT_BYTE_ARRAY:
+        snprintf(str, sizeof(str), "ptr %p", data);
+        break;
+    default:
+        snprintf(str, sizeof(str), "unknown format %d", format);
+        break;
+    }
+
+    return str;
+}
+
+static void process_property_change(const struct mpv_event_property *prop, uint64_t event) {
+    if (prop->data == NULL) {
+        WARN("mpv event: property %s: data is NULL!", prop->name);
+        return;
+    } else {
+        TRACE("mpv event: property %s: %s", prop->name, property_to_str(prop->format, prop->data));
+    }
+
+    switch ((enum player_event)event) {
+    case PLAYER_EVENT_PAUSE:
+        if (prop->format != MPV_FORMAT_FLAG) {
+            WARN("mpv event: property %s: unexpected format!", prop->name);
+            break;
+        }
+        bool pause = *(int *)prop->data;
+        signal_emit_bool(&player.emitter, event, pause);
+        break;
+    case PLAYER_EVENT_PERCENT_POSITION:
+        if (prop->format != MPV_FORMAT_INT64) {
+            WARN("mpv event: property %s: unexpected format!", prop->name);
+            break;
+        }
+        int64_t percent_pos = *(int64_t *)prop->data;
+        signal_emit_i64(&player.emitter, event, percent_pos);
+        break;
+    case PLAYER_EVENT_PLAYLIST_POSITION:
+        if (prop->format != MPV_FORMAT_INT64) {
+            WARN("mpv event: property %s: unexpected format!", prop->name);
+            break;
+        }
+        int64_t playlist_pos = *(int64_t *)prop->data;
+        signal_emit_i64(&player.emitter, event, playlist_pos);
+        break;
+    case PLAYER_EVENT_VOLUME:
+        if (prop->format != MPV_FORMAT_INT64) {
+            WARN("mpv event: property %s: unexpected format!", prop->name);
+            break;
+        }
+        int64_t volume = *(int64_t *)prop->data;
+        signal_emit_i64(&player.emitter, event, volume);
+        break;
+    case PLAYER_EVENT_MUTE:
+        if (prop->format != MPV_FORMAT_FLAG) {
+            WARN("mpv event: property %s: unexpected format!", prop->name);
+            break;
+        }
+        bool mute = *(int *)prop->data;
+        signal_emit_bool(&player.emitter, event, mute);
+        break;
+    default:
+        WARN("mpv event: property %s not asked for?", prop->name);
+        break;
+    }
+}
+
+void player_process_event(const struct mpv_event *ev) {
+    switch (ev->event_id) {
+    case MPV_EVENT_PROPERTY_CHANGE:
+        const struct mpv_event_property *p = ev->data;
+        process_property_change(p, ev->reply_userdata);
+        break;
+    case MPV_EVENT_QUEUE_OVERFLOW:
+        WARN("mpv event: queue overflow!");
+        break;
+    case MPV_EVENT_LOG_MESSAGE:
+        const struct mpv_event_log_message *m = ev->data;
+        log_print(convert_loglevel(m->log_level), "mpv: %s: %s", m->prefix, m->text);
+        break;
+    default:
+        TRACE("mpv event: %s", mpv_event_name(ev->event_id));
+        break;
+    }
+}
+

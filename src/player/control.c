@@ -3,6 +3,7 @@
 #include "player/control.h"
 #include "player/internal.h"
 #include "collections/string.h"
+#include "song.h"
 #include "log.h"
 
 void player_set_pause(bool pause) {

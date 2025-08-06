@@ -2,6 +2,7 @@
 #define SRC_PLAYER_EVENTS_H
 
 #include <mpv/client.h>
+
 #include "signals.h"
 
 enum player_event: uint64_t {
