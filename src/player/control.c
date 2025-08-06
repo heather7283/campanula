@@ -28,15 +28,15 @@ bool player_load_song(const struct song *song) {
             .num = 5,
             .keys = (char *[]){ "name", "url", "flags", "index", "options", },
             .values = (struct mpv_node[]){
-                (struct mpv_node){ .format = MPV_FORMAT_STRING, .u.string = "loadfile" },
-                (struct mpv_node){ .format = MPV_FORMAT_STRING, .u.string = url.str },
-                (struct mpv_node){ .format = MPV_FORMAT_STRING, .u.string = "append-play" },
-                (struct mpv_node){ .format = MPV_FORMAT_INT64, .u.int64 = -1 },
-                (struct mpv_node){
+                { .format = MPV_FORMAT_STRING, .u.string = "loadfile" },
+                { .format = MPV_FORMAT_STRING, .u.string = url.str },
+                { .format = MPV_FORMAT_STRING, .u.string = "append-play" },
+                { .format = MPV_FORMAT_INT64, .u.int64 = -1 },
+                {
                     .format = MPV_FORMAT_NODE_MAP,
                     .u.list = &(struct mpv_node_list){
                         .num = 1,
-                        .keys = (char *[]) { "force-media-title", },
+                        .keys = (char *[]){ "force-media-title", },
                         .values = (struct mpv_node[]){
                             { .format = MPV_FORMAT_STRING, .u.string = title.str },
                         },
