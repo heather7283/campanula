@@ -10,6 +10,14 @@ void playlist_append_song(const struct song *song) {
     }
 }
 
+void playlist_clear(void) {
+    struct player_playlist *pl = &player.playlist;
+
+    if (player_stop()) {
+        ARRAY_CLEAR(&pl->songs);
+    }
+}
+
 size_t playlist_get_songs(const struct song **songs) {
     struct player_playlist *pl = &player.playlist;
 

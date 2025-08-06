@@ -33,7 +33,10 @@ int player_stream_open(void *userdata, char *uri, struct mpv_stream_cb_info *inf
 
 void player_process_event(const struct mpv_event *event);
 
+/* Append song to playlist (TODO: ability to specify index) */
 bool player_loadfile(const struct song *song);
+/* Stop playback and clear playlist. */
+bool player_stop(void);
 
 #endif /* #ifndef SRC_PLAYER_INTERNAL_H */
 

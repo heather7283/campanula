@@ -62,3 +62,13 @@ bool player_loadfile(const struct song *song) {
     return true;
 }
 
+bool player_stop(void) {
+    int ret = mpv_command(player.mpv_handle, (const char *[]){ "stop" });
+    if (ret != MPV_ERROR_SUCCESS) {
+        ERROR("failed to clear playlist (stop cmd): %s", mpv_error_string(ret));
+        return false;
+    }
+
+    return true;
+}
+
