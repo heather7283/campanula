@@ -25,7 +25,7 @@ bool player_load_song(const struct song *song) {
     struct mpv_node node = {
         .format = MPV_FORMAT_NODE_MAP,
         .u.list = &(struct mpv_node_list){
-            .num = 3,
+            .num = 5,
             .keys = (char *[]){ "name", "url", "flags", "index", "options", },
             .values = (struct mpv_node[]){
                 (struct mpv_node){ .format = MPV_FORMAT_STRING, .u.string = "loadfile" },
