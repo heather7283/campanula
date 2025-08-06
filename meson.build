@@ -36,15 +36,17 @@ sources = [
   'src/xmalloc.c',
   'src/eventloop.c',
   'src/signals.c',
+  'src/song.c',
 
   'src/api/network.c',
   'src/api/requests.c',
   'src/api/json.c',
   'src/api/types.c',
 
-  'src/player/init.c',
-  'src/player/common.c',
+  'src/player/internal.c',
   'src/player/control.c',
+  'src/player/playlist.c',
+  'src/player/events.c',
   'src/player/stream.c',
 
   'src/collections/string.c',

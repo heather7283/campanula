@@ -1,4 +1,3 @@
-#include "campanula.h"
 #include "config.h"
 #include "log.h"
 #include "eventloop.h"
@@ -7,6 +6,8 @@
 #include "api/requests.h"
 #include "player/init.h"
 #include "player/control.h"
+#include "player/playlist.h"
+#include "player/events.h"
 
 static void api_callback(const char *errmsg, const struct subsonic_response *response, void *data) {
     if (response == NULL) {
@@ -21,9 +22,15 @@ static void api_callback(const char *errmsg, const struct subsonic_response *res
         const struct api_type_child *c = NULL;
         ARRAY_FOREACH(&songs->song, i) {
             c = ARRAY_AT(&songs->song, i);
+
+            playlist_append_song(&(struct song){
+                .id = c->id,
+                .title = c->title,
+                .artist = c->artist,
+            });
         }
 
-        player_play(c->id);
+        player_set_pause(false);
 
         break;
     }
@@ -32,9 +39,62 @@ static void api_callback(const char *errmsg, const struct subsonic_response *res
     }
 }
 
-int sigint_handler(struct pollen_callback *callback, int signum, void *data) {
+static int sigint_handler(struct pollen_callback *callback, int signum, void *data) {
     pollen_loop_quit(pollen_callback_get_loop(callback), 0);
     return 0;
+}
+
+struct playback_data {
+    int64_t pos, volume;
+    bool pause;
+};
+
+static void print_status_bar(const struct playback_data *d) {
+    printf("\r%s VOL %3li%% POS %3li%%",
+           d->pause ? "||" : "|>", d->volume, d->pos);
+    fflush(stdout);
+}
+
+static void on_playlist_position(uint64_t, const struct signal_data *data, void *userdata) {
+    struct playback_data *d = userdata;
+    d->pos = data->as.i64;
+    d->pos = 0;
+
+    printf("\nPlaylist pos: %li\n", d->pos);
+
+    const struct song *songs;
+    const size_t song_count = playlist_get_songs(&songs);
+    for (int64_t i = 0; (size_t)i < song_count; i++) {
+        const bool current = (i == d->pos);
+        printf("%s%s%li. %s - %s%s\n",
+               current ? "\033[1m" : "",
+               current ? "> " : "  ",
+               i, songs[i].artist, songs[i].title,
+               current ? "\033[m" : "");
+    }
+
+    print_status_bar(d);
+}
+
+static void on_percent_position(uint64_t, const struct signal_data *data, void *userdata) {
+    struct playback_data *d = userdata;
+    d->pos = data->as.i64;
+
+    print_status_bar(d);
+}
+
+static void on_pause(uint64_t, const struct signal_data *data, void *userdata) {
+    struct playback_data *d = userdata;
+    d->pause = data->as.boolean;
+
+    print_status_bar(d);
+}
+
+static void on_volume(uint64_t, const struct signal_data *data, void *userdata) {
+    struct playback_data *d = userdata;
+    d->volume = data->as.i64;
+
+    print_status_bar(d);
 }
 
 int main(int argc, char **argv) {
@@ -58,7 +118,13 @@ int main(int argc, char **argv) {
     }
 
     api_get_random_songs(5, NULL, 0, 0, NULL, api_callback, NULL);
-    api_search2("seeyalater stratocaster", 0, 0, 0, 0, 0, 0, NULL, api_callback, NULL);
+
+    struct playback_data d = {0};
+    struct signal_listener l1, l2, l3, l4;
+    player_event_subscribe(&l1, PLAYER_EVENT_PLAYLIST_POSITION, on_playlist_position, &d);
+    player_event_subscribe(&l2, PLAYER_EVENT_PERCENT_POSITION, on_percent_position, &d);
+    player_event_subscribe(&l3, PLAYER_EVENT_PAUSE, on_pause, &d);
+    player_event_subscribe(&l4, PLAYER_EVENT_VOLUME, on_volume, &d);
 
     pollen_loop_run(event_loop);
 

@@ -35,6 +35,14 @@ void signal_emit_ptr(const struct signal_emitter *emitter, uint64_t event, void 
     signal_emit_internal(emitter, event, &data);
 }
 
+void signal_emit_str(const struct signal_emitter *emitter, uint64_t event, char *str) {
+    struct signal_data data = {
+        .type = SIGNAL_DATA_TYPE_STR,
+        .as.str = str,
+    };
+    signal_emit_internal(emitter, event, &data);
+}
+
 void signal_emit_u64(const struct signal_emitter *emitter, uint64_t event, uint64_t u64) {
     struct signal_data data = {
         .type = SIGNAL_DATA_TYPE_U64,
@@ -47,6 +55,14 @@ void signal_emit_i64(const struct signal_emitter *emitter, uint64_t event, int64
     struct signal_data data = {
         .type = SIGNAL_DATA_TYPE_I64,
         .as.i64 = i64,
+    };
+    signal_emit_internal(emitter, event, &data);
+}
+
+void signal_emit_bool(const struct signal_emitter *emitter, uint64_t event, bool boolean) {
+    struct signal_data data = {
+        .type = SIGNAL_DATA_TYPE_BOOLEAN,
+        .as.boolean = boolean,
     };
     signal_emit_internal(emitter, event, &data);
 }

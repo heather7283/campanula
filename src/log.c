@@ -97,7 +97,8 @@ static void log_print_internal(enum log_level level, bool newline, char *message
         abort();
     }
 
-    fprintf(log_config.stream, "[%c] ", level_char);
+    fprintf(log_config.stream, "%c ", level_char);
+    fprintf(log_config.stream, "%d ", gettid());
 
     vfprintf(log_config.stream, message, args);
 

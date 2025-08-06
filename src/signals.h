@@ -10,6 +10,7 @@ enum signal_data_type {
     SIGNAL_DATA_TYPE_STR,
     SIGNAL_DATA_TYPE_U64,
     SIGNAL_DATA_TYPE_I64,
+    SIGNAL_DATA_TYPE_BOOLEAN,
 };
 
 struct signal_data {
@@ -19,6 +20,7 @@ struct signal_data {
         char *str;
         uint64_t u64;
         int64_t i64;
+        bool boolean;
     } as;
 };
 
@@ -47,9 +49,10 @@ void signal_subscribe(struct signal_emitter *emitter, struct signal_listener *li
 void signal_unsubscribe(struct signal_listener *listener);
 
 void signal_emit_ptr(const struct signal_emitter *emitter, uint64_t event, void *ptr);
-void signal_emit_str(const struct signal_emitter *emitter, uint64_t event, const char *str);
+void signal_emit_str(const struct signal_emitter *emitter, uint64_t event, char *str);
 void signal_emit_u64(const struct signal_emitter *emitter, uint64_t event, uint64_t u64);
 void signal_emit_i64(const struct signal_emitter *emitter, uint64_t event, int64_t i64);
+void signal_emit_bool(const struct signal_emitter *emitter, uint64_t event, bool boolean);
 
 #endif /* #ifndef SRC_SIGNALS_H */
 

@@ -2,8 +2,7 @@
 #include <unistd.h>
 #include <string.h>
 
-#include "player/stream.h"
-#include "player/common.h"
+#include "player/internal.h"
 #include "api/requests.h"
 #include "collections/array.h"
 #include "xmalloc.h"
@@ -100,7 +99,7 @@ static void stream_close_callback(void *cookie) {
 }
 
 static void stream_cancel_callback(void *cookie) {
-    /* TODO: what does this even do? */
+    TRACE("cancel; not doing anything"); /* TODO: what is this suppoed to do? */
 }
 
 static bool api_stream_data_callback(const char *errmsg, const void *data,
@@ -137,14 +136,13 @@ static bool api_stream_data_callback(const char *errmsg, const void *data,
 }
 
 int player_stream_open(void *userdata, char *uri, struct mpv_stream_cb_info *info) {
-    const char *id = uri + strlen(PLAYER_PROTOCOL) + strlen("://");
-    TRACE("stream_open_callback: uri %s id %s", uri, id);
+    const char *id = uri + strlen(MPV_PROTOCOL) + strlen("://");
 
     struct stream_data *d = xcalloc(1, sizeof(*d));
     d->cond = (TYPEOF(d->cond))PTHREAD_COND_INITIALIZER;
     d->mutex = (TYPEOF(d->mutex))PTHREAD_MUTEX_INITIALIZER;
 
-    if (!api_stream(id, 128, "raw", false, api_stream_data_callback, d)) {
+    if (!api_stream(id, 0, "raw", false, api_stream_data_callback, d)) {
         goto err;
     }
 
@@ -153,7 +151,7 @@ int player_stream_open(void *userdata, char *uri, struct mpv_stream_cb_info *inf
         .seek_fn = stream_seek_callback,
         .size_fn = stream_size_callback,
         .close_fn = stream_close_callback,
-        .cancel_fn = NULL,
+        .cancel_fn = stream_cancel_callback,
 
         .cookie = d,
     };
