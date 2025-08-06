@@ -58,7 +58,6 @@ static void print_status_bar(const struct playback_data *d) {
 static void on_playlist_position(uint64_t, const struct signal_data *data, void *userdata) {
     struct playback_data *d = userdata;
     d->pos = data->as.i64;
-    d->pos = 0;
 
     printf("\nPlaylist pos: %li\n", d->pos);
 
