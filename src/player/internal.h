@@ -33,7 +33,7 @@ int player_stream_open(void *userdata, char *uri, struct mpv_stream_cb_info *inf
 
 void player_process_event(const struct mpv_event *event);
 
-bool player_load_song(const struct song *song);
+bool player_loadfile(const struct song *song);
 
 #endif /* #ifndef SRC_PLAYER_INTERNAL_H */
 

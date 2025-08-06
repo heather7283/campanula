@@ -4,7 +4,7 @@
 void playlist_append_song(const struct song *song) {
     struct player_playlist *pl = &player.playlist;
 
-    if (player_load_song(song)) {
+    if (player_loadfile(song)) {
         struct song *new_song = ARRAY_EMPLACE_BACK(&pl->songs);
         song_deep_copy(new_song, song);
     }

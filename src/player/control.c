@@ -14,7 +14,7 @@ void player_set_pause(bool pause) {
     }
 }
 
-bool player_load_song(const struct song *song) {
+bool player_loadfile(const struct song *song) {
     struct string url = {0};
     string_appendf(&url, "%s://%s", MPV_PROTOCOL, song->id);
 
