@@ -99,6 +99,14 @@ static void process_property_change(const struct mpv_event_property *prop, uint6
         int64_t volume = *(int64_t *)prop->data;
         signal_emit_i64(&player.emitter, event, volume);
         break;
+    case PLAYER_EVENT_MUTE:
+        if (prop->format != MPV_FORMAT_FLAG) {
+            WARN("mpv event: property %s: unexpected format!", prop->name);
+            break;
+        }
+        bool mute = *(int *)prop->data;
+        signal_emit_bool(&player.emitter, event, mute);
+        break;
     default:
         WARN("mpv event: property %s not asked for?", prop->name);
         break;
@@ -194,6 +202,7 @@ bool player_init(void) {
     OBSERVE_PROPERTY_OR_FAIL(PLAYER_EVENT_PERCENT_POSITION, "percent-pos", MPV_FORMAT_INT64);
     OBSERVE_PROPERTY_OR_FAIL(PLAYER_EVENT_PAUSE, "pause", MPV_FORMAT_FLAG);
     OBSERVE_PROPERTY_OR_FAIL(PLAYER_EVENT_VOLUME, "volume", MPV_FORMAT_INT64);
+    OBSERVE_PROPERTY_OR_FAIL(PLAYER_EVENT_MUTE, "mute", MPV_FORMAT_FLAG);
 
     #undef OBSERVE_PROPERTY_OR_FAIL
 

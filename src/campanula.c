@@ -8,6 +8,7 @@
 #include "player/control.h"
 #include "player/playlist.h"
 #include "player/events.h"
+#include "collections/string.h"
 
 static void api_callback(const char *errmsg, const struct subsonic_response *response, void *data) {
     if (response == NULL) {
@@ -46,12 +47,23 @@ static int sigint_handler(struct pollen_callback *callback, int signum, void *da
 
 struct playback_data {
     int64_t pos, volume;
-    bool pause;
+    bool pause, mute;
 };
 
 static void print_status_bar(const struct playback_data *d) {
-    printf("\r%s VOL %3li%% POS %3li%%",
-           d->pause ? "||" : "|>", d->volume, d->pos);
+    static struct string str = {0};
+    string_clear(&str);
+
+    string_append(&str, "\r");
+    string_append(&str, d->pause ? "|| " : "|> ");
+    if (d->mute) {
+        string_append(&str, "VOL MUTE ");
+    } else {
+        string_appendf(&str, "VOL %3li%% ", d->volume);
+    }
+    string_appendf(&str, "POS %3li%%", d->pos);
+
+    fputs(str.str, stdout);
     fflush(stdout);
 }
 
@@ -96,6 +108,13 @@ static void on_volume(uint64_t, const struct signal_data *data, void *userdata) 
     print_status_bar(d);
 }
 
+static void on_mute(uint64_t, const struct signal_data *data, void *userdata) {
+    struct playback_data *d = userdata;
+    d->mute = data->as.boolean;
+
+    print_status_bar(d);
+}
+
 int main(int argc, char **argv) {
     log_init(fopen("campanula.log", "w"), LOG_TRACE, true);
 
@@ -119,11 +138,12 @@ int main(int argc, char **argv) {
     api_get_random_songs(5, NULL, 0, 0, NULL, api_callback, NULL);
 
     struct playback_data d = {0};
-    struct signal_listener l1, l2, l3, l4;
+    struct signal_listener l1, l2, l3, l4, l5;
     player_event_subscribe(&l1, PLAYER_EVENT_PLAYLIST_POSITION, on_playlist_position, &d);
     player_event_subscribe(&l2, PLAYER_EVENT_PERCENT_POSITION, on_percent_position, &d);
     player_event_subscribe(&l3, PLAYER_EVENT_PAUSE, on_pause, &d);
     player_event_subscribe(&l4, PLAYER_EVENT_VOLUME, on_volume, &d);
+    player_event_subscribe(&l5, PLAYER_EVENT_MUTE, on_mute, &d);
 
     pollen_loop_run(event_loop);
 

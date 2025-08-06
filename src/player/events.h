@@ -9,6 +9,7 @@ enum player_event: uint64_t {
     PLAYER_EVENT_PERCENT_POSITION = 1 << 1, /* percentage as i64 */
     PLAYER_EVENT_PAUSE = 1 << 2, /* boolean, true if paused, false if not */
     PLAYER_EVENT_VOLUME = 1 << 3, /* volume as i64 */
+    PLAYER_EVENT_MUTE = 1 << 4, /* boolean */
 };
 
 void player_event_subscribe(struct signal_listener *listener, enum player_event events,

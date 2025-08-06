@@ -5,6 +5,7 @@
 
 #include "song.h"
 
+/* Does not take ownership of song, creates its own private copy. */
 void playlist_append_song(const struct song *song);
 
 size_t playlist_get_songs(const struct song **songs);
