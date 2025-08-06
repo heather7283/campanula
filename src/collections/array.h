@@ -178,6 +178,18 @@ void array_free_generic(struct array_generic *arr);
         array_free_generic((struct array_generic *)(parray)); \
     })
 
+/*
+ * Reserves memory for elem_count elements, each of size elem_size.
+ */
+void array_reserve_generic(struct array_generic *arr, size_t elem_size, size_t elem_count);
+
+#define ARRAY_RESERVE(parray, count) \
+    ({ \
+        TYPECHECK_ARRAY(parray); \
+        array_reserve_generic((struct array_generic *)(parray), \
+                              sizeof(*(parray)->data), (count)); \
+    })
+
 #define ARRAY_FOREACH(parray, iter) for (size_t iter = 0; iter < (parray)->size; iter++)
 
 #endif /* #ifndef SRC_COLLECTIONS_ARRAY_H */

@@ -102,14 +102,15 @@ static const char *error_code_to_string(int32_t code) {
     }
 }
 
-static bool on_api_stream_data(const char *errmsg, const char *content_type,
+static bool on_api_stream_data(const char *errmsg, const struct response_headers *headers,
                                const void *data, ssize_t size, void *userdata) {
     struct api_stream_callback_data *d = userdata;
+    const size_t expected_size = headers->content_length.present ? headers->content_length.size : 0;
     bool ret = true;
 
     switch (size) {
     case -1: /* error */
-        d->callback(errmsg, NULL, -1, d->callback_data);
+        d->callback(errmsg, expected_size, NULL, -1, d->callback_data);
 
         goto out_free;
     case 0: /* EOF */
@@ -119,7 +120,8 @@ static bool on_api_stream_data(const char *errmsg, const char *content_type,
                                                              ARRAY_SIZE(&d->error_data));
 
             if (r == NULL || r->inner_object_type != API_TYPE_ERROR) {
-                d->callback("Failed to parse server response", NULL, -1, d->callback_data);
+                d->callback("Failed to parse server response",
+                            expected_size, NULL, -1, d->callback_data);
             } else {
                 const struct api_type_error *err = &r->inner_object.error;
                 const char *errmsg;
@@ -128,24 +130,25 @@ static bool on_api_stream_data(const char *errmsg, const char *content_type,
                 } else {
                     errmsg = error_code_to_string(err->code);
                 }
-                d->callback(errmsg, NULL, -1, d->callback_data);
+                d->callback(errmsg, expected_size, NULL, -1, d->callback_data);
             }
 
             subsonic_response_free(r);
         } else {
-            d->callback(NULL, NULL, 0, d->callback_data);
+            d->callback(NULL, expected_size, NULL, 0, d->callback_data);
         }
 
         goto out_free;
     default: /* data */
         if (!d->checked_content_type) {
-            d->error = STREQ(content_type, "application/json");
+            const char *content_type = headers->content_type.str;
+            d->error = (content_type != NULL) && STREQ(content_type, "application/json");
             d->checked_content_type = true;
         }
 
         if (d->error) {
             ARRAY_APPEND_N(&d->error_data, (char *)data, size);
-        } else if (!d->callback(NULL, data, size, d->callback_data)) {
+        } else if (!d->callback(NULL, expected_size, data, size, d->callback_data)) {
             ret = false;
             goto out_free;
         }
@@ -161,7 +164,7 @@ out:
     return ret;
 }
 
-static bool on_api_request_done(const char *errmsg, const char *content_type,
+static bool on_api_request_done(const char *errmsg, const struct response_headers *headers,
                                 const void *data, ssize_t size, void *userdata) {
     struct api_request_callback_data *d = userdata;
 
@@ -318,10 +321,8 @@ bool api_search2(const char *query,
                             callback, callback_data);
 }
 
-bool api_stream(const char *id, uint32_t max_bit_rate,
-                const char *format, bool estimate_content_length,
-                api_stream_callback_t callback,
-                void *callback_data) {
+bool api_stream(const char *id, uint32_t max_bit_rate, const char *format,
+                api_stream_callback_t callback, void *callback_data) {
     ARG_BUILDER(4) args = {0};
 
     if (id == NULL || strlen(id) == 0) {
@@ -332,8 +333,7 @@ bool api_stream(const char *id, uint32_t max_bit_rate,
 
     if (max_bit_rate > 0) ARG_BUILDER_ADD_INT(args, "maxBitRate", max_bit_rate);
     if (format != NULL) ARG_BUILDER_ADD_STR(args, "format", format);
-    if (estimate_content_length) ARG_BUILDER_ADD_BOOL(args, "estimateContentLength",
-                                                      estimate_content_length);
+    ARG_BUILDER_ADD_BOOL(args, "estimateContentLength", true); /* unconditionally */
 
     return api_make_request(API_REQUEST_STREAM,
                             args.args, args.count,

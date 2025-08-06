@@ -96,3 +96,7 @@ void array_free_generic(struct array_generic *arr) {
     arr->data = NULL;
 }
 
+void array_reserve_generic(struct array_generic *arr, size_t elem_size, size_t elem_count) {
+    array_ensure_capacity(arr, elem_size, elem_count);
+}
+

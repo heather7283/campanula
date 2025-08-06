@@ -1,3 +1,5 @@
+#include <errno.h>
+
 #include "collections/array.h"
 #include "network.h"
 #include "eventloop.h"
@@ -12,7 +14,7 @@ static struct curl_global_data {
 struct connection_data {
     CURL *easy;
     char *url;
-    char *content_type;
+    struct response_headers headers;
     char error[CURL_ERROR_SIZE];
 
     bool stream;
@@ -31,16 +33,35 @@ struct socket_data {
 static size_t easy_writefunction(void *ptr, size_t size, size_t nmemb, void *data) {
     struct connection_data *conn_data = data;
 
-    if (conn_data->content_type == NULL) {
+    if (!conn_data->headers.content_type.present) {
         struct curl_header *h;
-        curl_easy_header(conn_data->easy, "Content-Type", 0, CURLH_HEADER, -1, &h);
-        conn_data->content_type = xstrdup(h->value);
-        TRACE("got Content-Type: %s", h->value);
+        int ret = curl_easy_header(conn_data->easy, "Content-Type", 0, CURLH_HEADER, -1, &h);
+        if (ret == CURLHE_OK) {
+            conn_data->headers.content_type.present = true;
+            conn_data->headers.content_type.str = xstrdup(h->value);
+            TRACE("got Content-Type: %s", conn_data->headers.content_type.str);
+        }
+    }
+    if (!conn_data->headers.content_length.present) {
+        struct curl_header *h;
+        int ret = curl_easy_header(conn_data->easy, "Content-Length", 0, CURLH_HEADER, -1, &h);
+        if (ret == CURLHE_OK) {
+            errno = 0;
+            conn_data->headers.content_length.size = strtoul(h->value, NULL, 10);
+            if (errno == 0) {
+                conn_data->headers.content_length.present = true;
+                TRACE("got Content-Length: %zu", conn_data->headers.content_length.size);
+            }
+        }
+
+        if (!conn_data->stream) {
+            ARRAY_RESERVE(&conn_data->received, conn_data->headers.content_length.size);
+        }
     }
 
     if (!conn_data->stream) {
         ARRAY_APPEND_N(&conn_data->received, (uint8_t *)ptr, size * nmemb);
-    } else if (!conn_data->callback(NULL, conn_data->content_type,
+    } else if (!conn_data->callback(NULL, &conn_data->headers,
                                     ptr, size * nmemb,
                                     conn_data->callback_data)) {
         conn_data->cancelled = true;
@@ -85,17 +106,17 @@ static void check_multi_info(struct curl_global_data *global_data) {
                 }
 
                 /* error, both stream and regular */
-                conn_data->callback(errmsg, conn_data->content_type,
+                conn_data->callback(errmsg, &conn_data->headers,
                                     NULL, -1,
                                     conn_data->callback_data);
             } else if (conn_data->stream) {
                 /* EOF, stream callback */
-                conn_data->callback(NULL, conn_data->content_type,
+                conn_data->callback(NULL, &conn_data->headers,
                                     NULL, 0,
                                     conn_data->callback_data);
             } else {
                 /* EOF, regular callback */
-                conn_data->callback(NULL, conn_data->content_type,
+                conn_data->callback(NULL, &conn_data->headers,
                                     ARRAY_DATA(&conn_data->received),
                                     ARRAY_SIZE(&conn_data->received),
                                     conn_data->callback_data);
@@ -106,7 +127,9 @@ static void check_multi_info(struct curl_global_data *global_data) {
 
             ARRAY_FREE(&conn_data->received);
             free(conn_data->url);
-            free(conn_data->content_type);
+            if (conn_data->headers.content_type.present) {
+                free(conn_data->headers.content_type.str);
+            }
             free(conn_data);
         }
     }

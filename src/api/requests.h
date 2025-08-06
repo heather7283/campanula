@@ -23,7 +23,7 @@ typedef void (*api_response_callback_t)(const char *errmsg,
                                         void *userdata);
 
 /* return false to cancel transfer, no more callbacks will be called after that */
-typedef bool (*api_stream_callback_t)(const char *errmsg,
+typedef bool (*api_stream_callback_t)(const char *errmsg, size_t expected_size,
                                       const void *data, ssize_t data_size,
                                       void *userdata);
 
@@ -91,10 +91,8 @@ bool api_search2(const char *query,
  * id                    Yes              A string which uniquely identifies the file to stream.
  * maxBitRate            No               Limit bitrate to this value in kbps (0 for no limit).
  * format                No               Preferred target format, "raw" for no transcoding.
- * estimateContentLength No       false   Set Content-Length HTTP header to an estimated value.
  */
-bool api_stream(const char *id, uint32_t max_bit_rate,
-                const char *format, bool estimate_content_length,
+bool api_stream(const char *id, uint32_t max_bit_rate, const char *format,
                 api_stream_callback_t callback, void *callback_data);
 
 #endif /* #ifndef SRC_API_REQUESTS_H */

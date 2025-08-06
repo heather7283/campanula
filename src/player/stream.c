@@ -102,8 +102,8 @@ static void stream_cancel_callback(void *cookie) {
     TRACE("cancel; not doing anything"); /* TODO: what is this suppoed to do? */
 }
 
-static bool api_stream_data_callback(const char *errmsg, const void *data,
-                                     ssize_t data_size, void *userdata) {
+static bool api_stream_data_callback(const char *errmsg, size_t expected_size,
+                                     const void *data, ssize_t data_size, void *userdata) {
     struct stream_data *d = userdata;
 
     pthread_mutex_lock(&d->mutex);
@@ -124,6 +124,9 @@ static bool api_stream_data_callback(const char *errmsg, const void *data,
         d->eof = true;
         break;
     default: /* data */
+        if (ARRAY_SIZE(&d->data) == 0 && expected_size > 0) {
+            ARRAY_RESERVE(&d->data, expected_size);
+        }
         ARRAY_APPEND_N(&d->data, (uint8_t *)data, data_size);
         break;
     }
@@ -142,7 +145,7 @@ int player_stream_open(void *userdata, char *uri, struct mpv_stream_cb_info *inf
     d->cond = (TYPEOF(d->cond))PTHREAD_COND_INITIALIZER;
     d->mutex = (TYPEOF(d->mutex))PTHREAD_MUTEX_INITIALIZER;
 
-    if (!api_stream(id, 0, "raw", false, api_stream_data_callback, d)) {
+    if (!api_stream(id, 0, "raw", api_stream_data_callback, d)) {
         goto err;
     }
 
