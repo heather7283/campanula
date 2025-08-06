@@ -49,6 +49,8 @@ sources = [
   'src/player/events.c',
   'src/player/stream.c',
 
+  'src/commands/parse.c',
+
   'src/collections/string.c',
   'src/collections/array.c',
 ]
