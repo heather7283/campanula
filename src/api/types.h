@@ -120,5 +120,10 @@ struct subsonic_response {
 void subsonic_response_free(struct subsonic_response *response);
 void subsonic_response_print(const struct subsonic_response *resp, enum log_level lvl);
 
+void print_child(const struct api_type_child *c, enum log_level lvl, int indent);
+void print_artist(const struct api_type_artist *a, enum log_level lvl, int indent);
+void print_artist_id3(const struct api_type_artist_id3 *a, enum log_level lvl, int indent);
+void print_album_id3(const struct api_type_album_id3 *a, enum log_level lvl, int indent);
+
 #endif /* #ifndef SRC_API_TYPES_H */
 

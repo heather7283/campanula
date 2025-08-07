@@ -16,7 +16,7 @@ static void free_child(struct api_type_child *c) {
     free(c->artist_id);
 }
 
-static void print_child(const struct api_type_child *c, enum log_level lvl, int indent) {
+void print_child(const struct api_type_child *c, enum log_level lvl, int indent) {
     log_println(lvl, "%*sChild {", indent, "");
 
     log_println(lvl, "%*sid: %s", indent + 4, "", c->id);
@@ -47,7 +47,7 @@ static void free_artist(struct api_type_artist *a) {
     free(a->name);
 }
 
-static void print_artist(const struct api_type_artist *a, enum log_level lvl, int indent) {
+void print_artist(const struct api_type_artist *a, enum log_level lvl, int indent) {
     log_println(lvl, "%*sArtist {", indent, "");
 
     log_println(lvl, "%*sid: %s", indent + 4, "", a->id);
@@ -61,7 +61,7 @@ static void free_artist_id3(struct api_type_artist_id3 *a) {
     free(a->name);
 }
 
-static void print_artist_id3(const struct api_type_artist_id3 *a, enum log_level lvl, int indent) {
+void print_artist_id3(const struct api_type_artist_id3 *a, enum log_level lvl, int indent) {
     log_println(lvl, "%*sArtistID3 {", indent, "");
 
     log_println(lvl, "%*sid: %s", indent + 4, "", a->id);
@@ -79,7 +79,7 @@ static void free_album_id3(struct api_type_album_id3 *a) {
     free(a->artist_id);
 }
 
-static void print_album_id3(const struct api_type_album_id3 *a, enum log_level lvl, int indent) {
+void print_album_id3(const struct api_type_album_id3 *a, enum log_level lvl, int indent) {
     log_println(lvl, "%*sAlbumID3 {", indent, "");
 
     log_println(lvl, "%*sid: %s", indent + 4, "", a->id);
