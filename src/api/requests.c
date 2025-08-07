@@ -309,11 +309,11 @@ bool api_search2(const char *query,
     ARG_BUILDER_ADD_STR(args, "query", query);
 
     if (artist_count >= 0) ARG_BUILDER_ADD_INT(args, "artistCount", artist_count);
-    if (artist_offset >= 0) ARG_BUILDER_ADD_INT(args, "artistOffset", artist_count);
+    if (artist_offset >= 0) ARG_BUILDER_ADD_INT(args, "artistOffset", artist_offset);
     if (album_count >= 0) ARG_BUILDER_ADD_INT(args, "albumCount", album_count);
-    if (album_offset >= 0) ARG_BUILDER_ADD_INT(args, "albumOffset", album_count);
+    if (album_offset >= 0) ARG_BUILDER_ADD_INT(args, "albumOffset", album_offset);
     if (song_count >= 0) ARG_BUILDER_ADD_INT(args, "songCount", song_count);
-    if (song_offset >= 0) ARG_BUILDER_ADD_INT(args, "songOffset", song_count);
+    if (song_offset >= 0) ARG_BUILDER_ADD_INT(args, "songOffset", song_offset);
     if (music_folder_id != NULL) ARG_BUILDER_ADD_STR(args, "musicFolderId", music_folder_id);
 
     return api_make_request(API_REQUEST_SEARCH2,
@@ -337,11 +337,11 @@ bool api_search3(const char *query,
     ARG_BUILDER_ADD_STR(args, "query", query);
 
     if (artist_count >= 0) ARG_BUILDER_ADD_INT(args, "artistCount", artist_count);
-    if (artist_offset >= 0) ARG_BUILDER_ADD_INT(args, "artistOffset", artist_count);
+    if (artist_offset >= 0) ARG_BUILDER_ADD_INT(args, "artistOffset", artist_offset);
     if (album_count >= 0) ARG_BUILDER_ADD_INT(args, "albumCount", album_count);
-    if (album_offset >= 0) ARG_BUILDER_ADD_INT(args, "albumOffset", album_count);
+    if (album_offset >= 0) ARG_BUILDER_ADD_INT(args, "albumOffset", album_offset);
     if (song_count >= 0) ARG_BUILDER_ADD_INT(args, "songCount", song_count);
-    if (song_offset >= 0) ARG_BUILDER_ADD_INT(args, "songOffset", song_count);
+    if (song_offset >= 0) ARG_BUILDER_ADD_INT(args, "songOffset", song_offset);
     if (music_folder_id != NULL) ARG_BUILDER_ADD_STR(args, "musicFolderId", music_folder_id);
 
     return api_make_request(API_REQUEST_SEARCH3,
