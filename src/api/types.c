@@ -75,6 +75,8 @@ static void free_album_id3(struct api_type_album_id3 *a) {
     free(a->id);
     free(a->name);
     free(a->created);
+    free(a->artist);
+    free(a->artist_id);
 }
 
 static void print_album_id3(const struct api_type_album_id3 *a, enum log_level lvl, int indent) {
