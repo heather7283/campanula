@@ -127,7 +127,7 @@ static bool parse_album_id3(struct api_type_album_id3 *album, const struct json_
     album->name = xstrdup(JSON_GET_VALUE_OR_FAIL(json, string, "name"));
     album->song_count = JSON_GET_VALUE_OR_FAIL(json, int, "songCount");
     album->duration = JSON_GET_VALUE_OR_FAIL(json, int, "duration");
-    album->created = JSON_GET_VALUE_OR_FAIL(json, int, "created");
+    album->created = xstrdup(JSON_GET_VALUE_OR_FAIL(json, string, "created"));
     /* optional */
     album->artist = xstrdup(JSON_GET_VALUE(json, string, "artist"));
     album->artist_id = xstrdup(JSON_GET_VALUE(json, string, "artistId"));

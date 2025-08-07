@@ -59,7 +59,7 @@ struct api_type_album_id3 {
     char *name;
     int32_t song_count;
     int32_t duration;
-    int32_t created;
+    char *created;
     /* optional */
     char *artist;
     char *artist_id;

@@ -74,6 +74,7 @@ static void print_artist_id3(const struct api_type_artist_id3 *a, enum log_level
 static void free_album_id3(struct api_type_album_id3 *a) {
     free(a->id);
     free(a->name);
+    free(a->created);
 }
 
 static void print_album_id3(const struct api_type_album_id3 *a, enum log_level lvl, int indent) {
@@ -83,7 +84,7 @@ static void print_album_id3(const struct api_type_album_id3 *a, enum log_level l
     log_println(lvl, "%*sname: %s", indent + 4, "", a->name);
     log_println(lvl, "%*ssongCount: %d", indent + 4, "", a->song_count);
     log_println(lvl, "%*sduration: %d", indent + 4, "", a->duration);
-    log_println(lvl, "%*screated: %d", indent + 4, "", a->created);
+    log_println(lvl, "%*screated: %s", indent + 4, "", a->created);
 
     log_println(lvl, "%*sartist: %s", indent + 4, "", a->artist);
     log_println(lvl, "%*sartistId: %s", indent + 4, "", a->artist_id);
