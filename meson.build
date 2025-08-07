@@ -30,7 +30,7 @@ include_dirs = include_directories([
   'src',
 ])
 
-sources = [
+sources = files([
   'src/campanula.c',
   'src/auth.c',
   'src/config.c',
@@ -57,7 +57,7 @@ sources = [
 
   'src/collections/string.c',
   'src/collections/array.c',
-]
+])
 
 executable('campanula', sources,
            include_directories: include_dirs,
