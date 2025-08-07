@@ -14,6 +14,7 @@ libmpv_dep = dependency('mpv')
 libcurl_dep = dependency('libcurl')
 libopenssl_dep = dependency('OpenSSL') # needed for md5, curl links against it anyway
 libjsonc_dep = dependency('json-c')
+libsqlite_dep = dependency('sqlite3')
 pollen_dep = dependency('pollen', version: '>=2.1.0')
 
 dependencies = [
@@ -21,6 +22,7 @@ dependencies = [
   libcurl_dep,
   libopenssl_dep,
   libjsonc_dep,
+  libsqlite_dep,
   pollen_dep,
 ]
 
@@ -50,6 +52,8 @@ sources = [
   'src/player/stream.c',
 
   'src/commands/parse.c',
+
+  'src/db/internal.c',
 
   'src/collections/string.c',
   'src/collections/array.c',

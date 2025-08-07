@@ -9,6 +9,7 @@
 #include "player/playlist.h"
 #include "player/events.h"
 #include "collections/string.h"
+#include "db/init.h"
 
 static void api_callback(const char *errmsg, const struct subsonic_response *response, void *data) {
     if (response == NULL) {
@@ -128,6 +129,9 @@ int main(int argc, char **argv) {
     event_loop = pollen_loop_create();
     pollen_loop_add_signal(event_loop, SIGINT, sigint_handler, &event_loop);
 
+    if (!db_init()) {
+        return 1;
+    }
     if (!network_init()) {
         return 1;
     }
@@ -149,6 +153,7 @@ int main(int argc, char **argv) {
 
     player_cleanup();
     network_cleanup();
+    db_cleanup();
     pollen_loop_cleanup(event_loop);
 
     return 0;

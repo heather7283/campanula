@@ -2,3 +2,4 @@
 build/
 *.opus
 *.log
+*.sqlite3

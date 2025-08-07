@@ -6,6 +6,7 @@ struct config {
     char *application_name;
     char *username;
     char *password;
+    char *database_path;
 };
 
 extern struct config config;
