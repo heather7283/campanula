@@ -301,7 +301,7 @@ bool api_search2(const char *query,
                  api_response_callback_t callback, void *callback_data) {
     ARG_BUILDER(8) args = {0};
 
-    if (query == NULL || strlen(query) == 0) {
+    if (query == NULL) {
         ERROR("did not pass required parameter \"query\" to search2 api method");
         return false;
     }
