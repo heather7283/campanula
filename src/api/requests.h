@@ -13,6 +13,7 @@ enum api_request_type {
     API_REQUEST_GET_ALBUM_LIST,
     API_REQUEST_STREAM,
     API_REQUEST_SEARCH2,
+    API_REQUEST_SEARCH3,
 
     /* put new types before this one, TO THE END OR EVERYTHING WILL EXPLODE */
     API_REQUEST_TYPE_COUNT,
@@ -78,6 +79,27 @@ bool api_get_album_list(const char *type,
  * musicFolderId No               Self-explanatory.
  */
 bool api_search2(const char *query,
+                 int32_t artist_count, int32_t artist_offset,
+                 int32_t album_count, int32_t album_offset,
+                 int32_t song_count, int32_t song_offset,
+                 const char *music_folder_id,
+                 api_response_callback_t callback, void *callback_data);
+
+/*
+ * Returns albums, artists and songs matching the given search criteria.
+ * Supports paging through the result. Music is organized according to ID3 tags.
+ *
+ * Parameter     Required Default Comment
+ * query         Yes              Search query.
+ * artistCount   No       20      Maximum number of artists to return.
+ * artistOffset  No       0       Search result offset for artists. Used for paging.
+ * albumCount    No       20      Maximum number of albums to return.
+ * albumOffset   No       0       Search result offset for albums. Used for paging.
+ * songCount     No       20      Maximum number of songs to return.
+ * songOffset    No       0       Search result offset for songs. Used for paging.
+ * musicFolderId No               Self-explanatory.
+ */
+bool api_search3(const char *query,
                  int32_t artist_count, int32_t artist_offset,
                  int32_t album_count, int32_t album_offset,
                  int32_t song_count, int32_t song_offset,

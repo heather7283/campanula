@@ -56,6 +56,42 @@ static void print_artist(const struct api_type_artist *a, enum log_level lvl, in
     log_println(lvl, "%*s}", indent, "");
 }
 
+static void free_artist_id3(struct api_type_artist_id3 *a) {
+    free(a->id);
+    free(a->name);
+}
+
+static void print_artist_id3(const struct api_type_artist_id3 *a, enum log_level lvl, int indent) {
+    log_println(lvl, "%*sArtistID3 {", indent, "");
+
+    log_println(lvl, "%*sid: %s", indent + 4, "", a->id);
+    log_println(lvl, "%*sname: %s", indent + 4, "", a->name);
+    log_println(lvl, "%*salbumCount: %d", indent + 4, "", a->album_count);
+
+    log_println(lvl, "%*s}", indent, "");
+}
+
+static void free_album_id3(struct api_type_album_id3 *a) {
+    free(a->id);
+    free(a->name);
+}
+
+static void print_album_id3(const struct api_type_album_id3 *a, enum log_level lvl, int indent) {
+    log_println(lvl, "%*sAlbumID3 {", indent, "");
+
+    log_println(lvl, "%*sid: %s", indent + 4, "", a->id);
+    log_println(lvl, "%*sname: %s", indent + 4, "", a->name);
+    log_println(lvl, "%*ssongCount: %d", indent + 4, "", a->song_count);
+    log_println(lvl, "%*sduration: %d", indent + 4, "", a->duration);
+    log_println(lvl, "%*screated: %d", indent + 4, "", a->created);
+
+    log_println(lvl, "%*sartist: %s", indent + 4, "", a->artist);
+    log_println(lvl, "%*sartistId: %s", indent + 4, "", a->artist_id);
+    log_println(lvl, "%*syear: %d", indent + 4, "", a->year);
+
+    log_println(lvl, "%*s}", indent, "");
+}
+
 static void free_error(union subsonic_response_inner_object *o) {
     struct api_type_error *e = &o->error;
     free(e->message);
@@ -156,6 +192,48 @@ static void print_search_result_2(const union subsonic_response_inner_object *o,
     log_println(lvl, "%*s}", indent, "");
 }
 
+static void free_search_result_3(union subsonic_response_inner_object *o) {
+    struct api_type_search_result_3 *r = &o->search_result_3;
+    ARRAY_FOREACH(&r->artist, i) {
+        free_artist_id3(ARRAY_AT(&r->artist, i));
+    }
+    ARRAY_FREE(&r->artist);
+    ARRAY_FOREACH(&r->album, i) {
+        free_album_id3(ARRAY_AT(&r->album, i));
+    }
+    ARRAY_FREE(&r->album);
+    ARRAY_FOREACH(&r->song, i) {
+        free_child(ARRAY_AT(&r->song, i));
+    }
+    ARRAY_FREE(&r->song);
+}
+
+static void print_search_result_3(const union subsonic_response_inner_object *o,
+                                  enum log_level lvl, int indent) {
+    const struct api_type_search_result_3 *r = &o->search_result_3;
+    log_println(lvl, "%*sSearchResult3 {", indent, "");
+
+    log_println(lvl, "%*sartist [", indent + 4, "");
+    ARRAY_FOREACH(&r->artist, i) {
+        print_artist_id3(ARRAY_AT(&r->artist, i), lvl, indent + 8);
+    }
+    log_println(lvl, "%*s]", indent + 4, "");
+
+    log_println(lvl, "%*salbum [", indent + 4, "");
+    ARRAY_FOREACH(&r->album, i) {
+        print_album_id3(ARRAY_AT(&r->album, i), lvl, indent + 8);
+    }
+    log_println(lvl, "%*s]", indent + 4, "");
+
+    log_println(lvl, "%*ssong [", indent + 4, "");
+    ARRAY_FOREACH(&r->song, i) {
+        print_child(ARRAY_AT(&r->song, i), lvl, indent + 8);
+    }
+    log_println(lvl, "%*s]", indent + 4, "");
+
+    log_println(lvl, "%*s}", indent, "");
+}
+
 static const struct {
     void (*free)(union subsonic_response_inner_object *o);
     void (*print)(const union subsonic_response_inner_object *o, enum log_level lvl, int indent);
@@ -164,6 +242,7 @@ static const struct {
     [API_TYPE_SONGS] = { free_songs, print_songs },
     [API_TYPE_ALBUM_LIST] = { free_album_list, print_album_list },
     [API_TYPE_SEARCH_RESULT_2] = { free_search_result_2, print_search_result_2 },
+    [API_TYPE_SEARCH_RESULT_3] = { free_search_result_3, print_search_result_3 },
 };
 static_assert(SIZEOF_ARRAY(inner_object_funcs) == SUBSONIC_RESPONSE_INNER_OBJECT_TYPE_COUNT);
 

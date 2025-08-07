@@ -16,6 +16,7 @@ static const char *api_endpoints[] = {
     [API_REQUEST_GET_ALBUM_LIST] = "getAlbumList",
     [API_REQUEST_STREAM] = "stream",
     [API_REQUEST_SEARCH2] = "search2",
+    [API_REQUEST_SEARCH3] = "search3",
 };
 static_assert(SIZEOF_ARRAY(api_endpoints) == API_REQUEST_TYPE_COUNT);
 
@@ -316,6 +317,34 @@ bool api_search2(const char *query,
     if (music_folder_id != NULL) ARG_BUILDER_ADD_STR(args, "musicFolderId", music_folder_id);
 
     return api_make_request(API_REQUEST_SEARCH2,
+                            args.args, args.count,
+                            false,
+                            callback, callback_data);
+}
+
+bool api_search3(const char *query,
+                 int32_t artist_count, int32_t artist_offset,
+                 int32_t album_count, int32_t album_offset,
+                 int32_t song_count, int32_t song_offset,
+                 const char *music_folder_id,
+                 api_response_callback_t callback, void *callback_data) {
+    ARG_BUILDER(8) args = {0};
+
+    if (query == NULL) {
+        ERROR("did not pass required parameter \"query\" to search3 api method");
+        return false;
+    }
+    ARG_BUILDER_ADD_STR(args, "query", query);
+
+    if (artist_count >= 0) ARG_BUILDER_ADD_INT(args, "artistCount", artist_count);
+    if (artist_offset >= 0) ARG_BUILDER_ADD_INT(args, "artistOffset", artist_count);
+    if (album_count >= 0) ARG_BUILDER_ADD_INT(args, "albumCount", album_count);
+    if (album_offset >= 0) ARG_BUILDER_ADD_INT(args, "albumOffset", album_count);
+    if (song_count >= 0) ARG_BUILDER_ADD_INT(args, "songCount", song_count);
+    if (song_offset >= 0) ARG_BUILDER_ADD_INT(args, "songOffset", song_count);
+    if (music_folder_id != NULL) ARG_BUILDER_ADD_STR(args, "musicFolderId", music_folder_id);
+
+    return api_make_request(API_REQUEST_SEARCH3,
                             args.args, args.count,
                             false,
                             callback, callback_data);

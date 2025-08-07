@@ -39,8 +39,31 @@ struct api_type_child {
 }; /* why is it called "Child" ????? */
 
 struct api_type_artist {
+    /* required */
     char *id;
     char *name;
+    /* optional */
+};
+
+struct api_type_artist_id3 {
+    /* required */
+    char *id;
+    char *name;
+    int32_t album_count;
+    /* optional */
+};
+
+struct api_type_album_id3 {
+    /* required */
+    char *id;
+    char *name;
+    int32_t song_count;
+    int32_t duration;
+    int32_t created;
+    /* optional */
+    char *artist;
+    char *artist_id;
+    int32_t year;
 };
 
 struct api_type_songs {
@@ -57,6 +80,12 @@ struct api_type_search_result_2 {
     ARRAY(struct api_type_child) song;
 };
 
+struct api_type_search_result_3 {
+    ARRAY(struct api_type_artist_id3) artist;
+    ARRAY(struct api_type_album_id3) album;
+    ARRAY(struct api_type_child) song;
+};
+
 enum subsonic_response_status {
     RESPONSE_STATUS_FAILED,
     RESPONSE_STATUS_OK,
@@ -67,6 +96,7 @@ enum subsonic_response_inner_object_type {
     API_TYPE_SONGS,
     API_TYPE_ALBUM_LIST,
     API_TYPE_SEARCH_RESULT_2,
+    API_TYPE_SEARCH_RESULT_3,
 
     SUBSONIC_RESPONSE_INNER_OBJECT_TYPE_COUNT
 };
@@ -76,6 +106,7 @@ union subsonic_response_inner_object {
     struct api_type_songs songs;
     struct api_type_album_list album_list;
     struct api_type_search_result_2 search_result_2;
+    struct api_type_search_result_3 search_result_3;
 };
 
 struct subsonic_response {
