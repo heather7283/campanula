@@ -1,36 +1,29 @@
 #include <assert.h>
 
-#include <sqlite3.h>
-
+#include "db/internal.h"
 #include "macros.h"
 #include "config.h"
 #include "log.h"
 
-struct sqlite_statement {
-    const char *source;
-    struct sqlite3_stmt *stmt;
-};
-
-enum sqlite_statement_type {
-    STATEMENT_CREATE_TABLE_ARTISTS,
-    STATEMENT_CREATE_TABLE_ALBUMS,
-    STATEMENT_CREATE_TABLE_SONGS,
-
-    SQLITE_STATEMENT_TYPE_COUNT
-};
-
-static struct sqlite_statement statements[] = {
+struct sqlite_statement statements[] = {
+    [STATEMENT_ENABLE_FOREIGN_KEYS] = { .source =
+        "PRAGMA foreign_keys = ON",
+    },
     [STATEMENT_CREATE_TABLE_ARTISTS] = { .source =
         "CREATE TABLE IF NOT EXISTS artists ("
         "    id TEXT NOT NULL PRIMARY KEY,"
-        "    name TEXT NOT NULL"
+        "    name TEXT NOT NULL,"
+        ""
+        "    deleted BOOLEAN DEFAULT FALSE"
         ")"
     },
     [STATEMENT_CREATE_TABLE_ALBUMS] = { .source =
         "CREATE TABLE IF NOT EXISTS albums ("
         "    id TEXT NOT NULL PRIMARY KEY,"
-        "    title TEXT NOT NULL,"
+        "    name TEXT NOT NULL,"
         "    artist TEXT NOT NULL,"
+        ""
+        "    deleted BOOLEAN DEFAULT FALSE,"
         ""
         "    artist_id TEXT,"
         "    FOREIGN KEY(artist_id) REFERENCES artists(id)"
@@ -50,16 +43,90 @@ static struct sqlite_statement statements[] = {
         "    size INTEGER,"
         "    filetype TEXT,"
         ""
+        "    deleted BOOLEAN DEFAULT FALSE,"
+        ""
         "    artist_id TEXT,"
         "    album_id TEXT,"
         "    FOREIGN KEY(artist_id) REFERENCES artists(id),"
         "    FOREIGN KEY(album_id) REFERENCES albums(id)"
         ")"
     },
+
+    [STATEMENT_BEGIN] = { .source =
+        "BEGIN"
+    },
+    [STATEMENT_COMMIT] = { .source =
+        "COMMIT"
+    },
+    [STATEMENT_ROLLBACK] = { .source =
+        "ROLLBACK"
+    },
+
+    [STATEMENT_MARK_ARTISTS_AS_DELETED] = { .source =
+        "UPDATE artists SET deleted = TRUE"
+    },
+    [STATEMENT_MARK_ALBUMS_AS_DELETED] = { .source =
+        "UPDATE albums SET deleted = TRUE"
+    },
+    [STATEMENT_MARK_SONGS_AS_DELETED] = { .source =
+        "UPDATE songs SET deleted = TRUE"
+    },
+    [STATEMENT_DELETE_DELETED_ARTISTS] = { .source =
+        "DELETE FROM artists WHERE deleted = TRUE"
+    },
+    [STATEMENT_DELETE_DELETED_ALBUMS] = { .source =
+        "DELETE FROM albums WHERE deleted = TRUE"
+    },
+    [STATEMENT_DELETE_DELETED_SONGS] = { .source =
+        "DELETE FROM songs WHERE deleted = TRUE"
+    },
+
+    [STATEMENT_INSERT_ARTIST] = { .source =
+        "INSERT INTO artists("
+        "   id, name"
+        ") VALUES ("
+        "   $id, $name"
+        ") ON CONFLICT(id) DO UPDATE SET"
+        "   id = excluded.id, name = excluded.name,"
+        "   deleted = FALSE"
+    },
+    [STATEMENT_INSERT_ALBUM] = { .source =
+        "INSERT INTO albums("
+        "   id, name, artist, artist_id"
+        ") VALUES ("
+        "   $id, $name, $artist, $artist_id"
+        ") ON CONFLICT(id) DO UPDATE SET"
+        "   id = excluded.id, name = excluded.name,"
+        "   artist = excluded.artist, artist_id = excluded.artist_id,"
+        "   deleted = FALSE"
+    },
+    [STATEMENT_INSERT_SONG] = { .source =
+        "INSERT INTO songs("
+        "   id, title, artist, album,"
+        "   track, year, duration, bitrate, size, filetype,"
+        "   artist_id, album_id"
+        ") VALUES ("
+        "   $id, $title, $artist, $album,"
+        "   $track, $year, $duration, $bitrate, $size, $filetype,"
+        "   $artist_id, $album_id"
+        ") ON CONFLICT(id) DO UPDATE SET"
+        "   title = excluded.title,"
+        "   artist = excluded.artist,"
+        "   album = excluded.album,"
+        "   track = excluded.track,"
+        "   year = excluded.year,"
+        "   duration = excluded.duration,"
+        "   bitrate = excluded.bitrate,"
+        "   size = excluded.size,"
+        "   filetype = excluded.filetype,"
+        "   artist_id = excluded.artist_id,"
+        "   album_id = excluded.album_id,"
+        "   deleted = FALSE"
+    },
 };
 static_assert(SIZEOF_ARRAY(statements) == SQLITE_STATEMENT_TYPE_COUNT);
 
-static struct sqlite3 *db = NULL;
+struct sqlite3 *db = NULL;
 
 bool db_init(void) {
     int ret = 0;
@@ -67,6 +134,12 @@ bool db_init(void) {
     ret = sqlite3_open(config.database_path, &db);
     if (ret != SQLITE_OK) {
         ERROR("failed to open db at %s: %s", config.database_path, sqlite3_errstr(ret));
+        goto err;
+    }
+
+    ret = sqlite3_exec(db, statements[STATEMENT_ENABLE_FOREIGN_KEYS].source, NULL, NULL, NULL);
+    if (ret != SQLITE_OK) {
+        ERROR("failed to enable foreign key support: %s", sqlite3_errmsg(db));
         goto err;
     }
 
@@ -84,6 +157,15 @@ bool db_init(void) {
     if (ret != SQLITE_OK) {
         ERROR("failed to create songs table: %s", sqlite3_errmsg(db));
         goto err;
+    }
+
+    /* prepare statements */
+    for (size_t i = 0; i < SIZEOF_ARRAY(statements); i++) {
+        ret = sqlite3_prepare_v2(db, statements[i].source, -1, &statements[i].stmt, NULL);
+        if (ret != SQLITE_OK) {
+            ERROR("failed to prepare sqlite statement: %s", sqlite3_errmsg(db));
+            goto err;
+        }
     }
 
     return true;

@@ -10,6 +10,7 @@
 #include "player/events.h"
 #include "collections/string.h"
 #include "db/init.h"
+#include "db/populate.h"
 
 static void api_callback(const char *errmsg, const struct subsonic_response *response, void *data) {
     if (response == NULL) {
@@ -139,8 +140,9 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    api_search3("", 0, 0, 0, 0, 100, 500, NULL, api_callback, NULL);
     api_get_random_songs(5, NULL, 0, 0, NULL, api_callback, NULL);
+
+    db_populate();
 
     struct playback_data d = {0};
     struct signal_listener l1, l2, l3, l4, l5;

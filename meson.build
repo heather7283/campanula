@@ -54,6 +54,7 @@ sources = files([
   'src/commands/parse.c',
 
   'src/db/internal.c',
+  'src/db/populate.c',
 
   'src/collections/string.c',
   'src/collections/array.c',
