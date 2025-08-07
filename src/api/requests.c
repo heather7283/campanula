@@ -255,15 +255,15 @@ static bool api_make_request(enum api_request_type request,
     return res;
 }
 
-bool api_get_random_songs(uint32_t size, const char *genre,
-                          uint32_t from_year, uint32_t to_year,
+bool api_get_random_songs(int32_t size, const char *genre,
+                          int32_t from_year, int32_t to_year,
                           const char *music_folder_id,
                           api_response_callback_t callback, void *callback_data) {
     ARG_BUILDER(5) args = {0};
-    if (size > 0) ARG_BUILDER_ADD_INT(args, "size", size);
+    if (size >= 0) ARG_BUILDER_ADD_INT(args, "size", size);
     if (genre != NULL) ARG_BUILDER_ADD_STR(args, "genre", genre);
-    if (from_year > 0) ARG_BUILDER_ADD_INT(args, "fromYear", from_year);
-    if (to_year > 0) ARG_BUILDER_ADD_INT(args, "toYear", to_year);
+    if (from_year >= 0) ARG_BUILDER_ADD_INT(args, "fromYear", from_year);
+    if (to_year >= 0) ARG_BUILDER_ADD_INT(args, "toYear", to_year);
     if (music_folder_id != NULL) ARG_BUILDER_ADD_STR(args, "musicFolderId", music_folder_id);
 
     return api_make_request(API_REQUEST_GET_RANDOM_SONGS,
@@ -274,16 +274,16 @@ bool api_get_random_songs(uint32_t size, const char *genre,
 }
 
 bool api_get_album_list(const char *type,
-                        uint32_t size, uint32_t offset,
-                        uint32_t from_year, uint32_t to_year,
+                        int32_t size, int32_t offset,
+                        int32_t from_year, int32_t to_year,
                         const char *genre, const char *music_folder_id,
                         api_response_callback_t callback, void *callback_data) {
     ARG_BUILDER(7) args = {0};
     if (type != NULL) ARG_BUILDER_ADD_STR(args, "type", type);
-    if (size > 0) ARG_BUILDER_ADD_INT(args, "size", size);
-    if (offset > 0) ARG_BUILDER_ADD_INT(args, "offset", offset);
-    if (from_year > 0) ARG_BUILDER_ADD_INT(args, "fromYear", from_year);
-    if (to_year > 0) ARG_BUILDER_ADD_INT(args, "toYear", to_year);
+    if (size >= 0) ARG_BUILDER_ADD_INT(args, "size", size);
+    if (offset >= 0) ARG_BUILDER_ADD_INT(args, "offset", offset);
+    if (from_year >= 0) ARG_BUILDER_ADD_INT(args, "fromYear", from_year);
+    if (to_year >= 0) ARG_BUILDER_ADD_INT(args, "toYear", to_year);
     if (genre != NULL) ARG_BUILDER_ADD_STR(args, "genre", genre);
     if (music_folder_id != NULL) ARG_BUILDER_ADD_STR(args, "musicFolderId", music_folder_id);
 
@@ -294,9 +294,9 @@ bool api_get_album_list(const char *type,
 }
 
 bool api_search2(const char *query,
-                 uint32_t artist_count, uint32_t artist_offset,
-                 uint32_t album_count, uint32_t album_offset,
-                 uint32_t song_count, uint32_t song_offset,
+                 int32_t artist_count, int32_t artist_offset,
+                 int32_t album_count, int32_t album_offset,
+                 int32_t song_count, int32_t song_offset,
                  const char *music_folder_id,
                  api_response_callback_t callback, void *callback_data) {
     ARG_BUILDER(8) args = {0};
@@ -307,12 +307,12 @@ bool api_search2(const char *query,
     }
     ARG_BUILDER_ADD_STR(args, "query", query);
 
-    if (artist_count > 0) ARG_BUILDER_ADD_INT(args, "artistCount", artist_count);
-    if (artist_offset > 0) ARG_BUILDER_ADD_INT(args, "artistOffset", artist_count);
-    if (album_count > 0) ARG_BUILDER_ADD_INT(args, "albumCount", album_count);
-    if (album_offset > 0) ARG_BUILDER_ADD_INT(args, "albumOffset", album_count);
-    if (song_count > 0) ARG_BUILDER_ADD_INT(args, "songCount", song_count);
-    if (song_offset > 0) ARG_BUILDER_ADD_INT(args, "songOffset", song_count);
+    if (artist_count >= 0) ARG_BUILDER_ADD_INT(args, "artistCount", artist_count);
+    if (artist_offset >= 0) ARG_BUILDER_ADD_INT(args, "artistOffset", artist_count);
+    if (album_count >= 0) ARG_BUILDER_ADD_INT(args, "albumCount", album_count);
+    if (album_offset >= 0) ARG_BUILDER_ADD_INT(args, "albumOffset", album_count);
+    if (song_count >= 0) ARG_BUILDER_ADD_INT(args, "songCount", song_count);
+    if (song_offset >= 0) ARG_BUILDER_ADD_INT(args, "songOffset", song_count);
     if (music_folder_id != NULL) ARG_BUILDER_ADD_STR(args, "musicFolderId", music_folder_id);
 
     return api_make_request(API_REQUEST_SEARCH2,
@@ -321,7 +321,7 @@ bool api_search2(const char *query,
                             callback, callback_data);
 }
 
-bool api_stream(const char *id, uint32_t max_bit_rate, const char *format,
+bool api_stream(const char *id, int32_t max_bit_rate, const char *format,
                 api_stream_callback_t callback, void *callback_data) {
     ARG_BUILDER(4) args = {0};
 
@@ -331,7 +331,7 @@ bool api_stream(const char *id, uint32_t max_bit_rate, const char *format,
     }
     ARG_BUILDER_ADD_STR(args, "id", id);
 
-    if (max_bit_rate > 0) ARG_BUILDER_ADD_INT(args, "maxBitRate", max_bit_rate);
+    if (max_bit_rate >= 0) ARG_BUILDER_ADD_INT(args, "maxBitRate", max_bit_rate);
     if (format != NULL) ARG_BUILDER_ADD_STR(args, "format", format);
     ARG_BUILDER_ADD_BOOL(args, "estimateContentLength", true); /* unconditionally */
 

@@ -37,8 +37,8 @@ typedef bool (*api_stream_callback_t)(const char *errmsg, size_t expected_size,
  * toYear        No                     Only return songs published before or in this year.
  * musicFolderId No                     Only return songs in the music folder with the given ID.
  */
-bool api_get_random_songs(uint32_t size, const char *genre,
-                          uint32_t from_year, uint32_t to_year,
+bool api_get_random_songs(int32_t size, const char *genre,
+                          int32_t from_year, int32_t to_year,
                           const char *music_folder_id,
                           api_response_callback_t callback, void *callback_data);
 
@@ -58,8 +58,8 @@ bool api_get_random_songs(uint32_t size, const char *genre,
  * musicFolderId No                            Only return albums in the music folder with given ID.
  */
 bool api_get_album_list(const char *type,
-                        uint32_t size, uint32_t offset,
-                        uint32_t from_year, uint32_t to_year,
+                        int32_t size, int32_t offset,
+                        int32_t from_year, int32_t to_year,
                         const char *genre, const char *music_folder_id,
                         api_response_callback_t callback, void *callback_data);
 
@@ -78,9 +78,9 @@ bool api_get_album_list(const char *type,
  * musicFolderId No               Self-explanatory.
  */
 bool api_search2(const char *query,
-                 uint32_t artist_count, uint32_t artist_offset,
-                 uint32_t album_count, uint32_t album_offset,
-                 uint32_t song_count, uint32_t song_offset,
+                 int32_t artist_count, int32_t artist_offset,
+                 int32_t album_count, int32_t album_offset,
+                 int32_t song_count, int32_t song_offset,
                  const char *music_folder_id,
                  api_response_callback_t callback, void *callback_data);
 
@@ -92,7 +92,7 @@ bool api_search2(const char *query,
  * maxBitRate            No               Limit bitrate to this value in kbps (0 for no limit).
  * format                No               Preferred target format, "raw" for no transcoding.
  */
-bool api_stream(const char *id, uint32_t max_bit_rate, const char *format,
+bool api_stream(const char *id, int32_t max_bit_rate, const char *format,
                 api_stream_callback_t callback, void *callback_data);
 
 #endif /* #ifndef SRC_API_REQUESTS_H */

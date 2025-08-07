@@ -145,7 +145,7 @@ int player_stream_open(void *userdata, char *uri, struct mpv_stream_cb_info *inf
     d->cond = (TYPEOF(d->cond))PTHREAD_COND_INITIALIZER;
     d->mutex = (TYPEOF(d->mutex))PTHREAD_MUTEX_INITIALIZER;
 
-    if (!api_stream(id, 0, "raw", api_stream_data_callback, d)) {
+    if (!api_stream(id, -1, "raw", api_stream_data_callback, d)) {
         goto err;
     }
 
