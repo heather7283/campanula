@@ -1,5 +1,5 @@
 # campanula
-TUI client for subsonic-compatible music streaming servers.
+TUI client for OpenSubsonic-compatible music streaming servers.
 
 ## License
 This program is free software: you can redistribute it and/or modify
