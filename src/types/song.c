@@ -1,4 +1,4 @@
-#include "song.h"
+#include "types/song.h"
 #include "xmalloc.h"
 
 void song_deep_copy(struct song *dst, const struct song *src) {

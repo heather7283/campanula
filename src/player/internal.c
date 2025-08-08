@@ -4,7 +4,7 @@
 #include "player/internal.h"
 #include "player/init.h"
 #include "player/events.h"
-#include "song.h"
+#include "types/song.h"
 #include "eventloop.h"
 #include "log.h"
 

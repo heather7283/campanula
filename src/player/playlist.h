@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#include "song.h"
+#include "types/song.h"
 
 /* Does not take ownership of song, creates its own private copy. */
 void playlist_append_song(const struct song *song);

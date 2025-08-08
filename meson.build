@@ -38,7 +38,9 @@ sources = files([
   'src/xmalloc.c',
   'src/eventloop.c',
   'src/signals.c',
-  'src/song.c',
+
+  'src/types/song.c',
+  'src/types/album.c',
 
   'src/api/network.c',
   'src/api/requests.c',
