@@ -193,7 +193,8 @@ bool db_init(void) {
     for (size_t i = 0; i < SIZEOF_ARRAY(statements); i++) {
         ret = sqlite3_prepare_v2(db, statements[i].source, -1, &statements[i].stmt, NULL);
         if (ret != SQLITE_OK) {
-            ERROR("failed to prepare sqlite statement: %s", sqlite3_errmsg(db));
+            ERROR("failed to prepare sql stmt: %s", sqlite3_errmsg(db));
+            log_println(LOG_ERROR, "%s", statements[i].source);
             goto err;
         }
     }
