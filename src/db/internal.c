@@ -24,6 +24,7 @@ struct sqlite_statement statements[] = {
         "    artist TEXT NOT NULL,"
         "    song_count INTEGER NOT NULL,"
         "    duration INTEGER NOT NULL,"
+        "    created DATETIME NOT NULL,"
         ""
         "    deleted BOOLEAN DEFAULT FALSE,"
         ""
@@ -94,9 +95,9 @@ struct sqlite_statement statements[] = {
     },
     [STATEMENT_INSERT_ALBUM] = { .source =
         "INSERT INTO albums("
-        "   id, name, artist, artist_id, song_count, duration"
+        "   id, name, artist, artist_id, song_count, duration, created"
         ") VALUES ("
-        "   $id, $name, $artist, $artist_id, $song_count, $duration"
+        "   $id, $name, $artist, $artist_id, $song_count, $duration, unixepoch($created)"
         ") ON CONFLICT(id) DO UPDATE SET"
         "   id = excluded.id, name = excluded.name,"
         "   artist = excluded.artist, artist_id = excluded.artist_id,"

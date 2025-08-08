@@ -30,6 +30,7 @@ static bool insert_album(const struct api_type_album_id3 *a) {
     STMT_BIND(stmt, text, "$name", a->name, -1, SQLITE_STATIC);
     STMT_BIND(stmt, text, "$artist", a->artist, -1, SQLITE_STATIC);
     STMT_BIND(stmt, text, "$artist_id", a->artist_id, -1, SQLITE_STATIC);
+    STMT_BIND(stmt, text, "$created", a->created, -1, SQLITE_STATIC);
     STMT_BIND(stmt, int64, "$song_count", a->song_count);
     STMT_BIND(stmt, int64, "$duration", a->duration);
 
