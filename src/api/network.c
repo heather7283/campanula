@@ -252,7 +252,7 @@ bool make_request(const char *url, bool stream, request_callback_t callback, voi
     /* follow HTTP 3XX redirects */
     curl_easy_setopt(conn->easy, CURLOPT_FOLLOWLOCATION, 1L);
     /* set speed limit for aborting transfers that are too slow */
-    curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_TIME, 3L);
+    curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_TIME, 5L);
     curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_LIMIT, 10L);
 
     CURLMcode rc = curl_multi_add_handle(curl_global.multi, conn->easy);
