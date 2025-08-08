@@ -119,8 +119,7 @@ static void on_mute(uint64_t, const struct signal_data *data, void *userdata) {
 }
 
 static void print_album(const struct album *a, enum log_level lvl) {
-    log_println(lvl, "Album %s {", a->id);
-    log_println(lvl, "    name: %s", a->name);
+    log_println(lvl, "Album %s (%s) {", a->name, a->id);
     log_println(lvl, "    artist: %s (%s)", a->artist, a->artist_id);
     log_println(lvl, "    song_count: %d", a->song_count);
     log_println(lvl, "    duration: %d", a->duration);
@@ -154,16 +153,18 @@ int main(int argc, char **argv) {
 
     db_populate();
 
-    struct album *albums;
-    size_t nalbums;
-
-    nalbums = db_search_albums(&albums, "seeya", 0, 10);
-    for (size_t i = 0; i < nalbums; i++) {
-        struct album *a = &albums[i];
-        print_album(a, LOG_INFO);
-        album_free_contents(a);
+    struct artist *artists;
+    size_t nartists;
+    for (size_t j = 0; j < 3; j++) {
+        nartists = db_get_artists(&artists, j, 10);
+        INFO("Page %zu", j);
+        for (size_t i = 0; i < nartists; i++) {
+            struct artist *a = &artists[i];
+            INFO("\t[%zu] Artist %s (%s)", i, a->name, a->id);
+            artist_free_contents(a);
+        }
+        free(artists);
     }
-    free(albums);
 
     struct playback_data d = {0};
     struct signal_listener l1, l2, l3, l4, l5;

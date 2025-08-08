@@ -4,6 +4,48 @@
 #include "xmalloc.h"
 #include "log.h"
 
+size_t db_search_artists(struct artist **partists, const char *query,
+                         size_t page, size_t artists_per_page) {
+    struct sqlite3_stmt *stmt;
+    ARRAY(struct artist) artists = {0};
+
+    if (query == NULL) {
+        stmt = statements[STATEMENT_GET_ARTISTS_WITH_PAGINATION].stmt;
+    } else {
+        stmt = statements[STATEMENT_SEARCH_ARTISTS_WITH_PAGINATION].stmt;
+    }
+
+    sqlite3_reset(stmt);
+    sqlite3_clear_bindings(stmt);
+
+    STMT_BIND(stmt, int64, "$select_count", artists_per_page);
+    STMT_BIND(stmt, int64, "$select_offset", page * artists_per_page);
+    if (query != NULL) {
+        STMT_BIND(stmt, text, "$query", query, -1, SQLITE_STATIC);
+    }
+
+    int ret;
+    while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
+        struct artist *a = ARRAY_EMPLACE_BACK(&artists);
+
+        a->id = xstrdup((char *)sqlite3_column_text(stmt, 0));
+        a->name = xstrdup((char *)sqlite3_column_text(stmt, 1));
+    }
+    if (ret != SQLITE_DONE) {
+        ERROR("failed to fetch albums from db: %s", sqlite3_errmsg(db));
+        ARRAY_FREE(&artists);
+        *partists = NULL;
+        return 0;
+    }
+
+    *partists = ARRAY_DATA(&artists);
+    return ARRAY_SIZE(&artists);
+}
+
+size_t db_get_artists(struct artist **artists, size_t page, size_t artists_per_page) {
+    return db_search_artists(artists, NULL, page, artists_per_page);
+}
+
 size_t db_search_albums(struct album **palbums, const char *query,
                         size_t page, size_t albums_per_page) {
     struct sqlite3_stmt *stmt;

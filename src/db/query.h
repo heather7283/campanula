@@ -3,7 +3,13 @@
 
 #include <stddef.h>
 
+#include "types/artist.h"
 #include "types/album.h"
+
+size_t db_get_artists(struct artist **artists, size_t page, size_t artists_per_page);
+
+size_t db_search_artists(struct artist **artists, const char *query,
+                         size_t page, size_t artists_per_page);
 
 size_t db_get_albums(struct album **albums, size_t page, size_t albums_per_page);
 

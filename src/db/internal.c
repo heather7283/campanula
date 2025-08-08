@@ -127,6 +127,19 @@ struct sqlite_statement statements[] = {
         "   deleted = FALSE"
     },
 
+    [STATEMENT_GET_ARTISTS_WITH_PAGINATION] = { .source =
+        "SELECT id, name "
+        "FROM artists "
+        "ORDER BY name ASC "
+        "LIMIT $select_count OFFSET $select_offset"
+    },
+    [STATEMENT_SEARCH_ARTISTS_WITH_PAGINATION] = { .source =
+        "SELECT id, name "
+        "FROM artists "
+        "WHERE name LIKE '%' || $query || '%' "
+        "ORDER BY name ASC "
+        "LIMIT $select_count OFFSET $select_offset"
+    },
     [STATEMENT_GET_ALBUMS_WITH_PAGINATION] = { .source =
         "SELECT id, name, artist, artist_id, song_count, duration "
         "FROM albums "
