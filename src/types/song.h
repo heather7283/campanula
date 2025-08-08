@@ -8,7 +8,9 @@ struct song {
     char *album, *album_id;
     char *artist, *artist_id;
 
+    char *filetype;
     int track, year, duration, bitrate;
+    long size;
 };
 
 void song_deep_copy(struct song *dst, const struct song *src);
