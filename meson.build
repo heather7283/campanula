@@ -57,6 +57,7 @@ sources = files([
 
   'src/db/internal.c',
   'src/db/populate.c',
+  'src/db/query.c',
 
   'src/collections/string.c',
   'src/collections/array.c',

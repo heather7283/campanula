@@ -126,6 +126,20 @@ struct sqlite_statement statements[] = {
         "   album_id = excluded.album_id,"
         "   deleted = FALSE"
     },
+
+    [STATEMENT_GET_ALBUMS_WITH_PAGINATION] = { .source =
+        "SELECT id, name, artist, artist_id, song_count, duration "
+        "FROM albums "
+        "ORDER BY name ASC "
+        "LIMIT $select_count OFFSET $select_offset"
+    },
+    [STATEMENT_SEARCH_ALBUMS_WITH_PAGINATION] = { .source =
+        "SELECT id, name, artist, artist_id, song_count, duration "
+        "FROM albums "
+        "WHERE name LIKE '%' || $query || '%' "
+        "ORDER BY name ASC "
+        "LIMIT $select_count OFFSET $select_offset"
+    },
 };
 static_assert(SIZEOF_ARRAY(statements) == SQLITE_STATEMENT_TYPE_COUNT);
 
