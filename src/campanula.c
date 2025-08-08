@@ -151,20 +151,26 @@ int main(int argc, char **argv) {
 
     api_get_random_songs(5, NULL, 0, 0, NULL, api_callback, NULL);
 
-    db_populate();
+    //db_populate();
 
-    struct artist *artists;
-    size_t nartists;
-    for (size_t j = 0; j < 3; j++) {
-        nartists = db_get_artists(&artists, j, 10);
-        INFO("Page %zu", j);
-        for (size_t i = 0; i < nartists; i++) {
-            struct artist *a = &artists[i];
-            INFO("\t[%zu] Artist %s (%s)", i, a->name, a->id);
-            artist_free_contents(a);
+    struct album *albums;
+    size_t nalbums = db_get_albums(&albums, 2, 10);
+    for (size_t i = 0; i < nalbums; i++) {
+        struct album *a = &albums[i];
+        INFO("%2zu. album \"%s\" (%s)", i, a->name, a->id);
+
+        struct song *songs;
+        size_t nsongs = db_get_songs_in_album(&songs, a);
+        for (size_t j = 0; j < nsongs; j++) {
+            struct song *s = &songs[j];
+            INFO("    %2zu. song \"%s\" (%s)", j, s->title, s->id);
+            song_free_contents(s);
         }
-        free(artists);
+        free(songs);
+
+        album_free_contents(a);
     }
+    free(albums);
 
     struct playback_data d = {0};
     struct signal_listener l1, l2, l3, l4, l5;

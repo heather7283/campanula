@@ -153,6 +153,16 @@ struct sqlite_statement statements[] = {
         "ORDER BY name ASC "
         "LIMIT $select_count OFFSET $select_offset"
     },
+
+    [STATEMENT_GET_SONGS_IN_ALBUM] = { .source =
+        "SELECT "
+        "   id, title, artist, album,"
+        "   track, year, duration, bitrate, size, filetype,"
+        "   artist_id, album_id "
+        "FROM songs "
+        "WHERE album_id = $album_id "
+        "ORDER BY track ASC"
+    },
 };
 static_assert(SIZEOF_ARRAY(statements) == SQLITE_STATEMENT_TYPE_COUNT);
 

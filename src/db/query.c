@@ -92,3 +92,42 @@ size_t db_get_albums(struct album **palbums, size_t page, size_t albums_per_page
     return db_search_albums(palbums, NULL, page, albums_per_page);
 }
 
+size_t db_get_songs_in_album(struct song **psongs, const struct album *album) {
+    struct sqlite3_stmt *const stmt = statements[STATEMENT_GET_SONGS_IN_ALBUM].stmt;
+    ARRAY(struct song) songs;
+
+    sqlite3_reset(stmt);
+    sqlite3_clear_bindings(stmt);
+
+    STMT_BIND(stmt, text, "$album_id", album->id, -1, SQLITE_STATIC);
+
+    int ret;
+    while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
+        struct song *s = ARRAY_EMPLACE_BACK(&songs);
+
+        s->id = xstrdup((char *)sqlite3_column_text(stmt, 0));
+        s->title = xstrdup((char *)sqlite3_column_text(stmt, 1));
+        s->artist = xstrdup((char *)sqlite3_column_text(stmt, 2));
+        s->album = xstrdup((char *)sqlite3_column_text(stmt, 3));
+
+        s->track = sqlite3_column_int(stmt, 4);
+        s->year = sqlite3_column_int(stmt, 5);
+        s->duration = sqlite3_column_int(stmt, 6);
+        s->bitrate = sqlite3_column_int(stmt, 7);
+        s->size = sqlite3_column_int(stmt, 8);
+
+        s->filetype = xstrdup((char *)sqlite3_column_text(stmt, 9));
+        s->artist_id = xstrdup((char *)sqlite3_column_text(stmt, 10));
+        s->album_id = xstrdup((char *)sqlite3_column_text(stmt, 11));
+    }
+    if (ret != SQLITE_DONE) {
+        ERROR("failed to fetch songs from db: %s", sqlite3_errmsg(db));
+        ARRAY_FREE(&songs);
+        *psongs = NULL;
+        return 0;
+    }
+
+    *psongs = ARRAY_DATA(&songs);
+    return ARRAY_SIZE(&songs);
+}
+
