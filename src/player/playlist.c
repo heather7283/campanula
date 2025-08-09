@@ -31,7 +31,11 @@ size_t playlist_get_current_song(const struct song **song) {
     struct player_playlist *pl = &player.playlist;
 
     if (song != NULL) {
-        *song = ARRAY_AT(&pl->songs, pl->current_song);
+        if (ARRAY_SIZE(&pl->songs) > 0) {
+            *song = ARRAY_AT(&pl->songs, pl->current_song);
+        } else {
+            *song = NULL;
+        }
     }
 
     return pl->current_song;
