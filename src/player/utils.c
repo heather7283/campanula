@@ -2,14 +2,6 @@
 
 #include "player/utils.h"
 
-static void print_mpv_node_array(const struct mpv_node_list *l, enum log_level lvl, int indent) {
-    log_println(lvl, "%*sNODE { NODE_ARRAY(%d): ", indent, "", l->num);
-    for (int i = 0; i < l->num; i++) {
-        print_mpv_node(&l->values[i], lvl, indent + 4);
-    }
-    log_println(lvl, "%*s}", indent, "");
-}
-
 void print_mpv_node_internal(const char *key, const struct mpv_node *n,
                              enum log_level lvl, int indent) {
     const char *k = key ? key : "";
