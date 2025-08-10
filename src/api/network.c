@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <errno.h>
 
 #include "collections/array.h"
@@ -9,7 +10,11 @@
 static struct curl_global_data {
     CURLM *multi;
     struct pollen_callback *timer;
-} curl_global;
+    /* libmpv might try to open network stream from foreign thread, which will call in here */
+    pthread_mutex_t mutex;
+} curl_global = {
+    .mutex = PTHREAD_MUTEX_INITIALIZER,
+};
 
 struct connection_data {
     CURL *easy;
@@ -31,7 +36,10 @@ struct socket_data {
 };
 
 static size_t easy_writefunction(void *ptr, size_t size, size_t nmemb, void *data) {
+    pthread_mutex_lock(&curl_global.mutex);
+
     struct connection_data *conn_data = data;
+    size_t ret = size * nmemb;
 
     if (!conn_data->headers.content_type.present) {
         struct curl_header *h;
@@ -65,10 +73,12 @@ static size_t easy_writefunction(void *ptr, size_t size, size_t nmemb, void *dat
                                     ptr, size * nmemb,
                                     conn_data->callback_data)) {
         conn_data->cancelled = true;
-        return CURL_WRITEFUNC_ERROR;
+        ret = CURL_WRITEFUNC_ERROR;
     }
 
-    return size * nmemb;
+    pthread_mutex_unlock(&curl_global.mutex);
+
+    return ret;
 }
 
 static int easy_xferinfofunction(void *data,
@@ -177,6 +187,8 @@ static int timer_callback(struct pollen_callback *callback, void *data) {
 }
 
 static int multi_timerfunction(CURLM *multi, long timeout_ms, void *multi_timerdata) {
+    pthread_mutex_lock(&curl_global.mutex);
+
     struct curl_global_data *global_data = multi_timerdata;
 
     if (timeout_ms > 0) {
@@ -192,11 +204,15 @@ static int multi_timerfunction(CURLM *multi, long timeout_ms, void *multi_timerd
         pollen_timer_disarm(global_data->timer);
     }
 
+    pthread_mutex_unlock(&curl_global.mutex);
+
     return 0;
 }
 
 static int multi_socketfunction(CURL *easy, int fd, int what,
                                 void *multi_socketdata, void *private_socket_data) {
+    pthread_mutex_lock(&curl_global.mutex);
+
     struct curl_global_data *global_data = multi_socketdata;
     struct socket_data *socket_data = private_socket_data;
 
@@ -221,6 +237,8 @@ static int multi_socketfunction(CURL *easy, int fd, int what,
             pollen_fd_modify_events(socket_data->callback, events);
         }
     }
+
+    pthread_mutex_unlock(&curl_global.mutex);
 
     return 0;
 }
@@ -276,6 +294,8 @@ err:
 bool network_init(void) {
     CURLcode rc;
 
+    pthread_mutex_init(&curl_global.mutex, NULL);
+
     rc = curl_global_init_mem(CURL_GLOBAL_ALL, xmalloc, free, xrealloc, xstrdup, xcalloc);
     if (rc != CURLE_OK) {
         ERROR("failed to init libcurl: %s", curl_easy_strerror(rc));
@@ -305,5 +325,6 @@ bool network_init(void) {
 void network_cleanup(void) {
     curl_multi_cleanup(curl_global.multi);
     pollen_loop_remove_callback(curl_global.timer);
+    pthread_mutex_destroy(&curl_global.mutex);
 }
 
