@@ -17,6 +17,8 @@ struct tui {
         int64_t pos, volume;
         bool pause, mute;
     } statusbar;
+
+    WINDOW *mainwin;
 };
 
 extern struct tui tui;

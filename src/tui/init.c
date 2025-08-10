@@ -28,7 +28,7 @@ static void sigwinch_handler(int) {
 static int stdin_handler(struct pollen_callback *, int, uint32_t, void *) {
     wint_t ch;
     int ret;
-    while (errno = 0, (ret = get_wch(&ch)) != ERR || errno == EINTR) {
+    while (errno = 0, (ret = wget_wch(tui.statusbar.win, &ch)) != ERR || errno == EINTR) {
         switch (ret) {
         case OK: /* wide character */
             DEBUG("got wchar %s (%d)", key_name_from_key_code(ch), ch);
@@ -52,9 +52,6 @@ bool tui_init(void) {
     noecho();
     curs_set(0);
     ESCDELAY = 50 /* ms */;
-
-    nodelay(stdscr, TRUE); /* makes getch() return ERR instead of blocking */
-    keypad(stdscr, TRUE); /* enable recognition of escape sequences */
 
     pollen_loop_add_fd(event_loop, 0 /* stdin */, EPOLLIN, false, stdin_handler, NULL);
 

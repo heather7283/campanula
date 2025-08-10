@@ -3,46 +3,12 @@
 #include "eventloop.h"
 #include "xmalloc.h"
 #include "api/network.h"
-#include "api/requests.h"
 #include "player/init.h"
-#include "player/control.h"
 #include "player/playlist.h"
-#include "player/events.h"
-#include "collections/string.h"
 #include "db/init.h"
 #include "db/populate.h"
 #include "db/query.h"
 #include "tui/init.h"
-
-static void api_callback(const char *errmsg, const struct subsonic_response *response, void *data) {
-    if (response == NULL) {
-        ERROR("api request failed: %s", errmsg);
-        return;
-    }
-
-    switch (response->inner_object_type) {
-    case API_TYPE_SONGS: {
-        const struct api_type_songs *songs = &response->inner_object.songs;
-
-        const struct api_type_child *c = NULL;
-        ARRAY_FOREACH(&songs->song, i) {
-            c = ARRAY_AT(&songs->song, i);
-
-            playlist_append_song(&(struct song){
-                .id = c->id,
-                .title = c->title,
-                .artist = c->artist,
-            });
-        }
-
-        player_set_pause(false);
-
-        break;
-    }
-    default:
-        return;
-    }
-}
 
 static int sigint_handler(struct pollen_callback *callback, int signum, void *data) {
     pollen_loop_quit(pollen_callback_get_loop(callback), 0);
@@ -75,12 +41,10 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    api_get_random_songs(5, NULL, 0, 0, NULL, api_callback, NULL);
-
     //db_populate();
 
     struct album *albums;
-    size_t nalbums = db_get_albums(&albums, 2, 10);
+    size_t nalbums = db_search_albums(&albums, "stratocaster", 0, 10);
     for (size_t i = 0; i < nalbums; i++) {
         struct album *a = &albums[i];
         INFO("%2zu. album \"%s\" (%s)", i, a->name, a->id);
@@ -90,11 +54,16 @@ int main(int argc, char **argv) {
         for (size_t j = 0; j < nsongs; j++) {
             struct song *s = &songs[j];
             INFO("    %2zu. song \"%s\" (%s)", j, s->title, s->id);
+
+            playlist_append_song(s);
+
             song_free_contents(s);
         }
         free(songs);
 
         album_free_contents(a);
+
+        break;
     }
     free(albums);
 

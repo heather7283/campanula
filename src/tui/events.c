@@ -14,7 +14,15 @@ void tui_handle_resize(int width, int height) {
         delwin(tui.statusbar.win);
     }
     tui.statusbar.win = newwin(0, 0, LINES - STATUSBAR_HEIGHT, 0);
+    nodelay(tui.statusbar.win, TRUE); /* makes getch() return ERR instead of blocking */
+    keypad(tui.statusbar.win, TRUE); /* enable recognition of escape sequences */
 
+    if (tui.mainwin != NULL) {
+        delwin(tui.mainwin);
+    }
+    tui.mainwin = newwin(LINES - STATUSBAR_HEIGHT, 0, 0, 0);
+
+    draw_mainwin();
     draw_status_bar();
     doupdate();
 }
@@ -38,6 +46,15 @@ void tui_handle_key(uint32_t key) {
         break;
     case '<':
         player_prev();
+        break;
+    case '0':
+        player_set_volume(2, true);
+        break;
+    case '9':
+        player_set_volume(-2, true);
+        break;
+    case 'm':
+        player_toggle_mute();
         break;
     case ' ':
         player_toggle_pause();

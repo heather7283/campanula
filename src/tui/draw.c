@@ -2,6 +2,27 @@
 #include "tui/internal.h"
 #include "player/playlist.h"
 
+void draw_mainwin(void) {
+    wchar_t line[COLS];
+    const int xpos = COLS / 2 - 6;
+    const int ypos = LINES / 2 - 2;
+
+    wclear(tui.mainwin);
+
+    swprintf(line, COLS, L"     〇      ");
+    mvwaddwstr(tui.mainwin, ypos - 2, xpos, line);
+    swprintf(line, COLS, L"   { 零 }    ");
+    mvwaddwstr(tui.mainwin, ypos - 1, xpos, line);
+    swprintf(line, COLS, L" THIS SPACE  ");
+    mvwaddwstr(tui.mainwin, ypos, xpos, line);
+    swprintf(line, COLS, L"INTENTIONALLY");
+    mvwaddwstr(tui.mainwin, ypos + 1, xpos, line);
+    swprintf(line, COLS, L" LEFT BLANK. ");
+    mvwaddwstr(tui.mainwin, ypos + 2, xpos, line);
+
+    wnoutrefresh(tui.mainwin);
+}
+
 void draw_status_bar(void) {
     const int cols = COLS - 2;
     wchar_t line[cols];
