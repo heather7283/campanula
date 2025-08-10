@@ -45,7 +45,7 @@ void player_next(void) {
 }
 
 void player_prev(void) {
-    int ret = mpv_command(player.mpv_handle, (const char *[]){ "playlist-next", NULL });
+    int ret = mpv_command(player.mpv_handle, (const char *[]){ "playlist-prev", NULL });
     if (ret != MPV_ERROR_SUCCESS) {
         ERROR("playlist-prev failed: %s", mpv_error_string(ret));
     }
