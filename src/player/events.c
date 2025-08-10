@@ -1,5 +1,6 @@
 #include "player/events.h"
 #include "player/internal.h"
+#include "player/utils.h"
 #include "log.h"
 
 void player_event_subscribe(struct signal_listener *listener, enum player_event events,
@@ -104,6 +105,14 @@ static void process_property_change(const struct mpv_event_property *prop, uint6
         }
         bool mute = *(int *)prop->data;
         signal_emit_bool(&player.emitter, event, mute);
+        break;
+    case PLAYER_EVENT_PLAYLIST:
+        if (prop->format != MPV_FORMAT_NODE) {
+            WARN("mpv event: property %s: unexpected format!", prop->name);
+            break;
+        }
+        print_mpv_node((struct mpv_node *)prop->data, LOG_INFO, 0);
+        signal_emit_ptr(&player.emitter, event, NULL);
         break;
     default:
         WARN("mpv event: property %s not asked for?", prop->name);
