@@ -68,6 +68,15 @@ void player_set_volume(int volume, bool relative) {
     }
 }
 
+void player_toggle_mute(void) {
+    int ret = mpv_command(player.mpv_handle, (const char *[]){
+        "cycle-values", "mute", "yes", "no", NULL
+    });
+    if (ret != MPV_ERROR_SUCCESS) {
+        ERROR("failed to toggle pause: %s", mpv_error_string(ret));
+    }
+}
+
 void player_next(void) {
     int ret = mpv_command(player.mpv_handle, (const char *[]){ "playlist-next", NULL });
     if (ret != MPV_ERROR_SUCCESS) {
