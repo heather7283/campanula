@@ -55,6 +55,7 @@ sources = files([
   'src/player/playlist.c',
   'src/player/events.c',
   'src/player/stream.c',
+  'src/player/utils.c',
 
   'src/commands/parse.c',
 
