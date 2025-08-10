@@ -6,6 +6,8 @@ void player_toggle_pause(void);
 
 void player_seek(long off, bool relative);
 
+void player_set_volume(int volume, bool relative);
+
 void player_next(void);
 void player_prev(void);
 

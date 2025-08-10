@@ -46,6 +46,28 @@ void player_seek(long off, bool relative) {
     }
 }
 
+void player_set_volume(int volume, bool relative) {
+    struct mpv_node node = {
+        .format = MPV_FORMAT_NODE_ARRAY,
+        .u.list = &(struct mpv_node_list){
+            .num = 3,
+            .values = (struct mpv_node[]){
+                { .format = MPV_FORMAT_STRING, .u.string = relative ? "add" : "set" },
+                { .format = MPV_FORMAT_STRING, .u.string = "volume" },
+                { .format = MPV_FORMAT_INT64, .u.int64 = volume },
+            },
+        },
+    };
+
+    struct mpv_node n; /* remove this once my fix makes it into mpv release */
+    int ret = mpv_command_node(player.mpv_handle, &node, &n);
+    mpv_free_node_contents(&n);
+
+    if (ret != MPV_ERROR_SUCCESS) {
+        ERROR("failed to set volume: %s", mpv_error_string(ret));
+    }
+}
+
 void player_next(void) {
     int ret = mpv_command(player.mpv_handle, (const char *[]){ "playlist-next", NULL });
     if (ret != MPV_ERROR_SUCCESS) {
