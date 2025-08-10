@@ -12,6 +12,7 @@
 #include "db/init.h"
 #include "db/populate.h"
 #include "db/query.h"
+#include "tui/init.h"
 
 static void api_callback(const char *errmsg, const struct subsonic_response *response, void *data) {
     if (response == NULL) {
@@ -48,86 +49,8 @@ static int sigint_handler(struct pollen_callback *callback, int signum, void *da
     return 0;
 }
 
-struct playback_data {
-    int64_t pos, volume;
-    bool pause, mute;
-};
-
-static void print_status_bar(const struct playback_data *d) {
-    static struct string str = {0};
-    string_clear(&str);
-
-    string_append(&str, "\r");
-    string_append(&str, d->pause ? "|| " : "|> ");
-    if (d->mute) {
-        string_append(&str, "VOL MUTE ");
-    } else {
-        string_appendf(&str, "VOL %3li%% ", d->volume);
-    }
-    string_appendf(&str, "POS %3li%%", d->pos);
-
-    fputs(str.str, stdout);
-    fflush(stdout);
-}
-
-static void on_playlist_position(uint64_t, const struct signal_data *data, void *userdata) {
-    struct playback_data *d = userdata;
-    d->pos = data->as.i64;
-
-    printf("\nPlaylist pos: %li\n", d->pos);
-
-    const struct song *songs;
-    const size_t song_count = playlist_get_songs(&songs);
-    for (int64_t i = 0; (size_t)i < song_count; i++) {
-        const bool current = (i == d->pos);
-        printf("%s%s%li. %s - %s%s\n",
-               current ? "\033[1m" : "",
-               current ? "> " : "  ",
-               i, songs[i].artist, songs[i].title,
-               current ? "\033[m" : "");
-    }
-
-    print_status_bar(d);
-}
-
-static void on_percent_position(uint64_t, const struct signal_data *data, void *userdata) {
-    struct playback_data *d = userdata;
-    d->pos = data->as.i64;
-
-    print_status_bar(d);
-}
-
-static void on_pause(uint64_t, const struct signal_data *data, void *userdata) {
-    struct playback_data *d = userdata;
-    d->pause = data->as.boolean;
-
-    print_status_bar(d);
-}
-
-static void on_volume(uint64_t, const struct signal_data *data, void *userdata) {
-    struct playback_data *d = userdata;
-    d->volume = data->as.i64;
-
-    print_status_bar(d);
-}
-
-static void on_mute(uint64_t, const struct signal_data *data, void *userdata) {
-    struct playback_data *d = userdata;
-    d->mute = data->as.boolean;
-
-    print_status_bar(d);
-}
-
-static void print_album(const struct album *a, enum log_level lvl) {
-    log_println(lvl, "Album %s (%s) {", a->name, a->id);
-    log_println(lvl, "    artist: %s (%s)", a->artist, a->artist_id);
-    log_println(lvl, "    song_count: %d", a->song_count);
-    log_println(lvl, "    duration: %d", a->duration);
-    log_println(lvl, "}");
-}
-
 int main(int argc, char **argv) {
-    log_init(fopen("campanula.log", "w"), LOG_TRACE, true);
+    log_init(fopen("campanula.log", "w"), LOG_DEBUG, true);
 
     char *password = getenv("CAMPANULA_PASSWORD");
     if (password == NULL) {
@@ -146,6 +69,9 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (!player_init()) {
+        return 1;
+    }
+    if (!tui_init()) {
         return 1;
     }
 
@@ -172,16 +98,9 @@ int main(int argc, char **argv) {
     }
     free(albums);
 
-    struct playback_data d = {0};
-    struct signal_listener l1, l2, l3, l4, l5;
-    player_event_subscribe(&l1, PLAYER_EVENT_PLAYLIST_POSITION, on_playlist_position, &d);
-    player_event_subscribe(&l2, PLAYER_EVENT_PERCENT_POSITION, on_percent_position, &d);
-    player_event_subscribe(&l3, PLAYER_EVENT_PAUSE, on_pause, &d);
-    player_event_subscribe(&l4, PLAYER_EVENT_VOLUME, on_volume, &d);
-    player_event_subscribe(&l5, PLAYER_EVENT_MUTE, on_mute, &d);
-
     pollen_loop_run(event_loop);
 
+    tui_cleanup();
     player_cleanup();
     network_cleanup();
     db_cleanup();

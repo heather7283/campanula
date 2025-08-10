@@ -2,6 +2,7 @@
 #define SRC_PLAYER_CONTROL_H
 
 void player_set_pause(bool pause);
+void player_toggle_pause(void);
 
 void player_seek(long off, bool relative);
 

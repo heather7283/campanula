@@ -14,6 +14,15 @@ void player_set_pause(bool pause) {
     }
 }
 
+void player_toggle_pause(void) {
+    int ret = mpv_command(player.mpv_handle, (const char *[]){
+        "cycle-values", "pause", "yes", "no", NULL
+    });
+    if (ret != MPV_ERROR_SUCCESS) {
+        ERROR("failed to toggle pause: %s", mpv_error_string(ret));
+    }
+}
+
 void player_seek(long off, bool relative) {
     struct mpv_node node = {
         .format = MPV_FORMAT_NODE_MAP,

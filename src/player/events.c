@@ -86,6 +86,7 @@ static void process_property_change(const struct mpv_event_property *prop, uint6
             break;
         }
         int64_t playlist_pos = *(int64_t *)prop->data;
+        player.playlist.current_song = playlist_pos;
         signal_emit_i64(&player.emitter, event, playlist_pos);
         break;
     case PLAYER_EVENT_VOLUME:

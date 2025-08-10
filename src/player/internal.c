@@ -55,11 +55,6 @@ bool player_init(void) {
     SET_PROPERTY_STRING_OR_FAIL("title", "${media-title}");
     SET_PROPERTY_STRING_OR_FAIL("keep-open", "yes");
 
-    SET_PROPERTY_STRING_OR_FAIL("input-default-bindings", "yes");
-    SET_PROPERTY_STRING_OR_FAIL("input-terminal", "yes");
-    SET_PROPERTY_STRING_OR_FAIL("terminal", "yes");
-    SET_PROPERTY_STRING_OR_FAIL("really-quiet", "yes");
-
     #undef SET_PROPERTY_STRING_OR_FAIL
 
     ret = mpv_initialize(player.mpv_handle);

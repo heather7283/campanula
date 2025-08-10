@@ -15,6 +15,7 @@ libcurl_dep = dependency('libcurl')
 libopenssl_dep = dependency('OpenSSL') # needed for md5, curl links against it anyway
 libjsonc_dep = dependency('json-c')
 libsqlite_dep = dependency('sqlite3')
+libncursesw_dep = dependency('ncursesw') # I will regret this later.
 pollen_dep = dependency('pollen', version: '>=2.1.0')
 
 dependencies = [
@@ -23,6 +24,7 @@ dependencies = [
   libopenssl_dep,
   libjsonc_dep,
   libsqlite_dep,
+  libncursesw_dep,
   pollen_dep,
 ]
 
@@ -59,6 +61,12 @@ sources = files([
   'src/db/internal.c',
   'src/db/populate.c',
   'src/db/query.c',
+
+  'src/tui/internal.c',
+  'src/tui/init.c',
+  'src/tui/utils.c',
+  'src/tui/events.c',
+  'src/tui/draw.c',
 
   'src/collections/string.c',
   'src/collections/array.c',
