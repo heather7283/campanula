@@ -6,6 +6,7 @@
 #include "player/events.h"
 #include "types/song.h"
 #include "eventloop.h"
+#include "config.h"
 #include "log.h"
 
 struct player player = {0};
@@ -51,7 +52,7 @@ bool player_init(void) {
     SET_PROPERTY_STRING_OR_FAIL("vid", "no");
     SET_PROPERTY_STRING_OR_FAIL("video", "no");
     SET_PROPERTY_STRING_OR_FAIL("audio-display", "no");
-    SET_PROPERTY_STRING_OR_FAIL("audio-client-name", "campanula");
+    SET_PROPERTY_STRING_OR_FAIL("audio-client-name", config.application_name);
     SET_PROPERTY_STRING_OR_FAIL("title", "${media-title}");
     SET_PROPERTY_STRING_OR_FAIL("keep-open", "yes");
 
