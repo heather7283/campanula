@@ -59,7 +59,5 @@ void log_println(enum log_level level, char *msg, ...);
                     __FILE__, __LINE__ __VA_OPT__(,) __VA_ARGS__); \
     } while (0)
 
-#undef PRINTF
-
 #endif /* #ifndef SRC_LOG_H */
 
