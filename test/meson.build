@@ -5,6 +5,7 @@ test_sources = [
   ['auth.c', ['../src/auth.c']],
   ['signals.c', ['../src/signals.c']],
   ['cmd_parse.c', ['../src/commands/parse.c', '../src/xmalloc.c', '../src/collections/array.c']],
+  ['xdg.c', ['../src/xdg.c', '../src/log.c', '../src/xmalloc.c']],
 ]
 
 
