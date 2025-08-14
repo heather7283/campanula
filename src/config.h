@@ -12,10 +12,17 @@ struct config {
     /* name that will be used in API requests and reported to the audio system */
     char *application_name;
 
-    char *database_path;
+    /* ~/.config/campanula/ */
+    const char *config_dir;
+    /* ~/.cache/campanula/ */
+    const char *cache_dir;
+    /* ~/.local/share/campanula/ */
+    const char *data_dir;
 };
 
 extern struct config config;
+
+bool load_config(void);
 
 #endif /* #ifndef SRC_CONFIG_H */
 

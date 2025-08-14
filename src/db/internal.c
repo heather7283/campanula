@@ -1,6 +1,7 @@
 #include <assert.h>
 
 #include "db/internal.h"
+#include "xmalloc.h"
 #include "macros.h"
 #include "config.h"
 #include "log.h"
@@ -152,12 +153,15 @@ struct sqlite3 *db = NULL;
 
 bool db_init(void) {
     int ret = 0;
+    char *db_path = NULL;
 
-    ret = sqlite3_open(config.database_path, &db);
+    xasprintf(&db_path, "%s/db.sqlite3", config.data_dir);
+    ret = sqlite3_open(db_path, &db);
     if (ret != SQLITE_OK) {
-        ERROR("failed to open db at %s: %s", config.database_path, sqlite3_errstr(ret));
+        ERROR("failed to open db at %s: %s", db_path, sqlite3_errstr(ret));
         goto err;
     }
+    free(db_path);
 
     ret = sqlite3_exec(db, statements[STATEMENT_ENABLE_FOREIGN_KEYS].source, NULL, NULL, NULL);
     if (ret != SQLITE_OK) {
@@ -194,6 +198,7 @@ bool db_init(void) {
     return true;
 
 err:
+    free(db_path);
     sqlite3_close(db);
     return false;
 }

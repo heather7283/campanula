@@ -16,14 +16,13 @@ static int sigint_handler(struct pollen_callback *callback, int signum, void *da
 }
 
 int main(int argc, char **argv) {
-    log_init(fopen("campanula.log", "w"), LOG_DEBUG, true);
+    log_init(stderr, LOG_TRACE, false);
 
-    char *password = getenv("CAMPANULA_PASSWORD");
-    if (password == NULL) {
-        ERROR("CAMPANULA_PASSWORD is unset");
+    if (!load_config()) {
         return 1;
     }
-    config.password = password;
+
+    log_init(fopen("campanula.log", "w"), LOG_DEBUG, true);
 
     event_loop = pollen_loop_create();
     pollen_loop_add_signal(event_loop, SIGINT, sigint_handler, &event_loop);
