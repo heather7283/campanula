@@ -6,6 +6,7 @@
 #include "api/requests.h"
 #include "collections/array.h"
 #include "xmalloc.h"
+#include "config.h"
 #include "log.h"
 
 struct stream_data {
@@ -145,7 +146,8 @@ int player_stream_open(void *userdata, char *uri, struct mpv_stream_cb_info *inf
     d->cond = (TYPEOF(d->cond))PTHREAD_COND_INITIALIZER;
     d->mutex = (TYPEOF(d->mutex))PTHREAD_MUTEX_INITIALIZER;
 
-    if (!api_stream(id, -1, "raw", api_stream_data_callback, d)) {
+    if (!api_stream(id, config.preferred_audio_bitrate, config.preferred_audio_format,
+                    api_stream_data_callback, d)) {
         goto err;
     }
 

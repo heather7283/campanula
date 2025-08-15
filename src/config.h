@@ -12,6 +12,10 @@ struct config {
     /* name that will be used in API requests and reported to the audio system */
     char *application_name;
 
+    /* used for stream api call */
+    char *preferred_audio_format;
+    int preferred_audio_bitrate;
+
     /* ~/.config/campanula/ */
     const char *config_dir;
     /* ~/.cache/campanula/ */
