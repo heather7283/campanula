@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "collections/list.h"
+#include "collections/array.h"
 
 enum signal_data_type {
     SIGNAL_DATA_TYPE_PTR,
@@ -38,10 +39,18 @@ struct signal_listener {
 };
 
 struct signal_emitter {
+    struct pollen_callback *efd;
+
+    ARRAY(struct signal_queued_event {
+        uint64_t event;
+        struct signal_data data;
+    }) queued_events;
+
     LIST_HEAD listeners;
 };
 
-void signal_emitter_init(struct signal_emitter *emitter);
+bool signal_emitter_init(struct signal_emitter *emitter);
+void signal_emitter_cleanup(struct signal_emitter *emitter);
 
 void signal_subscribe(struct signal_emitter *emitter, struct signal_listener *listener,
                       uint64_t events, signal_callback_func_t callback, void *callback_data);

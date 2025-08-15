@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "signals.h"
+#include "eventloop.h"
 
 enum events {
     FIRST_COSMIC_VELOCITY = 1 << 0,
@@ -31,6 +32,8 @@ void third_callback(uint64_t event, const struct signal_data *data, void *userda
 
     fprintf(stderr, "Third cosmic velocity is %lu m/s\n", data->as.u64);
     *(int *)userdata += 1;
+
+    pollen_loop_quit(event_loop, 69);
 }
 
 void generic_callback(uint64_t event, const struct signal_data *data, void *userdata) {
@@ -43,6 +46,8 @@ void generic_callback(uint64_t event, const struct signal_data *data, void *user
 int main(void) {
     struct signal_emitter e;
     struct signal_listener l1, l2, l3, g;
+
+    event_loop = pollen_loop_create();
 
     signal_emitter_init(&e);
 
@@ -61,10 +66,14 @@ int main(void) {
     signal_emit_u64(&e, SECOND_COSMIC_VELOCITY, 11200);
     signal_emit_u64(&e, THIRD_COSMIC_VELOCITY, 16650);
 
+    assert(pollen_loop_run(event_loop) == 69);
+
     assert(c1 == 1);
     assert(c2 == 1);
     assert(c3 == 1);
     assert(cg == 3);
+
+    signal_emitter_cleanup(&e);
 
     return 0;
 }
