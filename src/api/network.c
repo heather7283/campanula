@@ -10,6 +10,13 @@
 static struct curl_global_data {
     CURLM *multi;
     struct pollen_callback *timer;
+
+    /* some stuff for events */
+    struct signal_emitter emitter;
+    int n_connections;
+    size_t received;
+    struct timespec last_event_time;
+
     /* libmpv might try to open network stream from foreign thread, which will call in here */
     pthread_mutex_t mutex;
 } curl_global = {
@@ -24,6 +31,7 @@ struct connection_data {
 
     bool stream;
     ARRAY(uint8_t) received;
+    size_t prev_received_size;
 
     bool cancelled;
     request_callback_t callback;
@@ -34,6 +42,41 @@ struct socket_data {
     struct pollen_callback *callback;
     int sock_fd;
 };
+
+static struct timespec timespec_sub(const struct timespec *lhs, const struct timespec *rhs) {
+    const struct timespec zero = {
+        .tv_sec = 0,
+        .tv_nsec = 0,
+    };
+    struct timespec ret;
+
+    if (lhs->tv_sec < rhs->tv_sec) {
+        return zero;
+    }
+
+    ret.tv_sec = lhs->tv_sec - rhs->tv_sec;
+
+    if (lhs->tv_nsec < rhs->tv_nsec) {
+        if (ret.tv_sec == 0) {
+            return zero;
+        }
+
+        ret.tv_sec--;
+        ret.tv_nsec = 1000000000L - rhs->tv_nsec + lhs->tv_nsec;
+    } else {
+        ret.tv_nsec = lhs->tv_nsec - rhs->tv_nsec;
+    }
+
+    return ret;
+}
+
+static int timespec_cmp(const struct timespec *lhs, const struct timespec *rhs) {
+    if (lhs->tv_sec != rhs->tv_nsec) {
+        return lhs->tv_sec > rhs->tv_sec ? 1 : -1;
+    } else {
+        return lhs->tv_nsec > rhs->tv_nsec ? 1 : -1;
+    }
+}
 
 static size_t easy_writefunction(void *ptr, size_t size, size_t nmemb, void *data) {
     pthread_mutex_lock(&curl_global.mutex);
@@ -88,6 +131,24 @@ static int easy_xferinfofunction(void *data,
     TRACE("progress: %s (%li/%li) DL (%li/%li) UL",
           conn->url, dlnow, dltotal, ulnow, ultotal);
 
+    curl_global.received += dlnow - conn->prev_received_size;
+    conn->prev_received_size = dlnow;
+
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+
+    const uint64_t thresh_ms = 100;
+    const uint64_t thresh_ns = thresh_ms * 1000'000;
+    const struct timespec diff = timespec_sub(&t, &curl_global.last_event_time);
+    if (timespec_cmp(&diff, &(struct timespec){ .tv_nsec = thresh_ns }) > 0) {
+        const double tdiff = (double)diff.tv_nsec / 1'000'000'000.0 + (double)diff.tv_sec;
+        const uint64_t speed = (double)curl_global.received / tdiff / 1024 * 8;
+        signal_emit_u64(&curl_global.emitter, NETWORK_EVENT_SPEED, speed);
+
+        curl_global.last_event_time = t;
+        curl_global.received = 0;
+    }
+
     return 0;
 }
 
@@ -141,6 +202,9 @@ static void check_multi_info(struct curl_global_data *global_data) {
                 free(conn_data->headers.content_type.str);
             }
             free(conn_data);
+
+            signal_emit_u64(&curl_global.emitter, NETWORK_EVENT_CONNECTIONS,
+                            --curl_global.n_connections);
         }
     }
 }
@@ -262,7 +326,7 @@ bool make_request(const char *url, bool stream, request_callback_t callback, voi
     curl_easy_setopt(conn->easy, CURLOPT_WRITEFUNCTION, easy_writefunction);
     curl_easy_setopt(conn->easy, CURLOPT_WRITEDATA, conn);
     /* setup progress callback */
-    curl_easy_setopt(conn->easy, CURLOPT_NOPROGRESS, 1L);
+    curl_easy_setopt(conn->easy, CURLOPT_NOPROGRESS, 0L);
     curl_easy_setopt(conn->easy, CURLOPT_XFERINFOFUNCTION, easy_xferinfofunction);
     curl_easy_setopt(conn->easy, CURLOPT_XFERINFODATA, conn);
     /* setup buffer for storing error messages */
@@ -278,6 +342,8 @@ bool make_request(const char *url, bool stream, request_callback_t callback, voi
         ERROR("curl_multi_add_handle() failed: %s", curl_multi_strerror(rc));
         goto err;
     }
+
+    signal_emit_u64(&curl_global.emitter, NETWORK_EVENT_CONNECTIONS, ++curl_global.n_connections);
 
     /* note that the add_handle() sets a timeout to trigger soon so that the
      * necessary socket_action() call gets called by this app */
@@ -295,6 +361,7 @@ bool network_init(void) {
     CURLcode rc;
 
     pthread_mutex_init(&curl_global.mutex, NULL);
+    signal_emitter_init(&curl_global.emitter);
 
     rc = curl_global_init_mem(CURL_GLOBAL_ALL, xmalloc, free, xrealloc, xstrdup, xcalloc);
     if (rc != CURLE_OK) {
@@ -325,6 +392,12 @@ bool network_init(void) {
 void network_cleanup(void) {
     curl_multi_cleanup(curl_global.multi);
     pollen_loop_remove_callback(curl_global.timer);
+    signal_emitter_cleanup(&curl_global.emitter);
     pthread_mutex_destroy(&curl_global.mutex);
+}
+
+void network_event_subscribe(struct signal_listener *listener, enum network_event events,
+                             signal_callback_func_t callback, void *callback_data) {
+    signal_subscribe(&curl_global.emitter, listener, events, callback, callback_data);
 }
 
