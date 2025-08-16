@@ -1,5 +1,5 @@
-#ifndef SRC_SONG_H
-#define SRC_SONG_H
+#ifndef SRC_TYPES_SONG_H
+#define SRC_TYPES_SONG_H
 
 struct song {
     char *id;
@@ -16,5 +16,5 @@ struct song {
 void song_deep_copy(struct song *dst, const struct song *src);
 void song_free_contents(struct song *song);
 
-#endif /* #ifndef SRC_SONG_H */
+#endif /* #ifndef SRC_TYPES_SONG_H */
 
