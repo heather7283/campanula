@@ -11,7 +11,7 @@
 #include "xmalloc.h"
 #include "log.h"
 
-static struct curl_global_data {
+static struct network_state {
     CURLM *multi;
     struct pollen_callback *timer;
 
@@ -23,7 +23,7 @@ static struct curl_global_data {
 
     /* libmpv might try to open network stream from foreign thread, which will call in here */
     pthread_mutex_t mutex;
-} curl_global = {
+} state = {
     .mutex = PTHREAD_MUTEX_INITIALIZER,
 };
 
@@ -83,7 +83,7 @@ static int timespec_cmp(const struct timespec *lhs, const struct timespec *rhs) 
 }
 
 static size_t easy_writefunction(void *ptr, size_t size, size_t nmemb, void *data) {
-    pthread_mutex_lock(&curl_global.mutex);
+    pthread_mutex_lock(&state.mutex);
 
     struct connection_data *conn_data = data;
     size_t ret = size * nmemb;
@@ -123,7 +123,7 @@ static size_t easy_writefunction(void *ptr, size_t size, size_t nmemb, void *dat
         ret = CURL_WRITEFUNC_ERROR;
     }
 
-    pthread_mutex_unlock(&curl_global.mutex);
+    pthread_mutex_unlock(&state.mutex);
 
     return ret;
 }
@@ -135,27 +135,27 @@ static int easy_xferinfofunction(void *data,
     TRACE("progress: %s (%li/%li) DL (%li/%li) UL",
           conn->url, dlnow, dltotal, ulnow, ultotal);
 
-    curl_global.received += dlnow - conn->prev_received_size;
+    state.received += dlnow - conn->prev_received_size;
     conn->prev_received_size = dlnow;
 
     struct timespec t;
     clock_gettime(CLOCK_MONOTONIC, &t);
 
-    const struct timespec diff = timespec_sub(&t, &curl_global.last_event_time);
+    const struct timespec diff = timespec_sub(&t, &state.last_event_time);
     const struct timespec thresh = { .tv_nsec = 100'000'000 };
     if (timespec_cmp(&diff, &thresh) > 0) {
         const double tdiff = (double)diff.tv_sec + (double)diff.tv_nsec / 1'000'000'000.0;
-        const uint64_t speed = (double)curl_global.received / tdiff;
-        signal_emit_u64(&curl_global.emitter, NETWORK_EVENT_SPEED, speed);
+        const uint64_t speed = (double)state.received / tdiff;
+        signal_emit_u64(&state.emitter, NETWORK_EVENT_SPEED, speed);
 
-        curl_global.last_event_time = t;
-        curl_global.received = 0;
+        state.last_event_time = t;
+        state.received = 0;
     }
 
     return 0;
 }
 
-static void check_multi_info(struct curl_global_data *global_data) {
+static void check_multi_info(struct network_state *global_data) {
     /* check for completed transfers */
     int msgs_left;
     CURLMsg *msg;
@@ -206,14 +206,14 @@ static void check_multi_info(struct curl_global_data *global_data) {
             }
             free(conn_data);
 
-            signal_emit_u64(&curl_global.emitter, NETWORK_EVENT_CONNECTIONS,
-                            --curl_global.n_connections);
+            signal_emit_u64(&state.emitter, NETWORK_EVENT_CONNECTIONS,
+                            --state.n_connections);
         }
     }
 }
 
 static int socket_callback(struct pollen_callback *callback, int fd, uint32_t events, void *data) {
-    struct curl_global_data *global_data = data;
+    struct network_state *global_data = data;
     CURLMcode rc;
 
     const int action = \
@@ -237,7 +237,7 @@ static int socket_callback(struct pollen_callback *callback, int fd, uint32_t ev
 }
 
 static int timer_callback(struct pollen_callback *callback, void *data) {
-    struct curl_global_data *global_data = data;
+    struct network_state *global_data = data;
     CURLMcode rc;
 
     /* notify curl that timeout has expired */
@@ -254,9 +254,9 @@ static int timer_callback(struct pollen_callback *callback, void *data) {
 }
 
 static int multi_timerfunction(CURLM *multi, long timeout_ms, void *multi_timerdata) {
-    pthread_mutex_lock(&curl_global.mutex);
+    pthread_mutex_lock(&state.mutex);
 
-    struct curl_global_data *global_data = multi_timerdata;
+    struct network_state *global_data = multi_timerdata;
 
     if (timeout_ms > 0) {
         /* curl wants us to update timer timeout */
@@ -271,16 +271,16 @@ static int multi_timerfunction(CURLM *multi, long timeout_ms, void *multi_timerd
         pollen_timer_disarm(global_data->timer);
     }
 
-    pthread_mutex_unlock(&curl_global.mutex);
+    pthread_mutex_unlock(&state.mutex);
 
     return 0;
 }
 
 static int multi_socketfunction(CURL *easy, int fd, int what,
                                 void *multi_socketdata, void *private_socket_data) {
-    pthread_mutex_lock(&curl_global.mutex);
+    pthread_mutex_lock(&state.mutex);
 
-    struct curl_global_data *global_data = multi_socketdata;
+    struct network_state *global_data = multi_socketdata;
     struct socket_data *socket_data = private_socket_data;
 
     if (what == CURL_POLL_REMOVE) {
@@ -305,7 +305,7 @@ static int multi_socketfunction(CURL *easy, int fd, int what,
         }
     }
 
-    pthread_mutex_unlock(&curl_global.mutex);
+    pthread_mutex_unlock(&state.mutex);
 
     return 0;
 }
@@ -340,13 +340,13 @@ bool make_request(const char *url, bool stream, request_callback_t callback, voi
     curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_TIME, 5L);
     curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_LIMIT, 10L);
 
-    CURLMcode rc = curl_multi_add_handle(curl_global.multi, conn->easy);
+    CURLMcode rc = curl_multi_add_handle(state.multi, conn->easy);
     if (rc != CURLM_OK) {
         ERROR("curl_multi_add_handle() failed: %s", curl_multi_strerror(rc));
         goto err;
     }
 
-    signal_emit_u64(&curl_global.emitter, NETWORK_EVENT_CONNECTIONS, ++curl_global.n_connections);
+    signal_emit_u64(&state.emitter, NETWORK_EVENT_CONNECTIONS, ++state.n_connections);
 
     /* note that the add_handle() sets a timeout to trigger soon so that the
      * necessary socket_action() call gets called by this app */
@@ -363,8 +363,8 @@ err:
 bool network_init(void) {
     CURLcode rc;
 
-    pthread_mutex_init(&curl_global.mutex, NULL);
-    signal_emitter_init(&curl_global.emitter);
+    pthread_mutex_init(&state.mutex, NULL);
+    signal_emitter_init(&state.emitter);
 
     rc = curl_global_init_mem(CURL_GLOBAL_ALL, xmalloc, free, xrealloc, xstrdup, xcalloc);
     if (rc != CURLE_OK) {
@@ -372,19 +372,19 @@ bool network_init(void) {
         return false;
     }
 
-    curl_global.multi = curl_multi_init();
-    if (curl_global.multi == NULL) {
+    state.multi = curl_multi_init();
+    if (state.multi == NULL) {
         ERROR("failed to create curl multi");
         return false;
     }
 
-    curl_multi_setopt(curl_global.multi, CURLMOPT_SOCKETFUNCTION, multi_socketfunction);
-    curl_multi_setopt(curl_global.multi, CURLMOPT_SOCKETDATA, &curl_global);
-    curl_multi_setopt(curl_global.multi, CURLMOPT_TIMERFUNCTION, multi_timerfunction);
-    curl_multi_setopt(curl_global.multi, CURLMOPT_TIMERDATA, &curl_global);
+    curl_multi_setopt(state.multi, CURLMOPT_SOCKETFUNCTION, multi_socketfunction);
+    curl_multi_setopt(state.multi, CURLMOPT_SOCKETDATA, &state);
+    curl_multi_setopt(state.multi, CURLMOPT_TIMERFUNCTION, multi_timerfunction);
+    curl_multi_setopt(state.multi, CURLMOPT_TIMERDATA, &state);
 
-    curl_global.timer = pollen_loop_add_timer(event_loop, timer_callback, &curl_global);
-    if (curl_global.timer == NULL) {
+    state.timer = pollen_loop_add_timer(event_loop, timer_callback, &state);
+    if (state.timer == NULL) {
         ERROR("failed to create timer");
         return false;
     }
@@ -393,14 +393,14 @@ bool network_init(void) {
 }
 
 void network_cleanup(void) {
-    curl_multi_cleanup(curl_global.multi);
-    pollen_loop_remove_callback(curl_global.timer);
-    signal_emitter_cleanup(&curl_global.emitter);
-    pthread_mutex_destroy(&curl_global.mutex);
+    curl_multi_cleanup(state.multi);
+    pollen_loop_remove_callback(state.timer);
+    signal_emitter_cleanup(&state.emitter);
+    pthread_mutex_destroy(&state.mutex);
 }
 
 void network_event_subscribe(struct signal_listener *listener, enum network_event events,
                              signal_callback_func_t callback, void *callback_data) {
-    signal_subscribe(&curl_global.emitter, listener, events, callback, callback_data);
+    signal_subscribe(&state.emitter, listener, events, callback, callback_data);
 }
 
