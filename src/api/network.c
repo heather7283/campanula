@@ -137,12 +137,11 @@ static int easy_xferinfofunction(void *data,
     struct timespec t;
     clock_gettime(CLOCK_MONOTONIC, &t);
 
-    const uint64_t thresh_ms = 100;
-    const uint64_t thresh_ns = thresh_ms * 1000'000;
     const struct timespec diff = timespec_sub(&t, &curl_global.last_event_time);
-    if (timespec_cmp(&diff, &(struct timespec){ .tv_nsec = thresh_ns }) > 0) {
-        const double tdiff = (double)diff.tv_nsec / 1'000'000'000.0 + (double)diff.tv_sec;
-        const uint64_t speed = (double)curl_global.received / tdiff / 1024 * 8;
+    const struct timespec thresh = { .tv_nsec = 100'000'000 };
+    if (timespec_cmp(&diff, &thresh) > 0) {
+        const double tdiff = (double)diff.tv_sec + (double)diff.tv_nsec / 1'000'000'000.0;
+        const uint64_t speed = (double)curl_global.received / tdiff;
         signal_emit_u64(&curl_global.emitter, NETWORK_EVENT_SPEED, speed);
 
         curl_global.last_event_time = t;

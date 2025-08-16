@@ -32,7 +32,7 @@ bool network_init(void);
 void network_cleanup(void);
 
 enum network_event: uint64_t {
-    NETWORK_EVENT_SPEED = 1 << 0, /* speed in kibps as u64 */
+    NETWORK_EVENT_SPEED = 1 << 0, /* speed in bytes per second as u64 */
     NETWORK_EVENT_CONNECTIONS = 1 << 1, /* number of active connections as u64 */
 };
 
