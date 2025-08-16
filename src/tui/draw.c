@@ -44,15 +44,17 @@ void draw_status_bar(void) {
     mvwaddnwstr(tui.statusbar.win, 2, 1, line, cols);
 
     const uint64_t bps = tui.statusbar.net_speed * 8;
-    if (bps >= 1024 * 1024) {
-        chars = swprintf(line, cols, L" NET %.2f Mibps (%lu)",
-                         (double)bps / (1024 * 1024), tui.statusbar.net_conns);
+    if (tui.statusbar.net_conns <= 0) {
+        chars = swprintf(line, cols, L" NET 0");
+    } else if (bps >= 1024 * 1024) {
+        chars = swprintf(line, cols, L" NET %lu %.2f Mibps",
+                         tui.statusbar.net_conns, (double)bps / (1024 * 1024));
     } else if (tui.statusbar.net_speed >= 1024) {
-        chars = swprintf(line, cols, L" NET %.2f Kibps (%lu)",
-                         (double)bps / 1024, tui.statusbar.net_conns);
+        chars = swprintf(line, cols, L" NET %lu %.2f Kibps",
+                         tui.statusbar.net_conns, (double)bps / 1024);
     } else {
-        chars = swprintf(line, cols, L" NET %lu bitps (%lu)",
-                         tui.statusbar.net_speed, tui.statusbar.net_conns);
+        chars = swprintf(line, cols, L" NET %lu %lu bitps",
+                         tui.statusbar.net_conns, tui.statusbar.net_speed);
     }
     mvwaddnwstr(tui.statusbar.win, 1, COLS - chars - 1, line, cols);
 
