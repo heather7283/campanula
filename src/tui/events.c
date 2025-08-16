@@ -3,6 +3,7 @@
 #include "tui/draw.h"
 #include "player/control.h"
 #include "player/events.h"
+#include "api/network.h"
 #include "log.h"
 
 void tui_handle_resize(int width, int height) {
@@ -77,6 +78,23 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
         tui.statusbar.pos = data->as.i64;
         break;
     case PLAYER_EVENT_PLAYLIST_POSITION:
+        break;
+    }
+
+    draw_status_bar();
+    doupdate();
+}
+
+void tui_handle_network_events(uint64_t event, const struct signal_data *data, void *userdata) {
+    switch ((enum network_event)event) {
+    case NETWORK_EVENT_SPEED:
+        tui.statusbar.net_speed = data->as.u64;
+        break;
+    case NETWORK_EVENT_CONNECTIONS:
+        tui.statusbar.net_conns = data->as.u64;
+        if (tui.statusbar.net_conns == 0) {
+            tui.statusbar.net_speed = 0;
+        }
         break;
     }
 

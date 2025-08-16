@@ -6,6 +6,7 @@
 #include "tui/internal.h"
 #include "tui/events.h"
 #include "player/events.h"
+#include "api/network.h"
 #include "log.h"
 #include "eventloop.h"
 
@@ -69,7 +70,10 @@ bool tui_init(void) {
 
     sigwinch_handler_deferred(NULL, 0, NULL); /* trigger it manually to pick up initial size */
 
-    player_event_subscribe(&tui.statusbar.listener, (uint64_t)-1, tui_handle_player_events, NULL);
+    player_event_subscribe(&tui.statusbar.player_listener, (uint64_t)-1 /* all */,
+                           tui_handle_player_events, NULL);
+    network_event_subscribe(&tui.statusbar.network_listener, (uint64_t)-1 /* all */,
+                            tui_handle_network_events, NULL);
 
     return true;
 }

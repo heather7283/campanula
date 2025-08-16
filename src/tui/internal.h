@@ -10,12 +10,14 @@
 struct tui {
     struct pollen_callback *resize_callback;
     struct {
-        struct signal_listener listener;
+        struct signal_listener player_listener, network_listener;
 
         WINDOW *win;
 
         int64_t pos, volume;
         bool pause, mute;
+
+        uint64_t net_speed, net_conns;
     } statusbar;
 
     WINDOW *mainwin;
