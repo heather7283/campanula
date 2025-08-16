@@ -1,8 +1,12 @@
 #include <pthread.h>
 #include <errno.h>
 
+#include <curl/curl.h>
+
+#include "network/init.h"
+#include "network/request.h"
+#include "network/events.h"
 #include "collections/array.h"
-#include "network.h"
 #include "eventloop.h"
 #include "xmalloc.h"
 #include "log.h"

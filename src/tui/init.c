@@ -6,7 +6,7 @@
 #include "tui/internal.h"
 #include "tui/events.h"
 #include "player/events.h"
-#include "api/network.h"
+#include "network/events.h"
 #include "log.h"
 #include "eventloop.h"
 

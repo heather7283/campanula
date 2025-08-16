@@ -1,11 +1,7 @@
-#ifndef SRC_NETWORK_H
-#define SRC_NETWORK_H
+#ifndef SRC_NETWORK_REQUEST_H
+#define SRC_NETWORK_REQUEST_H
 
-#include <stdint.h>
-
-#include <curl/curl.h>
-
-#include "signals.h"
+#include <sys/types.h>
 
 struct response_header {
     bool present;
@@ -28,16 +24,5 @@ typedef bool (*request_callback_t)(const char *errmsg,
 
 bool make_request(const char *url, bool stream, request_callback_t callback, void *callback_data);
 
-bool network_init(void);
-void network_cleanup(void);
-
-enum network_event: uint64_t {
-    NETWORK_EVENT_SPEED = 1 << 0, /* speed in bytes per second as u64 */
-    NETWORK_EVENT_CONNECTIONS = 1 << 1, /* number of active connections as u64 */
-};
-
-void network_event_subscribe(struct signal_listener *listener, enum network_event events,
-                             signal_callback_func_t callback, void *callback_data);
-
-#endif /* #ifndef SRC_NETWORK_H */
+#endif /* #ifndef SRC_NETWORK_REQUEST_H */
 

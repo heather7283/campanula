@@ -4,12 +4,12 @@
 
 #include "api/requests.h"
 #include "api/json.h"
+#include "network/request.h"
 #include "collections/string.h"
 #include "xmalloc.h"
 #include "config.h"
 #include "auth.h"
 #include "log.h"
-#include "network.h"
 
 static const char *api_endpoints[] = {
     [API_REQUEST_GET_RANDOM_SONGS] = "getRandomSongs",

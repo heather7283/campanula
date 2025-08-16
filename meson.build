@@ -46,7 +46,8 @@ sources = files([
   'src/types/album.c',
   'src/types/artist.c',
 
-  'src/api/network.c',
+  'src/network/network.c',
+
   'src/api/requests.c',
   'src/api/json.c',
   'src/api/types.c',

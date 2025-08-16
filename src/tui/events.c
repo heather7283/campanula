@@ -3,7 +3,7 @@
 #include "tui/draw.h"
 #include "player/control.h"
 #include "player/events.h"
-#include "api/network.h"
+#include "network/events.h"
 #include "log.h"
 
 void tui_handle_resize(int width, int height) {
