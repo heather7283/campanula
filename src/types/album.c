@@ -12,6 +12,10 @@ void album_deep_copy(struct album *dst, const struct album *src) {
 }
 
 void album_free_contents(struct album *a) {
+    if (a == NULL) {
+        return;
+    }
+
     free(a->id);
     free(a->name);
     free(a->artist);

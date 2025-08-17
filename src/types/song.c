@@ -18,6 +18,10 @@ void song_deep_copy(struct song *dst, const struct song *src) {
 }
 
 void song_free_contents(struct song *song) {
+    if (song == NULL) {
+        return;
+    }
+
     free(song->id);
     free(song->title);
     free(song->album);
