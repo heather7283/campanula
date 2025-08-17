@@ -66,6 +66,7 @@ struct sqlite_statement statements[] = {
             "filetype TEXT NOT NULL, "
             "bitrate INTEGER NOT NULL, "
             "size INTEGER NOT NULL, "
+            "accessed DATETIME NOT NULL DEFAULT (unixepoch('now')), "
 
             "FOREIGN KEY (id) REFERENCES songs (id)"
         ")"
@@ -173,6 +174,9 @@ struct sqlite_statement statements[] = {
         ") VALUES ( "
             "$id, $filename, $filetype, $bitrate, $size "
         ")"
+    },
+    [STATEMENT_TOUCH_CACHED_SONG] = { .source =
+        "UPDATE cached_songs SET accessed = unixepoch('now') WHERE id = $id"
     },
 };
 static_assert(SIZEOF_ARRAY(statements) == SQLITE_STATEMENT_TYPE_COUNT);

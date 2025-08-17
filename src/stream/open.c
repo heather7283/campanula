@@ -58,6 +58,7 @@ from_network:
 
 from_file:
     DEBUG("opening song %s from cache at %s", song_id, filepath);
+    db_touch_cached_song(song_id);
     return stream_open_from_fd(fd, filesize, functions, userdata);
 }
 

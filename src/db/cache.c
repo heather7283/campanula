@@ -64,3 +64,20 @@ bool db_add_cached_song(const struct cached_song *song) {
     return true;
 }
 
+bool db_touch_cached_song(const char *song_id) {
+    struct sqlite3_stmt *const stmt = statements[STATEMENT_TOUCH_CACHED_SONG].stmt;
+
+    sqlite3_reset(stmt);
+    sqlite3_clear_bindings(stmt);
+
+    STMT_BIND(stmt, text, "$id", song_id, -1, SQLITE_STATIC);
+
+    int ret = sqlite3_step(stmt);
+    if (ret != SQLITE_DONE) {
+        WARN("failed to touch cached song for id %s: %s", song_id, sqlite3_errmsg(db));
+        return false;
+    }
+
+    return true;
+}
+
