@@ -195,12 +195,12 @@ songs:
 fin:
     TRACE("db_populate: deleting deleted entries");
 
-    sqlite3_reset(statements[STATEMENT_DELETE_DELETED_ARTISTS].stmt);
-    if (sqlite3_step(statements[STATEMENT_DELETE_DELETED_ARTISTS].stmt) != SQLITE_DONE) {
-        ERROR("db_populate: failed to delete deleted artists: %s", sqlite3_errmsg(db));
+    sqlite3_reset(statements[STATEMENT_DELETE_DELETED_SONGS].stmt);
+    if (sqlite3_step(statements[STATEMENT_DELETE_DELETED_SONGS].stmt) != SQLITE_DONE) {
+        ERROR("db_populate: failed to delete deleted songs: %s", sqlite3_errmsg(db));
         goto err;
     }
-    TRACE("db_populate: deleted %lli artists", sqlite3_changes64(db));
+    TRACE("db_populate: deleted %lli songs", sqlite3_changes64(db));
 
     sqlite3_reset(statements[STATEMENT_DELETE_DELETED_ALBUMS].stmt);
     if (sqlite3_step(statements[STATEMENT_DELETE_DELETED_ALBUMS].stmt) != SQLITE_DONE) {
@@ -209,12 +209,12 @@ fin:
     }
     TRACE("db_populate: deleted %lli albums", sqlite3_changes64(db));
 
-    sqlite3_reset(statements[STATEMENT_DELETE_DELETED_SONGS].stmt);
-    if (sqlite3_step(statements[STATEMENT_DELETE_DELETED_SONGS].stmt) != SQLITE_DONE) {
-        ERROR("db_populate: failed to delete deleted songs: %s", sqlite3_errmsg(db));
+    sqlite3_reset(statements[STATEMENT_DELETE_DELETED_ARTISTS].stmt);
+    if (sqlite3_step(statements[STATEMENT_DELETE_DELETED_ARTISTS].stmt) != SQLITE_DONE) {
+        ERROR("db_populate: failed to delete deleted artists: %s", sqlite3_errmsg(db));
         goto err;
     }
-    TRACE("db_populate: deleted %lli songs", sqlite3_changes64(db));
+    TRACE("db_populate: deleted %lli artists", sqlite3_changes64(db));
 
     TRACE("db_populate: committing transaction");
     sqlite3_reset(statements[STATEMENT_COMMIT].stmt);
