@@ -1,6 +1,7 @@
 #include "player/events.h"
 #include "player/internal.h"
-#include "player/utils.h"
+#include "player/playlist.h"
+#include "api/requests.h"
 #include "log.h"
 
 void player_event_subscribe(struct signal_listener *listener, enum player_event events,
@@ -129,6 +130,13 @@ void player_process_event(const struct mpv_event *ev) {
     case MPV_EVENT_LOG_MESSAGE:
         const struct mpv_event_log_message *m = ev->data;
         log_print(convert_loglevel(m->log_level), "mpv: %s: %s", m->prefix, m->text);
+        break;
+    case MPV_EVENT_FILE_LOADED:
+        const struct song *s = NULL;
+        playlist_get_current_song(&s);
+        if (s != NULL) {
+            api_scrobble(s->id);
+        }
         break;
     default:
         TRACE("mpv event: %s", mpv_event_name(ev->event_id));
