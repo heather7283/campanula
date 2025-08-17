@@ -43,18 +43,22 @@ void draw_status_bar(void) {
     swprintf(line, cols, L"%s %3li%%", tui.statusbar.pause ? "||" : "|>", tui.statusbar.pos);
     mvwaddnwstr(tui.statusbar.win, 2, 1, line, cols);
 
-    const uint64_t bps = tui.statusbar.net_speed * 8;
-    if (tui.statusbar.net_conns <= 0) {
-        chars = swprintf(line, cols, L" NET 0");
-    } else if (bps >= 1024 * 1024) {
-        chars = swprintf(line, cols, L" NET %lu %.2f Mibps",
-                         tui.statusbar.net_conns, (double)bps / (1024 * 1024));
-    } else if (tui.statusbar.net_speed >= 1024) {
-        chars = swprintf(line, cols, L" NET %lu %.2f Kibps",
-                         tui.statusbar.net_conns, (double)bps / 1024);
-    } else {
-        chars = swprintf(line, cols, L" NET %lu %lu bitps",
-                         tui.statusbar.net_conns, tui.statusbar.net_speed);
+    static const char units[][6] = { "bitps", "Kibps", "Mibps", "Gibps", "Tibps", "Pibps" };
+    static const wchar_t labels[] = { [NET_SPEED_DL] = L'V', [NET_SPEED_UL] = L'Λ' };
+    chars = swprintf(line, cols, L" NET %lu", tui.statusbar.net_conns);
+    for (size_t i = 0; i < SIZEOF_ARRAY(tui.statusbar.net_speed); i++) {
+        if (tui.statusbar.net_speed[i] == 0) {
+            continue;
+        }
+
+        double n = tui.statusbar.net_speed[i] * 8; /* convert to bits per second */
+        int j = 0;
+        while (n >= 1024) {
+            n /= 1024;
+            j += 1;
+        }
+
+        chars += swprintf(line + chars, cols - chars, L" %lc %.2f %s", labels[i], n, units[j]);
     }
     mvwaddnwstr(tui.statusbar.win, 1, COLS - chars - 1, line, cols);
 

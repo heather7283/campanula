@@ -7,6 +7,11 @@
 
 #define STATUSBAR_HEIGHT 4
 
+enum {
+    NET_SPEED_DL = 0,
+    NET_SPEED_UL = 1,
+};
+
 struct tui {
     struct pollen_callback *resize_callback;
     struct {
@@ -17,7 +22,8 @@ struct tui {
         int64_t pos, volume;
         bool pause, mute;
 
-        uint64_t net_speed, net_conns;
+        uint64_t net_conns;
+        uint64_t net_speed[2];
     } statusbar;
 
     WINDOW *mainwin;

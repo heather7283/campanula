@@ -18,7 +18,7 @@ static struct network_state {
     /* some stuff for events */
     struct signal_emitter emitter;
     int n_connections;
-    size_t received;
+    size_t download, upload;
     struct timespec last_event_time;
 
     /* libmpv might try to open network stream from foreign thread, which will call in here */
@@ -35,7 +35,9 @@ struct connection_data {
 
     bool stream;
     ARRAY(uint8_t) received;
-    size_t prev_received_size;
+
+    /* for events */
+    size_t prev_download, prev_upload;
 
     bool cancelled;
     request_callback_t callback;
@@ -133,8 +135,11 @@ static int easy_xferinfofunction(void *data,
                                  curl_off_t ultotal, curl_off_t ulnow) {
     struct connection_data *conn = data;
 
-    state.received += dlnow - conn->prev_received_size;
-    conn->prev_received_size = dlnow;
+    state.download += dlnow - conn->prev_download;
+    conn->prev_download = dlnow;
+
+    state.upload += ulnow - conn->prev_upload;
+    conn->prev_upload = ulnow;
 
     struct timespec t;
     clock_gettime(CLOCK_MONOTONIC, &t);
@@ -143,11 +148,15 @@ static int easy_xferinfofunction(void *data,
     const struct timespec thresh = { .tv_nsec = 100'000'000 };
     if (timespec_cmp(&diff, &thresh) > 0) {
         const double tdiff = (double)diff.tv_sec + (double)diff.tv_nsec / 1'000'000'000.0;
-        const uint64_t speed = (double)state.received / tdiff;
-        signal_emit_u64(&state.emitter, NETWORK_EVENT_SPEED, speed);
+
+        const uint64_t speed_dl = (double)state.download / tdiff;
+        signal_emit_u64(&state.emitter, NETWORK_EVENT_SPEED_DL, speed_dl);
+
+        const uint64_t speed_ul = (double)state.upload / tdiff;
+        signal_emit_u64(&state.emitter, NETWORK_EVENT_SPEED_UL, speed_ul);
 
         state.last_event_time = t;
-        state.received = 0;
+        state.download = state.upload = 0;
     }
 
     return 0;

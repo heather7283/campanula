@@ -87,13 +87,16 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
 
 void tui_handle_network_events(uint64_t event, const struct signal_data *data, void *userdata) {
     switch ((enum network_event)event) {
-    case NETWORK_EVENT_SPEED:
-        tui.statusbar.net_speed = data->as.u64;
+    case NETWORK_EVENT_SPEED_DL:
+        tui.statusbar.net_speed[NET_SPEED_DL] = data->as.u64;
+        break;
+    case NETWORK_EVENT_SPEED_UL:
+        tui.statusbar.net_speed[NET_SPEED_UL] = data->as.u64;
         break;
     case NETWORK_EVENT_CONNECTIONS:
         tui.statusbar.net_conns = data->as.u64;
         if (tui.statusbar.net_conns == 0) {
-            tui.statusbar.net_speed = 0;
+            tui.statusbar.net_speed[0] = tui.statusbar.net_speed[1] = 0;
         }
         break;
     }
