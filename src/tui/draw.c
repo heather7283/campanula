@@ -20,7 +20,8 @@ void draw_mainwin(void) {
     swprintf(line, COLS, L" LEFT BLANK. ");
     mvwaddwstr(tui.mainwin, ypos + 2, xpos, line);
 
-    wnoutrefresh(tui.mainwin);
+    /* pad y, x; screen y, x; screen h, w */
+    pnoutrefresh(tui.mainwin, 0, 0, 0, 0, LINES - STATUSBAR_HEIGHT, COLS);
 }
 
 void draw_status_bar(void) {

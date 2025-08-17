@@ -1,6 +1,7 @@
 #include "tui/events.h"
 #include "tui/internal.h"
 #include "tui/draw.h"
+#include "tui/utils.h"
 #include "player/control.h"
 #include "player/events.h"
 #include "network/events.h"
@@ -18,10 +19,7 @@ void tui_handle_resize(int width, int height) {
     nodelay(tui.statusbar.win, TRUE); /* makes getch() return ERR instead of blocking */
     keypad(tui.statusbar.win, TRUE); /* enable recognition of escape sequences */
 
-    if (tui.mainwin != NULL) {
-        delwin(tui.mainwin);
-    }
-    tui.mainwin = newwin(LINES - STATUSBAR_HEIGHT, 0, 0, 0);
+    tui.mainwin = tui_set_pad_size(tui.mainwin, AT_LEAST, height, AT_LEAST, width, false);
 
     draw_mainwin();
     draw_status_bar();

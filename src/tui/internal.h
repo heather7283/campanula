@@ -7,6 +7,8 @@
 
 #define STATUSBAR_HEIGHT 4
 
+typedef WINDOW PAD;
+
 enum {
     NET_SPEED_DL = 0,
     NET_SPEED_UL = 1,
@@ -26,7 +28,7 @@ struct tui {
         uint64_t net_speed[2];
     } statusbar;
 
-    WINDOW *mainwin;
+    PAD *mainwin;
 };
 
 extern struct tui tui;
