@@ -58,7 +58,8 @@ void draw_status_bar(void) {
             j += 1;
         }
 
-        chars += swprintf(line + chars, cols - chars, L" %lc %.2f %s", labels[i], n, units[j]);
+        chars += swprintf(line + chars, cols - chars,
+                          L" %lc %.*f %s", labels[i], j == 0 ? 0 : 2, n, units[j]);
     }
     mvwaddnwstr(tui.statusbar.win, 1, COLS - chars - 1, line, cols);
 
