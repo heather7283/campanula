@@ -1,6 +1,7 @@
 #include <assert.h>
 
 #include "db/internal.h"
+#include "destructors.h"
 #include "xmalloc.h"
 #include "macros.h"
 #include "config.h"
@@ -180,7 +181,7 @@ struct sqlite3 *db = NULL;
 
 bool db_init(void) {
     int ret = 0;
-    char *db_path = NULL;
+    [[gnu::cleanup(cleanup_cstr)]] char *db_path = NULL;
 
     xasprintf(&db_path, "%s/db.sqlite3", config.data_dir);
     ret = sqlite3_open(db_path, &db);
@@ -226,11 +227,9 @@ bool db_init(void) {
         }
     }
 
-    free(db_path);
     return true;
 
 err:
-    free(db_path);
     sqlite3_close(db);
     return false;
 }

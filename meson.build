@@ -41,6 +41,7 @@ sources = files([
   'src/eventloop.c',
   'src/signals.c',
   'src/xdg.c',
+  'src/destructors.c',
 
   'src/types/song.c',
   'src/types/album.c',
