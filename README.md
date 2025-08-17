@@ -1,5 +1,6 @@
 # campanula
 TUI client for OpenSubsonic-compatible music streaming servers.
+Tested on [navidrome], might or might not work with other implementations.
 
 ## License
 This program is free software: you can redistribute it and/or modify
@@ -18,4 +19,6 @@ GNU General Public License for more details.
 - https://opensubsonic.netlify.app/docs
 - https://github.com/mpv-player/mpv/blob/master/DOCS/man/libmpv.rst
 - https://github.com/mpv-player/mpv-examples/tree/master/libmpv
+
+[navidrome]: https://github.com/navidrome/navidrome
 
