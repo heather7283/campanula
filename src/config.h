@@ -20,6 +20,8 @@ struct config {
     const char *config_dir;
     /* ~/.cache/campanula/ */
     const char *cache_dir;
+    /* ~/.cache/campanula/music/ */
+    char *music_cache_dir;
     /* ~/.local/share/campanula/ */
     const char *data_dir;
 };

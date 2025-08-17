@@ -7,11 +7,11 @@
 #include "log.h"
 
 struct sqlite_statement statements[] = {
+    [STATEMENT_ENABLE_FOREIGN_KEYS] = { .source = "PRAGMA foreign_keys = ON" },
+
     [STATEMENT_BEGIN] = { .source = "BEGIN" },
     [STATEMENT_COMMIT] = { .source = "COMMIT" },
     [STATEMENT_ROLLBACK] = { .source = "ROLLBACK" },
-
-    [STATEMENT_ENABLE_FOREIGN_KEYS] = { .source = "PRAGMA foreign_keys = ON" },
 
     [STATEMENT_CREATE_TABLE_ARTISTS] = { .source =
         "CREATE TABLE IF NOT EXISTS artists ( "
@@ -56,6 +56,17 @@ struct sqlite_statement statements[] = {
             "album_id TEXT, "
             "FOREIGN KEY (artist_id) REFERENCES artists (id), "
             "FOREIGN KEY (album_id) REFERENCES albums (id) "
+        ")"
+    },
+    [STATEMENT_CREATE_TABLE_SONGS_CACHE] = { .source =
+        "CREATE TABLE IF NOT EXISTS cached_songs ( "
+            "id TEXT NOT NULL PRIMARY KEY, "
+            "filename TEXT NOT NULL, "
+            "filetype TEXT NOT NULL, "
+            "bitrate INTEGER NOT NULL, "
+            "size INTEGER NOT NULL, "
+
+            "FOREIGN KEY (id) REFERENCES songs (id)"
         ")"
     },
 
@@ -146,6 +157,22 @@ struct sqlite_statement statements[] = {
         "WHERE album_id = $album_id "
         "ORDER BY track ASC"
     },
+
+    [STATEMENT_GET_CACHED_SONG] = { .source =
+        "SELECT id, filename, filetype, bitrate, size "
+        "FROM cached_songs "
+        "WHERE id = $id"
+    },
+    [STATEMENT_DELETE_CACHED_SONG] = { .source =
+        "DELETE FROM cached_songs WHERE id = $id"
+    },
+    [STATEMENT_ADD_CACHED_SONG] = { .source =
+        "INSERT OR REPLACE INTO cached_songs ( "
+            "id, filename, filetype, bitrate, size "
+        ") VALUES ( "
+            "$id, $filename, $filetype, $bitrate, $size "
+        ")"
+    },
 };
 static_assert(SIZEOF_ARRAY(statements) == SQLITE_STATEMENT_TYPE_COUNT);
 
@@ -161,7 +188,6 @@ bool db_init(void) {
         ERROR("failed to open db at %s: %s", db_path, sqlite3_errstr(ret));
         goto err;
     }
-    free(db_path);
 
     ret = sqlite3_exec(db, statements[STATEMENT_ENABLE_FOREIGN_KEYS].source, NULL, NULL, NULL);
     if (ret != SQLITE_OK) {
@@ -184,6 +210,11 @@ bool db_init(void) {
         ERROR("failed to create songs table: %s", sqlite3_errmsg(db));
         goto err;
     }
+    ret = sqlite3_exec(db, statements[STATEMENT_CREATE_TABLE_SONGS_CACHE].source, NULL, NULL, NULL);
+    if (ret != SQLITE_OK) {
+        ERROR("failed to create song cache table: %s", sqlite3_errmsg(db));
+        goto err;
+    }
 
     /* prepare statements */
     for (size_t i = 0; i < SIZEOF_ARRAY(statements); i++) {
@@ -195,6 +226,7 @@ bool db_init(void) {
         }
     }
 
+    free(db_path);
     return true;
 
 err:

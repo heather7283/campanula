@@ -2,9 +2,6 @@
 #include <string.h>
 
 #include <openssl/md5.h>
-#include <openssl/evp.h>
-#include <openssl/bio.h>
-#include <openssl/buffer.h>
 
 #include "auth.h"
 

@@ -45,6 +45,7 @@ sources = files([
   'src/types/song.c',
   'src/types/album.c',
   'src/types/artist.c',
+  'src/types/cached_song.c',
 
   'src/network/network.c',
 
@@ -59,11 +60,16 @@ sources = files([
   'src/player/stream.c',
   'src/player/utils.c',
 
+  'src/stream/open.c',
+  'src/stream/file.c',
+  'src/stream/network.c',
+
   'src/commands/parse.c',
 
   'src/db/internal.c',
   'src/db/populate.c',
   'src/db/query.c',
+  'src/db/cache.c',
 
   'src/tui/internal.c',
   'src/tui/init.c',

@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    log_init(fopen("campanula.log", "w"), LOG_DEBUG, true);
+    log_init(fopen("campanula.log", "w"), LOG_TRACE, true);
 
     event_loop = pollen_loop_create();
     pollen_loop_add_signal(event_loop, SIGINT, sigint_handler, &event_loop);
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    //db_populate();
+    db_populate();
 
     struct album *albums;
     size_t nalbums = db_search_albums(&albums, "stratocaster", 0, 10);

@@ -33,6 +33,12 @@ bool load_config(void) {
         return false;
     }
 
+    xasprintf(&config.music_cache_dir, "%s/music/", config.cache_dir);
+    if (!mkdir_with_parents(config.music_cache_dir)) {
+        ERROR("could not create music cache directory");
+        return false;
+    }
+
     config.data_dir = get_xdg_data_dir();
     if (config.data_dir == NULL) {
         return false;
