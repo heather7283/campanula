@@ -149,14 +149,19 @@ static int easy_xferinfofunction(void *data,
     if (timespec_cmp(&diff, &thresh) > 0) {
         const double tdiff = (double)diff.tv_sec + (double)diff.tv_nsec / 1'000'000'000.0;
 
-        const uint64_t speed_dl = (double)state.download / tdiff;
-        signal_emit_u64(&state.emitter, NETWORK_EVENT_SPEED_DL, speed_dl);
+        if (state.download > 0) {
+            const uint64_t speed_dl = (double)state.download / tdiff;
+            signal_emit_u64(&state.emitter, NETWORK_EVENT_SPEED_DL, speed_dl);
+            state.download = 0;
+        }
 
-        const uint64_t speed_ul = (double)state.upload / tdiff;
-        signal_emit_u64(&state.emitter, NETWORK_EVENT_SPEED_UL, speed_ul);
+        if (state.upload > 0) {
+            const uint64_t speed_ul = (double)state.upload / tdiff;
+            signal_emit_u64(&state.emitter, NETWORK_EVENT_SPEED_UL, speed_ul);
+            state.upload = 0;
+        }
 
         state.last_event_time = t;
-        state.download = state.upload = 0;
     }
 
     return 0;
