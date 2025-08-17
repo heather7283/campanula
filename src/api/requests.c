@@ -17,6 +17,7 @@ static const char *api_endpoints[] = {
     [API_REQUEST_STREAM] = "stream",
     [API_REQUEST_SEARCH2] = "search2",
     [API_REQUEST_SEARCH3] = "search3",
+    [API_REQUEST_SCROBBLE] = "scrobble",
 };
 static_assert(SIZEOF_ARRAY(api_endpoints) == API_REQUEST_TYPE_COUNT);
 
@@ -198,6 +199,10 @@ static bool on_api_request_done(const char *errmsg, const struct response_header
     return true;
 }
 
+static void dummy_api_callback(const char *, const struct subsonic_response *, void *) {
+    /* TODO: instead of doing this, make other functions handle NULL callback properly. */
+}
+
 static bool api_make_request(enum api_request_type request,
                              const struct url_arg *args, int args_count,
                              bool stream,
@@ -346,6 +351,23 @@ bool api_search3(const char *query,
                             args.args, args.count,
                             false,
                             callback, callback_data);
+}
+
+bool api_scrobble(const char *id) {
+    ARG_BUILDER(2) args = {0};
+
+    if (id == NULL || strlen(id) == 0) {
+        ERROR("did not pass required parameter \"id\" to scrobble api method");
+        return false;
+    }
+    ARG_BUILDER_ADD_STR(args, "id", id);
+
+    ARG_BUILDER_ADD_BOOL(args, "submission", true);
+
+    return api_make_request(API_REQUEST_SCROBBLE,
+                            args.args, args.count,
+                            false,
+                            dummy_api_callback, NULL);
 }
 
 bool api_stream(const char *id, int32_t max_bit_rate, const char *format,

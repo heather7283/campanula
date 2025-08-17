@@ -14,6 +14,7 @@ enum api_request_type {
     API_REQUEST_STREAM,
     API_REQUEST_SEARCH2,
     API_REQUEST_SEARCH3,
+    API_REQUEST_SCROBBLE,
 
     /* put new types before this one, TO THE END OR EVERYTHING WILL EXPLODE */
     API_REQUEST_TYPE_COUNT,
@@ -105,6 +106,18 @@ bool api_search3(const char *query,
                  int32_t song_count, int32_t song_offset,
                  const char *music_folder_id,
                  api_response_callback_t callback, void *callback_data);
+
+/*
+ * Registers the local playback of one or more media files.
+ * This request does not return anything and as such does not accept callback.
+ * Parameters time and submission are omitted.
+ *
+ * Parameter  Required Default Comment
+ * id         Yes              A string which uniquely identifies the file to scrobble.
+ * time       No               The time at which the song was listened to.
+ * submission No       True    Whether this is a "submission" or a "now playing" notification.
+ */
+bool api_scrobble(const char *id /*, time_t time, bool submission */);
 
 /*
  * Streams a given media file.

@@ -330,6 +330,7 @@ static const inner_object_parser_t inner_object_parsers[] = {
     [API_REQUEST_STREAM] = NULL, /* special */
     [API_REQUEST_SEARCH2] = parse_response_search2,
     [API_REQUEST_SEARCH3] = parse_response_search3,
+    [API_REQUEST_SCROBBLE] = NULL, /* returns empty response */
 };
 static_assert(SIZEOF_ARRAY(inner_object_parsers) == API_REQUEST_TYPE_COUNT);
 
@@ -339,6 +340,7 @@ static const char *inner_object_names[] = {
     [API_REQUEST_STREAM] = NULL, /* special */
     [API_REQUEST_SEARCH2] = "searchResult2",
     [API_REQUEST_SEARCH3] = "searchResult3",
+    [API_REQUEST_SCROBBLE] = NULL, /* returns empty response */
 };
 static_assert(SIZEOF_ARRAY(inner_object_names) == API_REQUEST_TYPE_COUNT);
 
@@ -372,9 +374,12 @@ struct subsonic_response *api_parse_response(enum api_request_type request,
         JSON_ERROR_IF(!parse_error(&resp->inner_object.error, error), "failed to parse \"error\"");
         break;
     case RESPONSE_STATUS_OK:
-        const char *inner_object_name = inner_object_names[request];
         const inner_object_parser_t inner_object_parser = inner_object_parsers[request];
+        if (inner_object_parser == NULL) {
+            break;
+        }
 
+        const char *inner_object_name = inner_object_names[request];
         const struct json_object *inner = JSON_GET_OR_FAIL(root, object, inner_object_name);
 
         JSON_ERROR_IF(!inner_object_parser(resp, inner),
