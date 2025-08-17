@@ -132,8 +132,6 @@ static int easy_xferinfofunction(void *data,
                                  curl_off_t dltotal, curl_off_t dlnow,
                                  curl_off_t ultotal, curl_off_t ulnow) {
     struct connection_data *conn = data;
-    TRACE("progress: %s (%li/%li) DL (%li/%li) UL",
-          conn->url, dlnow, dltotal, ulnow, ultotal);
 
     state.received += dlnow - conn->prev_received_size;
     conn->prev_received_size = dlnow;

@@ -173,8 +173,6 @@ static bool on_api_request_done(const char *errmsg, const struct response_header
         d->callback(errmsg, NULL, d->callback_data);
     } else {
         struct subsonic_response *response = api_parse_response(d->request_type, data, size);
-        TRACE("on_api_request_done: got response: ");
-        subsonic_response_print(response, LOG_TRACE);
 
         if (response == NULL) {
             d->callback("failed to parse server response", NULL, d->callback_data);

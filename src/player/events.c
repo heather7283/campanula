@@ -60,8 +60,6 @@ static void process_property_change(const struct mpv_event_property *prop, uint6
     if (prop->data == NULL) {
         WARN("mpv event: property %s: data is NULL!", prop->name);
         return;
-    } else {
-        TRACE("mpv event: property %s: %s", prop->name, property_to_str(prop->format, prop->data));
     }
 
     switch ((enum player_event)event) {
@@ -111,7 +109,6 @@ static void process_property_change(const struct mpv_event_property *prop, uint6
             WARN("mpv event: property %s: unexpected format!", prop->name);
             break;
         }
-        print_mpv_node((struct mpv_node *)prop->data, LOG_INFO, 0);
         signal_emit_ptr(&player.emitter, event, NULL);
         break;
     default:
