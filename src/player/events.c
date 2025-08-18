@@ -2,6 +2,7 @@
 #include "player/internal.h"
 #include "player/playlist.h"
 #include "api/requests.h"
+#include "eventloop.h"
 #include "log.h"
 
 void player_event_subscribe(struct signal_listener *listener, enum player_event events,
@@ -137,6 +138,10 @@ void player_process_event(const struct mpv_event *ev) {
         if (s != NULL) {
             api_scrobble(s->id);
         }
+        break;
+    case MPV_EVENT_SHUTDOWN:
+        DEBUG("got MPV_EVENT_SHUTDOWN, quitting application");
+        pollen_loop_quit(event_loop, 0);
         break;
     default:
         TRACE("mpv event: %s", mpv_event_name(ev->event_id));

@@ -149,3 +149,13 @@ bool player_stop(void) {
     return true;
 }
 
+bool player_quit(void) {
+    int ret = mpv_command(player.mpv_handle, (const char *[]){ "quit" });
+    if (ret != MPV_ERROR_SUCCESS) {
+        ERROR("failed to quit player: %s", mpv_error_string(ret));
+        return false;
+    }
+
+    return true;
+}
+

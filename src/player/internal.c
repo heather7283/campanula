@@ -96,11 +96,6 @@ bool player_init(void) {
 
 void player_cleanup(void) {
     if (player.mpv_handle != NULL) {
-        int ret = mpv_command(player.mpv_handle, (const char *[]){ "quit", NULL });
-        if (ret != MPV_ERROR_SUCCESS) {
-            ERROR("failed to send quit command to mpv: %s", mpv_error_string(ret));
-        }
-
         mpv_terminate_destroy(player.mpv_handle);
     }
 

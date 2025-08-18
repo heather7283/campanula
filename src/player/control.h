@@ -12,5 +12,8 @@ void player_toggle_mute(void);
 void player_next(void);
 void player_prev(void);
 
+bool player_stop(void);
+bool player_quit(void);
+
 #endif /* #ifndef SRC_PLAYER_CONTROL_H */
 

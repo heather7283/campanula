@@ -58,6 +58,9 @@ void tui_handle_key(uint32_t key) {
     case ' ':
         player_toggle_pause();
         break;
+    case 'q':
+        player_quit();
+        break;
     }
 }
 

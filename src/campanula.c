@@ -4,13 +4,14 @@
 #include "network/init.h"
 #include "player/init.h"
 #include "player/playlist.h"
+#include "player/control.h"
 #include "db/init.h"
 #include "db/populate.h"
 #include "db/query.h"
 #include "tui/init.h"
 
 static int sigint_handler(struct pollen_callback *callback, int signum, void *data) {
-    pollen_loop_quit(pollen_callback_get_loop(callback), 0);
+    player_quit();
     return 0;
 }
 
