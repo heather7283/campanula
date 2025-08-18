@@ -21,7 +21,7 @@ void draw_mainwin(void) {
     mvwaddwstr(tui.mainwin, ypos + 2, xpos, line);
 
     /* pad y, x; screen y, x; screen h, w */
-    pnoutrefresh(tui.mainwin, 0, 0, 0, 0, LINES - STATUSBAR_HEIGHT, COLS);
+    pnoutrefresh(tui.mainwin, 0, 0, 1, 0, LINES - STATUSBAR_HEIGHT - 1, COLS - 1);
 }
 
 void draw_status_bar(void) {
