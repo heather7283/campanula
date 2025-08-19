@@ -3,11 +3,10 @@
 
 #include <ncurses.h>
 
+#include "tui/pad.h"
 #include "signals.h"
 
 #define STATUSBAR_HEIGHT 4
-
-typedef WINDOW PAD;
 
 enum {
     NET_SPEED_DL = 0,
