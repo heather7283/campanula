@@ -11,24 +11,25 @@ void tui_handle_resize(int width, int height) {
     DEBUG("resize: new term size %dx%d", width, height);
 
     resize_term(height, width);
+    wclear(newscr); /* ncurses nonsense */
+
+    tui.mainwin = tui_pad_ensure_size(tui.mainwin, AT_LEAST, height, AT_LEAST, width, false);
+    draw_mainwin();
 
     if (tui.statusbar.win != NULL) {
         delwin(tui.statusbar.win);
     }
-    tui.statusbar.win = newwin(0, 0, LINES - STATUSBAR_HEIGHT, 0);
+    tui.statusbar.win = newwin(STATUSBAR_HEIGHT, COLS, LINES - STATUSBAR_HEIGHT, 0);
     nodelay(tui.statusbar.win, TRUE); /* makes getch() return ERR instead of blocking */
     keypad(tui.statusbar.win, TRUE); /* enable recognition of escape sequences */
+    draw_status_bar();
 
     if (tui.tabbar_win != NULL) {
         delwin(tui.tabbar_win);
     }
-    tui.tabbar_win = newwin(1, 0, 0, 0);
-
-    tui.mainwin = tui_pad_ensure_size(tui.mainwin, AT_LEAST, height, AT_LEAST, width, false);
-
-    draw_mainwin();
-    draw_status_bar();
+    tui.tabbar_win = newwin(1, COLS, 0, 0);
     draw_tab_bar();
+
     doupdate();
 }
 

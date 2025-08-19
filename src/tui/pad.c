@@ -7,9 +7,6 @@ PAD *tui_resize_pad(PAD *pad, int y, int x, bool keep_contents) {
 
     PAD *new_pad = newpad(y, x);
 
-    nodelay(new_pad, TRUE);
-    keypad(new_pad, TRUE);
-
     if (pad != NULL) {
         if (keep_contents) {
             copywin(pad, new_pad, 0, 0, 0, 0, y, x, FALSE);
