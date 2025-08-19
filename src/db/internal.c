@@ -68,7 +68,7 @@ struct sqlite_statement statements[] = {
             "size INTEGER NOT NULL, "
             "accessed DATETIME NOT NULL DEFAULT (unixepoch('now')), "
 
-            "FOREIGN KEY (id) REFERENCES songs (id)"
+            "FOREIGN KEY (id) REFERENCES songs (id) ON DELETE CASCADE "
         ")"
     },
 
