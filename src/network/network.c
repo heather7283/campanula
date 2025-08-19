@@ -348,6 +348,8 @@ bool make_request(const char *url, bool stream, request_callback_t callback, voi
     curl_easy_setopt(conn->easy, CURLOPT_ERRORBUFFER, conn->error);
     /* follow HTTP 3XX redirects */
     curl_easy_setopt(conn->easy, CURLOPT_FOLLOWLOCATION, 1L);
+    /* set connection timeout to 10 seconds */
+    curl_easy_setopt(conn->easy, CURLOPT_CONNECTTIMEOUT, 10L);
     /* set speed limit for aborting transfers that are too slow */
     curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_TIME, 5L);
     curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_LIMIT, 10L);
