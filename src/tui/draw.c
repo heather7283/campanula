@@ -1,6 +1,35 @@
 #include "tui/draw.h"
 #include "tui/internal.h"
 #include "player/playlist.h"
+#include "log.h"
+
+static const char *tab_names[] = {
+    [TUI_TAB_PLAYLIST] = "Playlist",
+    [TUI_TAB_ARTISTS] = "Artists",
+    [TUI_TAB_ALBUMS] = "Albums",
+    [TUI_TAB_SONGS] = "Songs",
+    [TUI_TAB_ARTIST] = "Artist",
+    [TUI_TAB_ALBUM] = "Album",
+};
+
+void draw_tab_bar(void) {
+    wmove(tui.tabbar_win, 0, 0);
+
+    for (size_t i = 0; i < SIZEOF_ARRAY(tab_names); i++) {
+        if (i == tui.active_tab) {
+            wattron(tui.tabbar_win, A_BOLD);
+        }
+
+        waddstr(tui.tabbar_win, tab_names[i]);
+        waddch(tui.tabbar_win, ' ');
+
+        if (i == tui.active_tab) {
+            wattroff(tui.tabbar_win, A_BOLD);
+        }
+    }
+
+    wnoutrefresh(tui.tabbar_win);
+}
 
 void draw_mainwin(void) {
     wchar_t line[COLS];

@@ -14,6 +14,15 @@ enum {
     NET_SPEED_UL = 1,
 };
 
+enum tui_tab {
+    TUI_TAB_PLAYLIST,
+    TUI_TAB_ARTISTS,
+    TUI_TAB_ALBUMS,
+    TUI_TAB_SONGS,
+    TUI_TAB_ARTIST,
+    TUI_TAB_ALBUM,
+};
+
 struct tui {
     struct pollen_callback *resize_callback;
     struct {
@@ -27,6 +36,9 @@ struct tui {
         uint64_t net_conns;
         uint64_t net_speed[2];
     } statusbar;
+
+    enum tui_tab active_tab;
+    WINDOW *tabbar_win;
 
     PAD *mainwin;
 };
