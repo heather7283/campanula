@@ -199,8 +199,11 @@ static bool on_api_request_done(const char *errmsg, const struct response_header
     return true;
 }
 
-static void dummy_api_callback(const char *, const struct subsonic_response *, void *) {
+static void dummy_api_callback(const char *e, const struct subsonic_response *r, void *u) {
     /* TODO: instead of doing this, make other functions handle NULL callback properly. */
+    if (e != NULL) {
+        ERROR("%s: %s", api_endpoints[(uintptr_t)u], e);
+    }
 }
 
 static bool api_make_request(enum api_request_type request,
@@ -367,7 +370,7 @@ bool api_scrobble(const char *id) {
     return api_make_request(API_REQUEST_SCROBBLE,
                             args.args, args.count,
                             false,
-                            dummy_api_callback, NULL);
+                            dummy_api_callback, (void *)(uintptr_t)API_REQUEST_SCROBBLE);
 }
 
 bool api_stream(const char *id, int32_t max_bit_rate, const char *format,
