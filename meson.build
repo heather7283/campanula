@@ -82,7 +82,7 @@ sources = files([
   'src/tui/list.c',
 
   'src/collections/string.c',
-  'src/collections/array.c',
+  'src/collections/vec.c',
 ])
 
 executable('campanula', sources,

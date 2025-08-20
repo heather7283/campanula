@@ -19,7 +19,7 @@ static const char *api_endpoints[] = {
     [API_REQUEST_SEARCH3] = "search3",
     [API_REQUEST_SCROBBLE] = "scrobble",
 };
-static_assert(SIZEOF_ARRAY(api_endpoints) == API_REQUEST_TYPE_COUNT);
+static_assert(SIZEOF_VEC(api_endpoints) == API_REQUEST_TYPE_COUNT);
 
 struct url_arg {
     const char *key;
@@ -39,7 +39,7 @@ struct url_arg {
 
 #define ARG_BUILDER_ADD_INT(builder, k, v) \
     do { \
-        assert(builder.count < SIZEOF_ARRAY(builder.args)); \
+        assert(builder.count < SIZEOF_VEC(builder.args)); \
         builder.args[builder.count++] = (struct url_arg){ \
             .key = (k), .type = NUMBER, .val.num = (v), \
         }; \
@@ -47,7 +47,7 @@ struct url_arg {
 
 #define ARG_BUILDER_ADD_STR(builder, k, v) \
     do { \
-        assert(builder.count < SIZEOF_ARRAY(builder.args)); \
+        assert(builder.count < SIZEOF_VEC(builder.args)); \
         builder.args[builder.count++] = (struct url_arg){ \
             .key = (k), .type = STRING, .val.str = (v), \
         }; \
@@ -55,7 +55,7 @@ struct url_arg {
 
 #define ARG_BUILDER_ADD_BOOL(builder, k, v) \
     do { \
-        assert(builder.count < SIZEOF_ARRAY(builder.args)); \
+        assert(builder.count < SIZEOF_VEC(builder.args)); \
         builder.args[builder.count++] = (struct url_arg){ \
             .key = (k), .type = BOOLEAN, .val.boolean = (v), \
         }; \
@@ -83,7 +83,7 @@ struct api_stream_callback_data {
 
     bool checked_content_type;
     bool error;
-    ARRAY(char) error_data;
+    VEC(char) error_data;
 
     api_stream_callback_t callback;
     void *callback_data;
@@ -118,8 +118,8 @@ static bool on_api_stream_data(const char *errmsg, const struct response_headers
     case 0: /* EOF */
         if (d->error) {
             struct subsonic_response *r = api_parse_response(d->request_type,
-                                                             ARRAY_DATA(&d->error_data),
-                                                             ARRAY_SIZE(&d->error_data));
+                                                             VEC_DATA(&d->error_data),
+                                                             VEC_SIZE(&d->error_data));
 
             if (r == NULL || r->inner_object_type != API_TYPE_ERROR) {
                 d->callback("Failed to parse server response",
@@ -149,7 +149,7 @@ static bool on_api_stream_data(const char *errmsg, const struct response_headers
         }
 
         if (d->error) {
-            ARRAY_APPEND_N(&d->error_data, (char *)data, size);
+            VEC_APPEND_N(&d->error_data, (char *)data, size);
         } else if (!d->callback(NULL, expected_size, data, size, d->callback_data)) {
             ret = false;
             goto out_free;
@@ -159,7 +159,7 @@ static bool on_api_stream_data(const char *errmsg, const struct response_headers
     }
 
 out_free:
-    ARRAY_FREE(&d->error_data);
+    VEC_FREE(&d->error_data);
     free(d);
 
 out:

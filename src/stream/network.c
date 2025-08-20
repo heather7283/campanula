@@ -5,14 +5,14 @@
 
 #include "stream/network.h"
 #include "api/requests.h"
-#include "collections/array.h"
+#include "collections/vec.h"
 #include "db/cache.h"
 #include "xmalloc.h"
 #include "config.h"
 #include "log.h"
 
 struct network_stream_data {
-    ARRAY(uint8_t) data;
+    VEC(uint8_t) data;
     int64_t pos;
     bool eof, error, closed;
 
@@ -47,8 +47,8 @@ static void network_stream_finalise(struct network_stream_data *d) {
     }
 
     size_t written = 0;
-    while (written < ARRAY_SIZE(&d->data)) {
-        ssize_t ret = write(fd, ARRAY_DATA(&d->data), ARRAY_SIZE(&d->data) - written);
+    while (written < VEC_SIZE(&d->data)) {
+        ssize_t ret = write(fd, VEC_DATA(&d->data), VEC_SIZE(&d->data) - written);
         if (ret < 0) {
             ERROR("cannot save song into cache: failed to write to file: %m");
             goto out;
@@ -61,7 +61,7 @@ static void network_stream_finalise(struct network_stream_data *d) {
         .filetype = d->filetype,
         .bitrate = d->bitrate,
         .filename = filename,
-        .size = ARRAY_SIZE(&d->data),
+        .size = VEC_SIZE(&d->data),
     });
 
 out:
@@ -70,7 +70,7 @@ out:
     }
     free(filepath);
 
-    ARRAY_FREE(&d->data);
+    VEC_FREE(&d->data);
     free(d->id);
     free(d->filetype);
     free(d);
@@ -86,12 +86,12 @@ again:
     if (d->error) {
         ret = -1;
         goto out;
-    } if ((size_t)d->pos < ARRAY_SIZE(&d->data)) {
+    } if ((size_t)d->pos < VEC_SIZE(&d->data)) {
         /* can return at least 1 byte before hitting end of buffer */
-        const uint64_t available = ARRAY_SIZE(&d->data) - d->pos;
+        const uint64_t available = VEC_SIZE(&d->data) - d->pos;
         const uint64_t len = MIN(available, nbytes);
 
-        memcpy(buf, ARRAY_DATA(&d->data) + d->pos, len);
+        memcpy(buf, VEC_DATA(&d->data) + d->pos, len);
         d->pos += len;
 
         ret = len;
@@ -122,7 +122,7 @@ static int64_t network_stream_seek(void *cookie, int64_t offset) {
 
     pthread_mutex_lock(&d->mutex);
 
-    d->pos = MIN(ARRAY_SIZE(&d->data), (size_t)offset);
+    d->pos = MIN(VEC_SIZE(&d->data), (size_t)offset);
 
     pthread_mutex_unlock(&d->mutex);
 
@@ -131,7 +131,7 @@ static int64_t network_stream_seek(void *cookie, int64_t offset) {
 
 static int64_t network_stream_size(void *cookie) {
     struct network_stream_data *d = cookie;
-    return ARRAY_SIZE(&d->data);
+    return VEC_SIZE(&d->data);
 }
 
 static void network_stream_close(void *cookie) {
@@ -173,10 +173,10 @@ static bool api_stream_data_callback(const char *errmsg, size_t expected_size,
         d->eof = true;
         break;
     default: /* data */
-        if (ARRAY_SIZE(&d->data) == 0 && expected_size > 0) {
-            ARRAY_RESERVE(&d->data, expected_size);
+        if (VEC_SIZE(&d->data) == 0 && expected_size > 0) {
+            VEC_RESERVE(&d->data, expected_size);
         }
-        ARRAY_APPEND_N(&d->data, (uint8_t *)data, data_size);
+        VEC_APPEND_N(&d->data, (uint8_t *)data, data_size);
         break;
     }
     d->new_data = true;

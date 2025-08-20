@@ -87,7 +87,7 @@ static const struct tui_menu_item_methods tui_menu_item_methods[] = {
         .activate = tui_menu_item_playlist_item_activate,
     }
 };
-static_assert(SIZEOF_ARRAY(tui_menu_item_methods) == TUI_LIST_ITEM_TYPE_COUNT);
+static_assert(SIZEOF_VEC(tui_menu_item_methods) == TUI_LIST_ITEM_TYPE_COUNT);
 
 #define METHOD_CALL(pobj, method, ...) \
     tui_menu_item_methods[(pobj)->type].method((pobj) __VA_OPT__(,) __VA_ARGS__)
@@ -98,7 +98,7 @@ void tui_menu_position(struct tui_menu *list, int screen_x, int screen_y, int wi
     list->width = width;
     list->height = height;
     list->pad = tui_pad_ensure_size(list->pad,
-                                    AT_LEAST, MAX((size_t)height, ARRAY_SIZE(&list->items)),
+                                    AT_LEAST, MAX((size_t)height, VEC_SIZE(&list->items)),
                                     AT_LEAST, width,
                                     false);
 }
@@ -108,7 +108,7 @@ void tui_menu_draw_nth(struct tui_menu *list, size_t index) {
         wattron(list->pad, A_REVERSE);
     }
 
-    const struct tui_menu_item *item = ARRAY_AT(&list->items, index);
+    const struct tui_menu_item *item = VEC_AT(&list->items, index);
     METHOD_CALL(item, draw, list->pad, index, list->width);
 
     if (index == list->selected) {
@@ -117,7 +117,7 @@ void tui_menu_draw_nth(struct tui_menu *list, size_t index) {
 }
 
 void tui_menu_draw(struct tui_menu *list) {
-    ARRAY_FOREACH(&list->items, i) {
+    VEC_FOREACH(&list->items, i) {
         tui_menu_draw_nth(list, i);
     }
     wclrtobot(list->pad);
@@ -130,12 +130,12 @@ void tui_menu_draw(struct tui_menu *list) {
 }
 
 void tui_menu_clear(struct tui_menu *list) {
-    ARRAY_FOREACH(&list->items, i) {
-        struct tui_menu_item *item = ARRAY_AT(&list->items, i);
+    VEC_FOREACH(&list->items, i) {
+        struct tui_menu_item *item = VEC_AT(&list->items, i);
         tui_menu_item_methods[item->type].free_contents(item);
     }
 
-    ARRAY_CLEAR(&list->items);
+    VEC_CLEAR(&list->items);
     list->scroll = 0;
     list->selected = 0;
 
@@ -143,9 +143,9 @@ void tui_menu_clear(struct tui_menu *list) {
 }
 
 bool tui_menu_select_nth(struct tui_menu *list, size_t index) {
-    if (index >= ARRAY_SIZE(&list->items)) {
+    if (index >= VEC_SIZE(&list->items)) {
         WARN("tried to select elem %zu of tui_menu that has %zu elems",
-             index, ARRAY_SIZE(&list->items));
+             index, VEC_SIZE(&list->items));
         return false;
     } else if (index == list->selected) {
         return false;
@@ -164,15 +164,15 @@ static bool tui_menu_select_prev_or_next(struct tui_menu *list, int direction) {
     bool looped = false;
     do {
         if (direction > 0) {
-            next_index = (next_index + direction) % ARRAY_SIZE(&list->items);
+            next_index = (next_index + direction) % VEC_SIZE(&list->items);
         } else {
-            next_index = MIN(next_index + direction, ARRAY_SIZE(&list->items) - 1);
+            next_index = MIN(next_index + direction, VEC_SIZE(&list->items) - 1);
         }
         if (next_index == old_index) {
             looped = true;
         }
 
-        const struct tui_menu_item *i = ARRAY_AT(&list->items, next_index);
+        const struct tui_menu_item *i = VEC_AT(&list->items, next_index);
         if (tui_menu_item_methods[i->type].is_selectable(i)) {
             list->selected = next_index;
             break;
@@ -204,12 +204,12 @@ bool tui_menu_select_prev(struct tui_menu *list) {
 }
 
 void tui_menu_activate(struct tui_menu *list) {
-    METHOD_CALL(ARRAY_AT(&list->items, list->selected), activate);
+    METHOD_CALL(VEC_AT(&list->items, list->selected), activate);
 }
 
 void tui_menu_add_label(struct tui_menu *list,
                         const char *label) {
-    struct tui_menu_item *i = ARRAY_EMPLACE_BACK(&list->items);
+    struct tui_menu_item *i = VEC_EMPLACE_BACK(&list->items);
     *i = (struct tui_menu_item){
         .type = TUI_LIST_ITEM_TYPE_LABEL,
         .as.label = {
@@ -220,7 +220,7 @@ void tui_menu_add_label(struct tui_menu *list,
 
 void tui_menu_add_playlist_item(struct tui_menu *list,
                                 int index, bool current, const struct song *song) {
-    struct tui_menu_item *i = ARRAY_EMPLACE_BACK(&list->items);
+    struct tui_menu_item *i = VEC_EMPLACE_BACK(&list->items);
     *i = (struct tui_menu_item){
         .type = TUI_LIST_ITEM_TYPE_PLAYLIST_ITEM,
         .as.playlist_item = {

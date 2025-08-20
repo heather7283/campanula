@@ -179,7 +179,7 @@ struct sqlite_statement statements[] = {
         "UPDATE cached_songs SET accessed = unixepoch('now') WHERE id = $id"
     },
 };
-static_assert(SIZEOF_ARRAY(statements) == SQLITE_STATEMENT_TYPE_COUNT);
+static_assert(SIZEOF_VEC(statements) == SQLITE_STATEMENT_TYPE_COUNT);
 
 struct sqlite3 *db = NULL;
 
@@ -222,7 +222,7 @@ bool db_init(void) {
     }
 
     /* prepare statements */
-    for (size_t i = 0; i < SIZEOF_ARRAY(statements); i++) {
+    for (size_t i = 0; i < SIZEOF_VEC(statements); i++) {
         ret = sqlite3_prepare_v2(db, statements[i].source, -1, &statements[i].stmt, NULL);
         if (ret != SQLITE_OK) {
             ERROR("failed to prepare sql stmt: %s", sqlite3_errmsg(db));

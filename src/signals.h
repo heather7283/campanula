@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include "collections/list.h"
-#include "collections/array.h"
+#include "collections/vec.h"
 
 enum signal_data_type {
     SIGNAL_DATA_TYPE_PTR,
@@ -43,7 +43,7 @@ struct signal_listener {
 struct signal_emitter {
     struct pollen_callback *efd;
 
-    ARRAY(struct signal_queued_event {
+    VEC(struct signal_queued_event {
         uint64_t event;
         struct signal_data data;
     }) queued_events;

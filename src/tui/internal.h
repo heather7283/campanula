@@ -25,31 +25,31 @@ enum tui_tab {
 
 struct tui_tab_artists {
     int page, items_per_page, scroll;
-    ARRAY(struct artist) artists;
+    VEC(struct artist) artists;
 };
 
 struct tui_tab_albums {
     int page, items_per_page, scroll;
-    ARRAY(struct album) albums;
+    VEC(struct album) albums;
 };
 
 struct tui_tab_songs {
     int page, items_per_page, scroll;
-    ARRAY(struct song) songs;
+    VEC(struct song) songs;
 };
 
 struct tui_tab_artist {
     int scroll;
     struct artist *artist;
-    ARRAY(struct album) albums;
-    ARRAY(struct song) songs;
+    VEC(struct album) albums;
+    VEC(struct song) songs;
 };
 
 struct tui_tab_album {
     int scroll;
     struct artist *artist;
-    ARRAY(struct album) albums;
-    ARRAY(struct song) songs;
+    VEC(struct album) albums;
+    VEC(struct song) songs;
 };
 
 struct tui {

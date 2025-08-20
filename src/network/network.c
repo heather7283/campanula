@@ -6,7 +6,7 @@
 #include "network/init.h"
 #include "network/request.h"
 #include "network/events.h"
-#include "collections/array.h"
+#include "collections/vec.h"
 #include "eventloop.h"
 #include "xmalloc.h"
 #include "log.h"
@@ -34,7 +34,7 @@ struct connection_data {
     char error[CURL_ERROR_SIZE];
 
     bool stream;
-    ARRAY(uint8_t) received;
+    VEC(uint8_t) received;
 
     /* for events */
     size_t prev_download, prev_upload;
@@ -112,12 +112,12 @@ static size_t easy_writefunction(void *ptr, size_t size, size_t nmemb, void *dat
         }
 
         if (!conn_data->stream) {
-            ARRAY_RESERVE(&conn_data->received, conn_data->headers.content_length.size);
+            VEC_RESERVE(&conn_data->received, conn_data->headers.content_length.size);
         }
     }
 
     if (!conn_data->stream) {
-        ARRAY_APPEND_N(&conn_data->received, (uint8_t *)ptr, size * nmemb);
+        VEC_APPEND_N(&conn_data->received, (uint8_t *)ptr, size * nmemb);
     } else if (!conn_data->callback(NULL, &conn_data->headers,
                                     ptr, size * nmemb,
                                     conn_data->callback_data)) {
@@ -203,15 +203,15 @@ static void check_multi_info(struct network_state *global_data) {
             } else {
                 /* EOF, regular callback */
                 conn_data->callback(NULL, &conn_data->headers,
-                                    ARRAY_DATA(&conn_data->received),
-                                    ARRAY_SIZE(&conn_data->received),
+                                    VEC_DATA(&conn_data->received),
+                                    VEC_SIZE(&conn_data->received),
                                     conn_data->callback_data);
             }
 
             curl_multi_remove_handle(global_data->multi, easy);
             curl_easy_cleanup(easy);
 
-            ARRAY_FREE(&conn_data->received);
+            VEC_FREE(&conn_data->received);
             free(conn_data->url);
             if (conn_data->headers.content_type.present) {
                 free(conn_data->headers.content_type.str);

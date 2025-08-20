@@ -15,7 +15,7 @@ static const char *tab_names[] = {
 void draw_tab_bar(void) {
     wmove(tui.tabbar_win, 0, 0);
 
-    for (size_t i = 0; i < SIZEOF_ARRAY(tab_names); i++) {
+    for (size_t i = 0; i < SIZEOF_VEC(tab_names); i++) {
         if (i == tui.active_tab) {
             wattron(tui.tabbar_win, A_BOLD);
         }
@@ -54,7 +54,7 @@ void draw_status_bar(void) {
     static const char units[][6] = { "bitps", "Kibps", "Mibps", "Gibps", "Tibps", "Pibps" };
     static const wchar_t labels[] = { [NET_SPEED_DL] = L'V', [NET_SPEED_UL] = L'Λ' };
     chars = swprintf(line, cols, L" NET %lu", tui.statusbar.net_conns);
-    for (size_t i = 0; i < SIZEOF_ARRAY(tui.statusbar.net_speed); i++) {
+    for (size_t i = 0; i < SIZEOF_VEC(tui.statusbar.net_speed); i++) {
         if (tui.statusbar.net_speed[i] == 0) {
             continue;
         }

@@ -3,7 +3,7 @@
 
 #include <mpv/stream_cb.h>
 
-#include "collections/array.h"
+#include "collections/vec.h"
 #include "signals.h"
 
 /*
@@ -18,7 +18,7 @@ struct player {
     struct pollen_callback *mpv_events_callback;
 
     struct player_playlist {
-        ARRAY(struct song) songs;
+        VEC(struct song) songs;
         size_t current_song;
 
         bool loop;

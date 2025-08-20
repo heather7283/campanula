@@ -4,8 +4,8 @@
 static int signal_emitter_dispatch_events(struct pollen_callback *, uint64_t, void *data) {
     struct signal_emitter *emitter = data;
 
-    ARRAY_FOREACH(&emitter->queued_events, i) {
-        const struct signal_queued_event *ev = ARRAY_AT(&emitter->queued_events, i);
+    VEC_FOREACH(&emitter->queued_events, i) {
+        const struct signal_queued_event *ev = VEC_AT(&emitter->queued_events, i);
 
         const struct signal_listener *listener;
         LIST_FOREACH(listener, &emitter->listeners, link) {
@@ -14,14 +14,14 @@ static int signal_emitter_dispatch_events(struct pollen_callback *, uint64_t, vo
             }
         }
     }
-    ARRAY_CLEAR(&emitter->queued_events);
+    VEC_CLEAR(&emitter->queued_events);
 
     return 0;
 }
 
 bool signal_emitter_init(struct signal_emitter *emitter) {
     LIST_INIT(&emitter->listeners);
-    ARRAY_INIT(&emitter->queued_events);
+    VEC_INIT(&emitter->queued_events);
 
     emitter->efd = pollen_loop_add_efd(event_loop, signal_emitter_dispatch_events, emitter);
     return (emitter->efd == NULL);
@@ -29,7 +29,7 @@ bool signal_emitter_init(struct signal_emitter *emitter) {
 
 void signal_emitter_cleanup(struct signal_emitter *emitter) {
     pollen_loop_remove_callback(emitter->efd);
-    ARRAY_FREE(&emitter->queued_events);
+    VEC_FREE(&emitter->queued_events);
 }
 
 void signal_subscribe(struct signal_emitter *emitter, struct signal_listener *listener,
@@ -47,7 +47,7 @@ void signal_unsubscribe(struct signal_listener *listener) {
 
 static void signal_emit_internal(const struct signal_emitter *emitter,
                                  uint64_t event, struct signal_data *data) {
-    struct signal_queued_event *ev = ARRAY_EMPLACE_BACK(&emitter->queued_events);
+    struct signal_queued_event *ev = VEC_EMPLACE_BACK(&emitter->queued_events);
     ev->event = event;
     ev->data = *data;
 

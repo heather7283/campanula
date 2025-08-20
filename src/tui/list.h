@@ -2,7 +2,7 @@
 #define SRC_TUI_LIST_H
 
 #include "tui/pad.h"
-#include "collections/array.h"
+#include "collections/vec.h"
 #include "types/song.h"
 
 enum tui_menu_item_type {
@@ -37,7 +37,7 @@ struct tui_menu {
 
     size_t scroll;
     size_t selected;
-    ARRAY(struct tui_menu_item) items;
+    VEC(struct tui_menu_item) items;
 };
 
 void tui_menu_position(struct tui_menu *list, int screen_x, int screen_y, int width, int height);

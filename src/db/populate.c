@@ -124,53 +124,53 @@ static void on_db_populate_response(const char *errmsg,
         goto artists;
     }
     case ARTISTS: {
-        ARRAY_FOREACH(&sr3->artist, i) {
-            struct api_type_artist_id3 *artist = ARRAY_AT(&sr3->artist, i);
+        VEC_FOREACH(&sr3->artist, i) {
+            struct api_type_artist_id3 *artist = VEC_AT(&sr3->artist, i);
             if (!insert_artist(artist) && false) {
                 goto err;
             }
         }
-        if (ARRAY_SIZE(&sr3->artist) < d->count) {
+        if (VEC_SIZE(&sr3->artist) < d->count) {
             /* there are no more entries of this type */
             d->state = ALBUMS;
             d->offset = 0;
             goto albums;
         } else {
-            d->offset += ARRAY_SIZE(&sr3->artist);
+            d->offset += VEC_SIZE(&sr3->artist);
             goto artists;
         }
         break;
     }
     case ALBUMS: {
-        ARRAY_FOREACH(&sr3->album, i) {
-            struct api_type_album_id3 *album = ARRAY_AT(&sr3->album, i);
+        VEC_FOREACH(&sr3->album, i) {
+            struct api_type_album_id3 *album = VEC_AT(&sr3->album, i);
             if (!insert_album(album) && false) {
                 goto err;
             }
         }
-        if (ARRAY_SIZE(&sr3->album) < d->count) {
+        if (VEC_SIZE(&sr3->album) < d->count) {
             /* there are no more entries of this type */
             d->state = SONGS;
             d->offset = 0;
             goto songs;
         } else {
-            d->offset += ARRAY_SIZE(&sr3->album);
+            d->offset += VEC_SIZE(&sr3->album);
             goto albums;
         }
         break;
     }
     case SONGS: {
-        ARRAY_FOREACH(&sr3->song, i) {
-            struct api_type_child *child = ARRAY_AT(&sr3->song, i);
+        VEC_FOREACH(&sr3->song, i) {
+            struct api_type_child *child = VEC_AT(&sr3->song, i);
             if (!insert_song(child) && false) {
                 goto err;
             }
         }
-        if (ARRAY_SIZE(&sr3->song) < d->count) {
+        if (VEC_SIZE(&sr3->song) < d->count) {
             /* there are no more entries of this type */
             goto fin;
         } else {
-            d->offset += ARRAY_SIZE(&sr3->song);
+            d->offset += VEC_SIZE(&sr3->song);
             goto songs;
         }
         break;

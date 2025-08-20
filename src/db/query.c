@@ -1,13 +1,13 @@
 #include "db/query.h"
 #include "db/internal.h"
-#include "collections/array.h"
+#include "collections/vec.h"
 #include "xmalloc.h"
 #include "log.h"
 
 size_t db_search_artists(struct artist **partists, const char *query,
                          size_t page, size_t artists_per_page) {
     struct sqlite3_stmt *stmt;
-    ARRAY(struct artist) artists = {0};
+    VEC(struct artist) artists = {0};
 
     if (query == NULL) {
         stmt = statements[STATEMENT_GET_ARTISTS_WITH_PAGINATION].stmt;
@@ -26,20 +26,20 @@ size_t db_search_artists(struct artist **partists, const char *query,
 
     int ret;
     while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
-        struct artist *a = ARRAY_EMPLACE_BACK(&artists);
+        struct artist *a = VEC_EMPLACE_BACK(&artists);
 
         a->id = xstrdup((char *)sqlite3_column_text(stmt, 0));
         a->name = xstrdup((char *)sqlite3_column_text(stmt, 1));
     }
     if (ret != SQLITE_DONE) {
         ERROR("failed to fetch albums from db: %s", sqlite3_errmsg(db));
-        ARRAY_FREE(&artists);
+        VEC_FREE(&artists);
         *partists = NULL;
         return 0;
     }
 
-    *partists = ARRAY_DATA(&artists);
-    return ARRAY_SIZE(&artists);
+    *partists = VEC_DATA(&artists);
+    return VEC_SIZE(&artists);
 }
 
 size_t db_get_artists(struct artist **artists, size_t page, size_t artists_per_page) {
@@ -49,7 +49,7 @@ size_t db_get_artists(struct artist **artists, size_t page, size_t artists_per_p
 size_t db_search_albums(struct album **palbums, const char *query,
                         size_t page, size_t albums_per_page) {
     struct sqlite3_stmt *stmt;
-    ARRAY(struct album) albums = {0};
+    VEC(struct album) albums = {0};
 
     if (query == NULL) {
         stmt = statements[STATEMENT_GET_ALBUMS_WITH_PAGINATION].stmt;
@@ -68,7 +68,7 @@ size_t db_search_albums(struct album **palbums, const char *query,
 
     int ret;
     while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
-        struct album *a = ARRAY_EMPLACE_BACK(&albums);
+        struct album *a = VEC_EMPLACE_BACK(&albums);
 
         a->id = xstrdup((char *)sqlite3_column_text(stmt, 0));
         a->name = xstrdup((char *)sqlite3_column_text(stmt, 1));
@@ -79,13 +79,13 @@ size_t db_search_albums(struct album **palbums, const char *query,
     }
     if (ret != SQLITE_DONE) {
         ERROR("failed to fetch albums from db: %s", sqlite3_errmsg(db));
-        ARRAY_FREE(&albums);
+        VEC_FREE(&albums);
         *palbums = NULL;
         return 0;
     }
 
-    *palbums = ARRAY_DATA(&albums);
-    return ARRAY_SIZE(&albums);
+    *palbums = VEC_DATA(&albums);
+    return VEC_SIZE(&albums);
 }
 
 size_t db_get_albums(struct album **palbums, size_t page, size_t albums_per_page) {
@@ -94,7 +94,7 @@ size_t db_get_albums(struct album **palbums, size_t page, size_t albums_per_page
 
 size_t db_get_songs_in_album(struct song **psongs, const struct album *album) {
     struct sqlite3_stmt *const stmt = statements[STATEMENT_GET_SONGS_IN_ALBUM].stmt;
-    ARRAY(struct song) songs;
+    VEC(struct song) songs;
 
     sqlite3_reset(stmt);
     sqlite3_clear_bindings(stmt);
@@ -103,7 +103,7 @@ size_t db_get_songs_in_album(struct song **psongs, const struct album *album) {
 
     int ret;
     while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
-        struct song *s = ARRAY_EMPLACE_BACK(&songs);
+        struct song *s = VEC_EMPLACE_BACK(&songs);
 
         s->id = xstrdup((char *)sqlite3_column_text(stmt, 0));
         s->title = xstrdup((char *)sqlite3_column_text(stmt, 1));
@@ -122,12 +122,12 @@ size_t db_get_songs_in_album(struct song **psongs, const struct album *album) {
     }
     if (ret != SQLITE_DONE) {
         ERROR("failed to fetch songs from db: %s", sqlite3_errmsg(db));
-        ARRAY_FREE(&songs);
+        VEC_FREE(&songs);
         *psongs = NULL;
         return 0;
     }
 
-    *psongs = ARRAY_DATA(&songs);
-    return ARRAY_SIZE(&songs);
+    *psongs = VEC_DATA(&songs);
+    return VEC_SIZE(&songs);
 }
 

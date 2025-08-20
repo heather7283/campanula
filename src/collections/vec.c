@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "collections/array.h"
+#include "collections/vec.h"
 #include "macros.h"
 #include "xmalloc.h"
 

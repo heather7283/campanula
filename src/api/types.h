@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "collections/array.h"
+#include "collections/vec.h"
 #include "log.h"
 
 /*
@@ -67,23 +67,23 @@ struct api_type_album_id3 {
 };
 
 struct api_type_songs {
-    ARRAY(struct api_type_child) song;
+    VEC(struct api_type_child) song;
 };
 
 struct api_type_album_list {
-    ARRAY(struct api_type_child) album;
+    VEC(struct api_type_child) album;
 };
 
 struct api_type_search_result_2 {
-    ARRAY(struct api_type_artist) artist;
-    ARRAY(struct api_type_child) album;
-    ARRAY(struct api_type_child) song;
+    VEC(struct api_type_artist) artist;
+    VEC(struct api_type_child) album;
+    VEC(struct api_type_child) song;
 };
 
 struct api_type_search_result_3 {
-    ARRAY(struct api_type_artist_id3) artist;
-    ARRAY(struct api_type_album_id3) album;
-    ARRAY(struct api_type_child) song;
+    VEC(struct api_type_artist_id3) artist;
+    VEC(struct api_type_album_id3) album;
+    VEC(struct api_type_child) song;
 };
 
 enum subsonic_response_status {

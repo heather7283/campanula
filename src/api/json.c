@@ -143,14 +143,14 @@ static bool parse_type_songs(struct api_type_songs *songs,
                              const struct json_object *json) {
     const struct json_object *song = JSON_GET_OR_FAIL(json, array, "song");
 
-    ARRAY_INIT(&songs->song);
+    VEC_INIT(&songs->song);
 
     const size_t array_len = json_object_array_length(song);
     for (size_t i = 0; i < array_len; i++) {
         const struct json_object *elem = json_object_array_get_idx(song, i);
         JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-        struct api_type_child *child = ARRAY_EMPLACE_BACK_ZEROED(&songs->song);
+        struct api_type_child *child = VEC_EMPLACE_BACK_ZEROED(&songs->song);
         if (!parse_child(child, elem)) {
             return false;
         }
@@ -166,14 +166,14 @@ static bool parse_type_album_list(struct api_type_album_list *album_list,
                                   const struct json_object *json) {
     const struct json_object *album = JSON_GET_OR_FAIL(json, array, "album");
 
-    ARRAY_INIT(&album_list->album);
+    VEC_INIT(&album_list->album);
 
     const size_t array_len = json_object_array_length(album);
     for (size_t i = 0; i < array_len; i++) {
         const struct json_object *elem = json_object_array_get_idx(album, i);
         JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-        struct api_type_child *child = ARRAY_EMPLACE_BACK_ZEROED(&album_list->album);
+        struct api_type_child *child = VEC_EMPLACE_BACK_ZEROED(&album_list->album);
         if (!parse_child(child, elem)) {
             return false;
         }
@@ -187,9 +187,9 @@ err:
 
 static bool parse_type_search_result_2(struct api_type_search_result_2 *sr2,
                                        const struct json_object *json) {
-    ARRAY_INIT(&sr2->artist);
-    ARRAY_INIT(&sr2->album);
-    ARRAY_INIT(&sr2->song);
+    VEC_INIT(&sr2->artist);
+    VEC_INIT(&sr2->album);
+    VEC_INIT(&sr2->song);
 
     const struct json_object *artist = NULL;
     if ((artist = JSON_GET(json, array, "artist"))) {
@@ -197,7 +197,7 @@ static bool parse_type_search_result_2(struct api_type_search_result_2 *sr2,
             const struct json_object *elem = json_object_array_get_idx(artist, i);
             JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-            struct api_type_artist *artist = ARRAY_EMPLACE_BACK_ZEROED(&sr2->artist);
+            struct api_type_artist *artist = VEC_EMPLACE_BACK_ZEROED(&sr2->artist);
             if (!parse_artist(artist, elem)) {
                 goto err;
             }
@@ -210,7 +210,7 @@ static bool parse_type_search_result_2(struct api_type_search_result_2 *sr2,
             const struct json_object *elem = json_object_array_get_idx(album, i);
             JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-            struct api_type_child *child = ARRAY_EMPLACE_BACK_ZEROED(&sr2->album);
+            struct api_type_child *child = VEC_EMPLACE_BACK_ZEROED(&sr2->album);
             if (!parse_child(child, elem)) {
                 goto err;
             }
@@ -223,7 +223,7 @@ static bool parse_type_search_result_2(struct api_type_search_result_2 *sr2,
             const struct json_object *elem = json_object_array_get_idx(song, i);
             JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-            struct api_type_child *child = ARRAY_EMPLACE_BACK_ZEROED(&sr2->song);
+            struct api_type_child *child = VEC_EMPLACE_BACK_ZEROED(&sr2->song);
             if (!parse_child(child, elem)) {
                 goto err;
             }
@@ -238,9 +238,9 @@ err:
 
 static bool parse_type_search_result_3(struct api_type_search_result_3 *sr3,
                                        const struct json_object *json) {
-    ARRAY_INIT(&sr3->artist);
-    ARRAY_INIT(&sr3->album);
-    ARRAY_INIT(&sr3->song);
+    VEC_INIT(&sr3->artist);
+    VEC_INIT(&sr3->album);
+    VEC_INIT(&sr3->song);
 
     const struct json_object *artist = NULL;
     if ((artist = JSON_GET(json, array, "artist"))) {
@@ -248,7 +248,7 @@ static bool parse_type_search_result_3(struct api_type_search_result_3 *sr3,
             const struct json_object *elem = json_object_array_get_idx(artist, i);
             JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-            struct api_type_artist_id3 *artist = ARRAY_EMPLACE_BACK_ZEROED(&sr3->artist);
+            struct api_type_artist_id3 *artist = VEC_EMPLACE_BACK_ZEROED(&sr3->artist);
             if (!parse_artist_id3(artist, elem)) {
                 goto err;
             }
@@ -261,7 +261,7 @@ static bool parse_type_search_result_3(struct api_type_search_result_3 *sr3,
             const struct json_object *elem = json_object_array_get_idx(album, i);
             JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-            struct api_type_album_id3 *child = ARRAY_EMPLACE_BACK_ZEROED(&sr3->album);
+            struct api_type_album_id3 *child = VEC_EMPLACE_BACK_ZEROED(&sr3->album);
             if (!parse_album_id3(child, elem)) {
                 goto err;
             }
@@ -274,7 +274,7 @@ static bool parse_type_search_result_3(struct api_type_search_result_3 *sr3,
             const struct json_object *elem = json_object_array_get_idx(song, i);
             JSON_CHECK_TYPE_OR_FAIL(elem, object);
 
-            struct api_type_child *child = ARRAY_EMPLACE_BACK_ZEROED(&sr3->song);
+            struct api_type_child *child = VEC_EMPLACE_BACK_ZEROED(&sr3->song);
             if (!parse_child(child, elem)) {
                 goto err;
             }
@@ -332,7 +332,7 @@ static const inner_object_parser_t inner_object_parsers[] = {
     [API_REQUEST_SEARCH3] = parse_response_search3,
     [API_REQUEST_SCROBBLE] = NULL, /* returns empty response */
 };
-static_assert(SIZEOF_ARRAY(inner_object_parsers) == API_REQUEST_TYPE_COUNT);
+static_assert(SIZEOF_VEC(inner_object_parsers) == API_REQUEST_TYPE_COUNT);
 
 static const char *inner_object_names[] = {
     [API_REQUEST_GET_RANDOM_SONGS] = "randomSongs",
@@ -342,7 +342,7 @@ static const char *inner_object_names[] = {
     [API_REQUEST_SEARCH3] = "searchResult3",
     [API_REQUEST_SCROBBLE] = NULL, /* returns empty response */
 };
-static_assert(SIZEOF_ARRAY(inner_object_names) == API_REQUEST_TYPE_COUNT);
+static_assert(SIZEOF_VEC(inner_object_names) == API_REQUEST_TYPE_COUNT);
 
 struct subsonic_response *api_parse_response(enum api_request_type request,
                                              const char *data, size_t data_size) {

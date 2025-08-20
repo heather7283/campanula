@@ -1,13 +1,13 @@
 test_sources = [
   ['list.c', ['../src/xmalloc.c']],
-  ['array.c', ['../src/collections/array.c', '../src/xmalloc.c']],
+  ['vec.c', ['../src/collections/vec.c', '../src/xmalloc.c']],
   ['string.c', ['../src/collections/string.c', '../src/xmalloc.c']],
   ['auth.c', ['../src/auth.c']],
   ['signals.c', [
     '../src/signals.c', '../src/eventloop.c', '../src/log.c',
-    '../src/xmalloc.c', '../src/collections/array.c'
+    '../src/xmalloc.c', '../src/collections/vec.c'
   ]],
-  ['cmd_parse.c', ['../src/commands/parse.c', '../src/xmalloc.c', '../src/collections/array.c']],
+  ['cmd_parse.c', ['../src/commands/parse.c', '../src/xmalloc.c', '../src/collections/vec.c']],
   ['xdg.c', ['../src/xdg.c', '../src/log.c', '../src/xmalloc.c']],
 ]
 

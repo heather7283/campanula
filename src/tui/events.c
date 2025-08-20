@@ -119,7 +119,7 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
         for (size_t i = 0; i < nsongs; i++) {
             tui_menu_add_playlist_item(&tui.list, i, i == current, &songs[i]);
         }
-        tui.list.selected = MIN(prev_selected, ARRAY_SIZE(&tui.list.items) - 1);
+        tui.list.selected = MIN(prev_selected, VEC_SIZE(&tui.list.items) - 1);
         tui_menu_draw(&tui.list);
         draw_status_bar();
         break;

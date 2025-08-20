@@ -99,10 +99,10 @@ void player_cleanup(void) {
         mpv_terminate_destroy(player.mpv_handle);
     }
 
-    ARRAY_FOREACH(&player.playlist.songs, i) {
-        struct song *s = ARRAY_AT(&player.playlist.songs, i);
+    VEC_FOREACH(&player.playlist.songs, i) {
+        struct song *s = VEC_AT(&player.playlist.songs, i);
         song_free_contents(s);
     }
-    ARRAY_FREE(&player.playlist.songs);
+    VEC_FREE(&player.playlist.songs);
 }
 

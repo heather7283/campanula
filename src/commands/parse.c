@@ -1,10 +1,10 @@
 #include <ctype.h>
 
 #include "commands/parse.h"
-#include "collections/array.h"
+#include "collections/vec.h"
 
 size_t command_into_argv(char *cmd, char ***argv) {
-    ARRAY(char *) args;
+    VEC(char *) args;
 
     char *p = cmd;
     char *arg_start;
@@ -19,19 +19,19 @@ size_t command_into_argv(char *cmd, char ***argv) {
             if (!prev_space) {
                 prev_space = true;
                 *p = '\0';
-                ARRAY_APPEND(&args, &arg_start);
+                VEC_APPEND(&args, &arg_start);
             }
         }
         p += 1;
     }
     if (!prev_space) {
-        ARRAY_APPEND(&args, &arg_start);
+        VEC_APPEND(&args, &arg_start);
     }
 
     arg_start = NULL;
-    ARRAY_APPEND(&args, &arg_start);
+    VEC_APPEND(&args, &arg_start);
 
-    *argv = ARRAY_DATA(&args);
-    return ARRAY_SIZE(&args);
+    *argv = VEC_DATA(&args);
+    return VEC_SIZE(&args);
 }
 
