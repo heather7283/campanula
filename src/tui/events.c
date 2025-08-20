@@ -15,8 +15,8 @@ void tui_handle_resize(int width, int height) {
     resize_term(height, width);
     wclear(newscr); /* ncurses nonsense */
 
-    tui_list_position(&tui.list, 0, 1, COLS, LINES - STATUSBAR_HEIGHT - 1);
-    tui_list_draw(&tui.list);
+    tui_menu_position(&tui.list, 0, 1, COLS, LINES - STATUSBAR_HEIGHT - 1);
+    tui_menu_draw(&tui.list);
 
     if (tui.statusbar.win != NULL) {
         delwin(tui.statusbar.win);
@@ -68,17 +68,17 @@ void tui_handle_key(uint32_t key) {
         player_toggle_pause();
         break;
     case 'k':
-        if (tui_list_select_prev(&tui.list)) {
+        if (tui_menu_select_prev(&tui.list)) {
             doupdate();
         }
         break;
     case 'j':
-        if (tui_list_select_next(&tui.list)) {
+        if (tui_menu_select_next(&tui.list)) {
             doupdate();
         }
         break;
     case '\n':
-        tui_list_activate(&tui.list);
+        tui_menu_activate(&tui.list);
         break;
     case 'q':
         player_quit();
@@ -115,12 +115,12 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
         const struct song *songs;
         const size_t nsongs = playlist_get_songs(&songs);
         const size_t current = playlist_get_current_song(NULL);
-        tui_list_clear(&tui.list);
+        tui_menu_clear(&tui.list);
         for (size_t i = 0; i < nsongs; i++) {
-            tui_list_add_playlist_item(&tui.list, i, i == current, &songs[i]);
+            tui_menu_add_playlist_item(&tui.list, i, i == current, &songs[i]);
         }
         tui.list.selected = MIN(prev_selected, ARRAY_SIZE(&tui.list.items) - 1);
-        tui_list_draw(&tui.list);
+        tui_menu_draw(&tui.list);
         draw_status_bar();
         break;
     }

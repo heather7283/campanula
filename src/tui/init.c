@@ -67,9 +67,9 @@ bool tui_init(void) {
     /* TODO: figure out why this doesn't work (sometimes sigwinch is not received) */
     //pollen_loop_add_signal(event_loop, SIGWINCH, sigwinch_handler, NULL);
 
-    tui_list_add_label(&tui.list, "aboba");
-    tui_list_add_label(&tui.list, "amogus");
-    tui_list_add_label(&tui.list, "skibidi");
+    tui_menu_add_label(&tui.list, "aboba");
+    tui_menu_add_label(&tui.list, "amogus");
+    tui_menu_add_label(&tui.list, "skibidi");
 
     player_event_subscribe(&tui.statusbar.player_listener, (uint64_t)-1 /* all */,
                            tui_handle_player_events, NULL);

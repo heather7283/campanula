@@ -69,7 +69,7 @@ struct tui {
     WINDOW *tabbar_win;
 
     enum tui_tab active_tab;
-    struct tui_list list;
+    struct tui_menu list;
 };
 
 extern struct tui tui;
