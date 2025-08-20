@@ -163,7 +163,11 @@ static bool tui_list_select_prev_or_next(struct tui_list *list, int direction) {
     size_t next_index = old_index;
     bool looped = false;
     do {
-        next_index = (next_index + direction) % ARRAY_SIZE(&list->items);
+        if (direction > 0) {
+            next_index = (next_index + direction) % ARRAY_SIZE(&list->items);
+        } else {
+            next_index = MIN(next_index + direction, ARRAY_SIZE(&list->items) - 1);
+        }
         if (next_index == old_index) {
             looped = true;
         }
