@@ -32,11 +32,10 @@ static int stdin_handler(struct pollen_callback *, int, uint32_t, void *) {
     while (errno = 0, (ret = wget_wch(tui.statusbar.win, &ch)) != ERR || errno == EINTR) {
         switch (ret) {
         case OK: /* wide character */
-            DEBUG("got wchar %s (%d)", key_name_from_key_code(ch), ch);
             tui_handle_key(ch);
             break;
         case KEY_CODE_YES: /* special keycode */
-            DEBUG("got function key code %d (%X)", ch, ch);
+            TRACE("got function key code %d (%X)", ch, ch);
             break;
         }
     }

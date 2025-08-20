@@ -2,6 +2,7 @@
 #include "tui/internal.h"
 #include "tui/draw.h"
 #include "tui/list.h"
+#include "tui/utils.h"
 #include "player/control.h"
 #include "player/events.h"
 #include "player/playlist.h"
@@ -82,6 +83,8 @@ void tui_handle_key(uint32_t key) {
     case 'q':
         player_quit();
         break;
+    default:
+        TRACE("unhandled wchar %s (%d 0x%X)", key_name_from_key_code(key), key, key);
     }
 }
 
