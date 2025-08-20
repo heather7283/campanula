@@ -11,6 +11,7 @@ void player_toggle_mute(void);
 
 void player_next(void);
 void player_prev(void);
+void player_play_nth(int index);
 
 bool player_stop(void);
 bool player_quit(void);

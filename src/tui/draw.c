@@ -31,28 +31,6 @@ void draw_tab_bar(void) {
     wnoutrefresh(tui.tabbar_win);
 }
 
-void draw_mainwin(void) {
-    wchar_t line[COLS];
-    const int xpos = COLS / 2 - 6;
-    const int ypos = LINES / 2 - 2;
-
-    wclear(tui.mainwin);
-
-    swprintf(line, COLS, L"     〇      ");
-    mvwaddwstr(tui.mainwin, ypos - 2, xpos, line);
-    swprintf(line, COLS, L"   { 零 }    ");
-    mvwaddwstr(tui.mainwin, ypos - 1, xpos, line);
-    swprintf(line, COLS, L" THIS SPACE  ");
-    mvwaddwstr(tui.mainwin, ypos, xpos, line);
-    swprintf(line, COLS, L"INTENTIONALLY");
-    mvwaddwstr(tui.mainwin, ypos + 1, xpos, line);
-    swprintf(line, COLS, L" LEFT BLANK. ");
-    mvwaddwstr(tui.mainwin, ypos + 2, xpos, line);
-
-    /* pad y, x; screen y, x; screen h, w */
-    pnoutrefresh(tui.mainwin, 0, 0, 1, 0, LINES - STATUSBAR_HEIGHT - 1, COLS - 1);
-}
-
 void draw_status_bar(void) {
     const int cols = COLS - 2;
     wchar_t line[cols];

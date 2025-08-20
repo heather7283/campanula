@@ -15,7 +15,8 @@ libcurl_dep = dependency('libcurl')
 libopenssl_dep = dependency('OpenSSL') # needed for md5, curl links against it anyway
 libjsonc_dep = dependency('json-c')
 libsqlite_dep = dependency('sqlite3')
-libncursesw_dep = dependency('ncursesw') # I will regret this later.
+# I will regret this (times I wanted to kill myself because ncurses is retarded: 3)
+libncursesw_dep = dependency('ncursesw')
 pollen_dep = dependency('pollen', version: '>=2.1.0')
 
 dependencies = [
@@ -78,6 +79,7 @@ sources = files([
   'src/tui/events.c',
   'src/tui/draw.c',
   'src/tui/pad.c',
+  'src/tui/list.c',
 
   'src/collections/string.c',
   'src/collections/array.c',

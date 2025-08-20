@@ -68,12 +68,17 @@ bool tui_init(void) {
     /* TODO: figure out why this doesn't work (sometimes sigwinch is not received) */
     //pollen_loop_add_signal(event_loop, SIGWINCH, sigwinch_handler, NULL);
 
-    sigwinch_handler_deferred(NULL, 0, NULL); /* trigger it manually to pick up initial size */
+    tui_list_add_label(&tui.list, "aboba");
+    tui_list_add_label(&tui.list, "amogus");
+    tui_list_add_label(&tui.list, "skibidi");
 
     player_event_subscribe(&tui.statusbar.player_listener, (uint64_t)-1 /* all */,
                            tui_handle_player_events, NULL);
     network_event_subscribe(&tui.statusbar.network_listener, (uint64_t)-1 /* all */,
                             tui_handle_network_events, NULL);
+
+    /* trigger it manually to pick up initial size and draw everything */
+    sigwinch_handler_deferred(NULL, 0, NULL);
 
     return true;
 }

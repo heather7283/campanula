@@ -9,7 +9,7 @@
 struct config config = {
     .server_address = "10.200.200.10:4533/music",
     .application_name = "campanula",
-    .preferred_audio_format = "opus",
+    .preferred_audio_format = "raw",
     .preferred_audio_bitrate = 128,
     .username = "heather",
 };

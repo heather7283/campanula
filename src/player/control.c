@@ -91,6 +91,14 @@ void player_prev(void) {
     }
 }
 
+void player_play_nth(int index) {
+    int64_t i = index;
+    int ret = mpv_set_property(player.mpv_handle, "playlist-pos", MPV_FORMAT_INT64, &i);
+    if (ret != MPV_ERROR_SUCCESS) {
+        ERROR("failed to set playlist-pos to %li: %s", i, mpv_error_string(ret));
+    }
+}
+
 bool player_loadfile(const struct song *song) {
     struct string url = {0};
     string_appendf(&url, "%s://%s", MPV_PROTOCOL, song->id);

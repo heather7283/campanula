@@ -4,6 +4,7 @@
 #include <ncurses.h>
 
 #include "tui/pad.h"
+#include "tui/list.h"
 #include "signals.h"
 
 #define STATUSBAR_HEIGHT 4
@@ -22,6 +23,35 @@ enum tui_tab {
     TUI_TAB_ALBUM,
 };
 
+struct tui_tab_artists {
+    int page, items_per_page, scroll;
+    ARRAY(struct artist) artists;
+};
+
+struct tui_tab_albums {
+    int page, items_per_page, scroll;
+    ARRAY(struct album) albums;
+};
+
+struct tui_tab_songs {
+    int page, items_per_page, scroll;
+    ARRAY(struct song) songs;
+};
+
+struct tui_tab_artist {
+    int scroll;
+    struct artist *artist;
+    ARRAY(struct album) albums;
+    ARRAY(struct song) songs;
+};
+
+struct tui_tab_album {
+    int scroll;
+    struct artist *artist;
+    ARRAY(struct album) albums;
+    ARRAY(struct song) songs;
+};
+
 struct tui {
     struct pollen_callback *resize_callback;
     struct {
@@ -36,10 +66,10 @@ struct tui {
         uint64_t net_speed[2];
     } statusbar;
 
-    enum tui_tab active_tab;
     WINDOW *tabbar_win;
 
-    PAD *mainwin;
+    enum tui_tab active_tab;
+    struct tui_list list;
 };
 
 extern struct tui tui;
