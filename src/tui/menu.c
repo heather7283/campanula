@@ -1,24 +1,23 @@
 #include "tui/menu.h"
-#include "tui/pad.h"
 #include "player/control.h"
 #include "xmalloc.h"
 #include "macros.h"
 #include "log.h"
 
 static void tui_menu_item_playlist_item_draw(const struct tui_menu_item *self,
-                                             PAD *pad, int ypos, int width) {
+                                             WINDOW *win, int ypos, int width) {
     const struct tui_menu_item_playlist_item *i = &self->as.playlist_item;
     const struct song *s = i->song;
 
     if (i->current) {
-        wattron(pad, A_BOLD);
+        wattron(win, A_BOLD);
     }
 
-    mvwprintw(pad, ypos, 0, "%s%d. %s - %s",
+    mvwprintw(win, ypos, 0, "%s%d. %s - %s",
               i->current ? "> " : "", i->index, s->artist, s->title);
 
     if (i->current) {
-        wattroff(pad, A_BOLD);
+        wattroff(win, A_BOLD);
     }
 }
 
@@ -38,10 +37,10 @@ static void tui_menu_item_playlist_item_activate(const struct tui_menu_item *sel
 }
 
 static void tui_menu_item_label_draw(const struct tui_menu_item *self,
-                                     PAD *pad, int ypos, int width) {
+                                     WINDOW *win, int ypos, int width) {
     const struct tui_menu_item_label *l = &self->as.label;
 
-    mvwaddnstr(pad, ypos, 0, l->str, width);
+    mvwaddnstr(win, ypos, 0, l->str, width);
 }
 
 static void tui_menu_item_label_free_contents(struct tui_menu_item *self) {
@@ -58,7 +57,7 @@ static void tui_menu_item_label_activate(const struct tui_menu_item *self) {
 }
 
 typedef void (*tui_menu_item_method_draw)(const struct tui_menu_item *self,
-                                          PAD *pad, int ypos, int width);
+                                          WINDOW *win, int ypos, int width);
 
 typedef void (*tui_menu_item_method_free_contents)(struct tui_menu_item *self);
 
@@ -97,35 +96,40 @@ void tui_menu_position(struct tui_menu *list, int screen_x, int screen_y, int wi
     list->screen_y = screen_y;
     list->width = width;
     list->height = height;
-    list->pad = tui_pad_ensure_size(list->pad,
-                                    AT_LEAST, MAX((size_t)height, VEC_SIZE(&list->items)),
-                                    AT_LEAST, width,
-                                    false);
+
+    if (list->win != NULL) {
+        delwin(list->win);
+    }
+    list->win = newwin(height, width, screen_y, screen_x);
+    scrollok(list->win, true);
 }
 
 void tui_menu_draw_nth(struct tui_menu *list, size_t index) {
+    if (index < list->scroll || index > list->scroll + list->height - 1) {
+        return;
+    }
+
     if (index == list->selected) {
-        wattron(list->pad, A_REVERSE);
+        wattron(list->win, A_REVERSE);
     }
 
     const struct tui_menu_item *item = VEC_AT(&list->items, index);
-    METHOD_CALL(item, draw, list->pad, index, list->width);
+    METHOD_CALL(item, draw, list->win, index - list->scroll, list->width);
 
     if (index == list->selected) {
-        wattroff(list->pad, A_REVERSE);
+        wattroff(list->win, A_REVERSE);
     }
 }
 
 void tui_menu_draw(struct tui_menu *list) {
-    VEC_FOREACH(&list->items, i) {
-        tui_menu_draw_nth(list, i);
+    const size_t lim = MIN((size_t)list->height, VEC_SIZE(&list->items));
+    for (size_t i = 0; i < lim; i++) {
+        tui_menu_draw_nth(list, list->scroll + i);
     }
-    wclrtobot(list->pad);
+    wclrtobot(list->win);
 
-    if (pnoutrefresh(list->pad, 0, 0,
-                     list->screen_y, list->screen_x,
-                     list->height - 1, list->width - 1) != OK) {
-        ERROR("pnoutrefresh");
+    if (wnoutrefresh(list->win) != OK) {
+        ERROR("wnoutrefresh");
     }
 }
 
@@ -139,7 +143,33 @@ void tui_menu_clear(struct tui_menu *list) {
     list->scroll = 0;
     list->selected = 0;
 
-    wclear(list->pad);
+    wclear(list->win);
+}
+
+static bool tui_menu_ensure_visible(struct tui_menu *menu, size_t index) {
+    if (index < menu->scroll) {
+        const size_t diff = menu->scroll - index;
+        wscrl(menu->win, -(int)diff);
+        menu->scroll -= diff;
+
+        for (size_t i = 0; i < MIN(diff, (size_t)menu->height); i++) {
+            tui_menu_draw_nth(menu, menu->scroll + i);
+        }
+
+        return true;
+    } else if (index > menu->scroll + menu->height - 1) {
+        const size_t diff = index + 1 - menu->height - menu->scroll;
+        wscrl(menu->win, (int)diff);
+        menu->scroll += diff;
+
+        for (size_t i = 0; i < MIN(diff, (size_t)menu->height); i++) {
+            tui_menu_draw_nth(menu, menu->scroll + menu->height - 1 - i);
+        }
+
+        return true;
+    }
+
+    return false;
 }
 
 bool tui_menu_select_nth(struct tui_menu *list, size_t index) {
@@ -149,12 +179,17 @@ bool tui_menu_select_nth(struct tui_menu *list, size_t index) {
         return false;
     } else if (index == list->selected) {
         return false;
-    } else {
+    } else if (METHOD_CALL(VEC_AT(&list->items, index), is_selectable)) {
         const size_t prev_selected = list->selected;
         list->selected = index;
+
+        tui_menu_ensure_visible(list, list->selected);
+
         tui_menu_draw_nth(list, prev_selected);
         tui_menu_draw_nth(list, list->selected);
         return true;
+    } else {
+        return false;
     }
 }
 
@@ -180,13 +215,13 @@ static bool tui_menu_select_prev_or_next(struct tui_menu *list, int direction) {
     } while (!looped);
 
     if (old_index != list->selected) {
+        tui_menu_ensure_visible(list, list->selected);
+
         tui_menu_draw_nth(list, old_index);
         tui_menu_draw_nth(list, list->selected);
 
-        if (pnoutrefresh(list->pad, 0, 0,
-                         list->screen_y, list->screen_x,
-                         list->height - 1, list->width - 1) != OK) {
-            ERROR("pnoutrefresh");
+        if (wnoutrefresh(list->win) != OK) {
+            ERROR("wnoutrefresh");
         }
 
         return true;

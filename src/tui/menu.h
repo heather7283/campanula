@@ -1,7 +1,8 @@
 #ifndef SRC_TUI_MENU_H
 #define SRC_TUI_MENU_H
 
-#include "tui/pad.h"
+#include <curses.h>
+
 #include "collections/vec.h"
 #include "types/song.h"
 
@@ -31,7 +32,7 @@ struct tui_menu_item {
 };
 
 struct tui_menu {
-    PAD *pad;
+    WINDOW *win;
     int screen_x, screen_y;
     int width, height;
 
