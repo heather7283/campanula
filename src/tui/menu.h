@@ -1,5 +1,5 @@
-#ifndef SRC_TUI_LIST_H
-#define SRC_TUI_LIST_H
+#ifndef SRC_TUI_MENU_H
+#define SRC_TUI_MENU_H
 
 #include "tui/pad.h"
 #include "collections/vec.h"
@@ -58,5 +58,5 @@ void tui_menu_add_label(struct tui_menu *list,
 void tui_menu_add_playlist_item(struct tui_menu *list,
                                 int index, bool current, const struct song *song);
 
-#endif /* #ifndef SRC_TUI_LIST_H */
+#endif /* #ifndef SRC_TUI_MENU_H */
 

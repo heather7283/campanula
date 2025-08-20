@@ -79,7 +79,7 @@ sources = files([
   'src/tui/events.c',
   'src/tui/draw.c',
   'src/tui/pad.c',
-  'src/tui/list.c',
+  'src/tui/menu.c',
 
   'src/collections/string.c',
   'src/collections/vec.c',

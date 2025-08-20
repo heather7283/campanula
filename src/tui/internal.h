@@ -4,7 +4,7 @@
 #include <ncurses.h>
 
 #include "tui/pad.h"
-#include "tui/list.h"
+#include "tui/menu.h"
 #include "signals.h"
 
 #define STATUSBAR_HEIGHT 4

@@ -1,7 +1,7 @@
 #include "tui/events.h"
 #include "tui/internal.h"
 #include "tui/draw.h"
-#include "tui/list.h"
+#include "tui/menu.h"
 #include "tui/utils.h"
 #include "player/control.h"
 #include "player/events.h"
