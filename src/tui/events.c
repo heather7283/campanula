@@ -118,7 +118,7 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
         tui_menu_clear(&tui.list);
         for (size_t i = 0; i < nsongs; i++) {
             tui_menu_append_item(&tui.list, &(struct tui_menu_item){
-                .type = TUI_LIST_ITEM_TYPE_PLAYLIST_ITEM,
+                .type = TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM,
                 .as.playlist_item = {
                     .index = i,
                     .current = i == current,

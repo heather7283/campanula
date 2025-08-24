@@ -98,14 +98,14 @@ struct tui_menu_item_methods {
 };
 
 static const struct tui_menu_item_methods tui_menu_item_methods[] = {
-    [TUI_LIST_ITEM_TYPE_LABEL] = {
+    [TUI_MENU_ITEM_TYPE_LABEL] = {
         .draw = tui_menu_item_label_draw,
         .free_contents = tui_menu_item_label_free_contents,
         .is_selectable = tui_menu_item_label_is_selectable,
         .activate = tui_menu_item_label_activate,
         .copy = tui_menu_item_label_copy,
     },
-    [TUI_LIST_ITEM_TYPE_PLAYLIST_ITEM] = {
+    [TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM] = {
         .draw = tui_menu_item_playlist_item_draw,
         .free_contents = tui_menu_item_playlist_item_free_contents,
         .is_selectable = tui_menu_item_playlist_item_is_selectable,
@@ -113,64 +113,64 @@ static const struct tui_menu_item_methods tui_menu_item_methods[] = {
         .copy = tui_menu_item_playlist_item_copy,
     }
 };
-static_assert(SIZEOF_VEC(tui_menu_item_methods) == TUI_LIST_ITEM_TYPE_COUNT);
+static_assert(SIZEOF_VEC(tui_menu_item_methods) == TUI_MENU_ITEM_TYPE_COUNT);
 
 #define METHOD_CALL(pobj, method, ...) \
     tui_menu_item_methods[(pobj)->type].method((pobj) __VA_OPT__(,) __VA_ARGS__)
 
-void tui_menu_position(struct tui_menu *list, int screen_x, int screen_y, int width, int height) {
-    list->screen_x = screen_x;
-    list->screen_y = screen_y;
-    list->width = width;
-    list->height = height;
+void tui_menu_position(struct tui_menu *menu, int screen_x, int screen_y, int width, int height) {
+    menu->screen_x = screen_x;
+    menu->screen_y = screen_y;
+    menu->width = width;
+    menu->height = height;
 
-    if (list->win != NULL) {
-        delwin(list->win);
+    if (menu->win != NULL) {
+        delwin(menu->win);
     }
-    list->win = newwin(height, width, screen_y, screen_x);
-    scrollok(list->win, true);
+    menu->win = newwin(height, width, screen_y, screen_x);
+    scrollok(menu->win, true);
 }
 
-void tui_menu_draw_nth(struct tui_menu *list, size_t index) {
-    if (index < list->scroll || index > list->scroll + list->height - 1) {
+void tui_menu_draw_nth(struct tui_menu *menu, size_t index) {
+    if (index < menu->scroll || index > menu->scroll + menu->height - 1) {
         return;
     }
 
-    if (index == list->selected) {
-        wattron(list->win, A_REVERSE);
+    if (index == menu->selected) {
+        wattron(menu->win, A_REVERSE);
     }
 
-    const struct tui_menu_item *item = VEC_AT(&list->items, index);
-    METHOD_CALL(item, draw, list->win, index - list->scroll, list->width);
+    const struct tui_menu_item *item = VEC_AT(&menu->items, index);
+    METHOD_CALL(item, draw, menu->win, index - menu->scroll, menu->width);
 
-    if (index == list->selected) {
-        wattroff(list->win, A_REVERSE);
+    if (index == menu->selected) {
+        wattroff(menu->win, A_REVERSE);
     }
 }
 
-void tui_menu_draw(struct tui_menu *list) {
-    const size_t lim = MIN((size_t)list->height, VEC_SIZE(&list->items));
+void tui_menu_draw(struct tui_menu *menu) {
+    const size_t lim = MIN((size_t)menu->height, VEC_SIZE(&menu->items));
     for (size_t i = 0; i < lim; i++) {
-        tui_menu_draw_nth(list, list->scroll + i);
+        tui_menu_draw_nth(menu, menu->scroll + i);
     }
-    wclrtobot(list->win);
+    wclrtobot(menu->win);
 
-    if (wnoutrefresh(list->win) != OK) {
+    if (wnoutrefresh(menu->win) != OK) {
         ERROR("wnoutrefresh");
     }
 }
 
-void tui_menu_clear(struct tui_menu *list) {
-    VEC_FOREACH(&list->items, i) {
-        struct tui_menu_item *item = VEC_AT(&list->items, i);
+void tui_menu_clear(struct tui_menu *menu) {
+    VEC_FOREACH(&menu->items, i) {
+        struct tui_menu_item *item = VEC_AT(&menu->items, i);
         tui_menu_item_methods[item->type].free_contents(item);
     }
 
-    VEC_CLEAR(&list->items);
-    list->scroll = 0;
-    list->selected = 0;
+    VEC_CLEAR(&menu->items);
+    menu->scroll = 0;
+    menu->selected = 0;
 
-    wclear(list->win);
+    wclear(menu->win);
 }
 
 static bool tui_menu_ensure_visible(struct tui_menu *menu, size_t index) {
@@ -199,55 +199,55 @@ static bool tui_menu_ensure_visible(struct tui_menu *menu, size_t index) {
     return false;
 }
 
-bool tui_menu_select_nth(struct tui_menu *list, size_t index) {
-    if (index >= VEC_SIZE(&list->items)) {
+bool tui_menu_select_nth(struct tui_menu *menu, size_t index) {
+    if (index >= VEC_SIZE(&menu->items)) {
         WARN("tried to select elem %zu of tui_menu that has %zu elems",
-             index, VEC_SIZE(&list->items));
+             index, VEC_SIZE(&menu->items));
         return false;
-    } else if (index == list->selected) {
+    } else if (index == menu->selected) {
         return false;
-    } else if (METHOD_CALL(VEC_AT(&list->items, index), is_selectable)) {
-        const size_t prev_selected = list->selected;
-        list->selected = index;
+    } else if (METHOD_CALL(VEC_AT(&menu->items, index), is_selectable)) {
+        const size_t prev_selected = menu->selected;
+        menu->selected = index;
 
-        tui_menu_ensure_visible(list, list->selected);
+        tui_menu_ensure_visible(menu, menu->selected);
 
-        tui_menu_draw_nth(list, prev_selected);
-        tui_menu_draw_nth(list, list->selected);
+        tui_menu_draw_nth(menu, prev_selected);
+        tui_menu_draw_nth(menu, menu->selected);
         return true;
     } else {
         return false;
     }
 }
 
-static bool tui_menu_select_prev_or_next(struct tui_menu *list, int direction) {
-    const size_t old_index = list->selected;
+static bool tui_menu_select_prev_or_next(struct tui_menu *menu, int direction) {
+    const size_t old_index = menu->selected;
     size_t next_index = old_index;
     bool looped = false;
     do {
         if (direction > 0) {
-            next_index = (next_index + direction) % VEC_SIZE(&list->items);
+            next_index = (next_index + direction) % VEC_SIZE(&menu->items);
         } else {
-            next_index = MIN(next_index + direction, VEC_SIZE(&list->items) - 1);
+            next_index = MIN(next_index + direction, VEC_SIZE(&menu->items) - 1);
         }
         if (next_index == old_index) {
             looped = true;
         }
 
-        const struct tui_menu_item *i = VEC_AT(&list->items, next_index);
+        const struct tui_menu_item *i = VEC_AT(&menu->items, next_index);
         if (tui_menu_item_methods[i->type].is_selectable(i)) {
-            list->selected = next_index;
+            menu->selected = next_index;
             break;
         }
     } while (!looped);
 
-    if (old_index != list->selected) {
-        tui_menu_ensure_visible(list, list->selected);
+    if (old_index != menu->selected) {
+        tui_menu_ensure_visible(menu, menu->selected);
 
-        tui_menu_draw_nth(list, old_index);
-        tui_menu_draw_nth(list, list->selected);
+        tui_menu_draw_nth(menu, old_index);
+        tui_menu_draw_nth(menu, menu->selected);
 
-        if (wnoutrefresh(list->win) != OK) {
+        if (wnoutrefresh(menu->win) != OK) {
             ERROR("wnoutrefresh");
         }
 
@@ -257,20 +257,20 @@ static bool tui_menu_select_prev_or_next(struct tui_menu *list, int direction) {
     }
 }
 
-bool tui_menu_select_next(struct tui_menu *list) {
-    return tui_menu_select_prev_or_next(list, +1);
+bool tui_menu_select_next(struct tui_menu *menu) {
+    return tui_menu_select_prev_or_next(menu, +1);
 }
 
-bool tui_menu_select_prev(struct tui_menu *list) {
-    return tui_menu_select_prev_or_next(list, -1);
+bool tui_menu_select_prev(struct tui_menu *menu) {
+    return tui_menu_select_prev_or_next(menu, -1);
 }
 
-void tui_menu_activate(struct tui_menu *list) {
-    METHOD_CALL(VEC_AT(&list->items, list->selected), activate);
+void tui_menu_activate(struct tui_menu *menu) {
+    METHOD_CALL(VEC_AT(&menu->items, menu->selected), activate);
 }
 
-void tui_menu_append_item(struct tui_menu *list, const struct tui_menu_item *item) {
-    struct tui_menu_item *i = VEC_EMPLACE_BACK(&list->items);
+void tui_menu_append_item(struct tui_menu *menu, const struct tui_menu_item *item) {
+    struct tui_menu_item *i = VEC_EMPLACE_BACK(&menu->items);
     METHOD_CALL(item, copy, i);
 }
 

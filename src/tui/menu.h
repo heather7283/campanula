@@ -7,10 +7,10 @@
 #include "types/song.h"
 
 enum tui_menu_item_type {
-    TUI_LIST_ITEM_TYPE_LABEL,
-    TUI_LIST_ITEM_TYPE_PLAYLIST_ITEM,
+    TUI_MENU_ITEM_TYPE_LABEL,
+    TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM,
 
-    TUI_LIST_ITEM_TYPE_COUNT,
+    TUI_MENU_ITEM_TYPE_COUNT,
 };
 
 struct tui_menu_item_label {
@@ -41,20 +41,20 @@ struct tui_menu {
     VEC(struct tui_menu_item) items;
 };
 
-void tui_menu_position(struct tui_menu *list, int screen_x, int screen_y, int width, int height);
+void tui_menu_position(struct tui_menu *menu, int screen_x, int screen_y, int width, int height);
 
-void tui_menu_draw(struct tui_menu *list);
-void tui_menu_draw_nth(struct tui_menu *list, size_t index);
+void tui_menu_draw(struct tui_menu *menu);
+void tui_menu_draw_nth(struct tui_menu *menu, size_t index);
 
-void tui_menu_clear(struct tui_menu *list);
+void tui_menu_clear(struct tui_menu *menu);
 
-bool tui_menu_select_nth(struct tui_menu *list, size_t index);
-bool tui_menu_select_next(struct tui_menu *list);
-bool tui_menu_select_prev(struct tui_menu *list);
+bool tui_menu_select_nth(struct tui_menu *menu, size_t index);
+bool tui_menu_select_next(struct tui_menu *menu);
+bool tui_menu_select_prev(struct tui_menu *menu);
 
-void tui_menu_activate(struct tui_menu *list);
+void tui_menu_activate(struct tui_menu *menu);
 
-void tui_menu_append_item(struct tui_menu *list, const struct tui_menu_item *item);
+void tui_menu_append_item(struct tui_menu *menu, const struct tui_menu_item *item);
 
 #endif /* #ifndef SRC_TUI_MENU_H */
 

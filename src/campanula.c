@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
     //db_populate();
 
     struct album *albums;
-    size_t nalbums = db_search_albums(&albums, "prefer not to say", 0, 10);
+    size_t nalbums = db_search_albums(&albums, "Miracle Milk", 0, 10);
     for (size_t i = 0; i < nalbums; i++) {
         struct album *a = &albums[i];
         INFO("%2zu. album \"%s\" (%s)", i, a->name, a->id);
