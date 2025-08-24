@@ -5,7 +5,7 @@
 
 #include "macros.h"
 
-struct array_generic {
+struct vec_generic {
     size_t size, capacity;
     void *data;
 };
@@ -18,15 +18,15 @@ struct array_generic {
 
 #define VEC_INITALISER {0}
 
-#define VEC_INIT(parray) \
+#define VEC_INIT(pvec) \
     do { \
-        (parray)->size = (parray)->capacity = 0; \
-        (parray)->data = NULL; \
+        (pvec)->size = (pvec)->capacity = 0; \
+        (pvec)->data = NULL; \
     } while (0)
 
-#define TYPECHECK_VEC(parray) \
+#define TYPECHECK_VEC(pvec) \
     ({ \
-        (void)(parray)->size; (void)(parray)->capacity; (void)(parray)->data; 1; \
+        (void)(pvec)->size; (void)(pvec)->capacity; (void)(pvec)->data; 1; \
     })
 
 #define TYPECHECK(a, b) \
@@ -37,8 +37,8 @@ struct array_generic {
         1; \
     })
 
-#define VEC_SIZE(parray) ((parray)->size)
-#define VEC_DATA(parray) ((parray)->data)
+#define VEC_SIZE(pvec) ((pvec)->size)
+#define VEC_DATA(pvec) ((pvec)->data)
 
 /*
  * Insert elem_count elements, each of size elem_size, in arr at index.
@@ -49,40 +49,40 @@ struct array_generic {
  * Supports python-style negative indexing.
  * Dumps core on OOB access.
  */
-void *array_insert_generic(struct array_generic *arr, ptrdiff_t index,
-                           const void *elems, size_t elem_size, size_t elem_count,
-                           bool zero_init);
+void *vec_insert_generic(struct vec_generic *arr, ptrdiff_t index,
+                         const void *elems, size_t elem_size, size_t elem_count,
+                         bool zero_init);
 
-#define VEC_INSERT_N(parray, index, pelem, nelem) \
+#define VEC_INSERT_N(pvec, index, pelem, nelem) \
     ({ \
-        TYPECHECK_VEC(parray); \
-        TYPECHECK(*(parray)->data, *(pelem)); \
-        array_insert_generic((struct array_generic *)(parray), (index), \
-                             (pelem), sizeof(*(parray)->data), (nelem), false); \
+        TYPECHECK_VEC(pvec); \
+        TYPECHECK(*(pvec)->data, *(pelem)); \
+        vec_insert_generic((struct vec_generic *)(pvec), (index), \
+                           (pelem), sizeof(*(pvec)->data), (nelem), false); \
     })
 
-#define VEC_INSERT(parray, index, pelem) \
-    VEC_INSERT_N(parray, index, pelem, 1)
+#define VEC_INSERT(pvec, index, pelem) \
+    VEC_INSERT_N(pvec, index, pelem, 1)
 
-#define VEC_EMPLACE_INTERNAL_DO_NOT_USE(parray, index, nelem, zeroed) \
+#define VEC_EMPLACE_INTERNAL_DO_NOT_USE(pvec, index, nelem, zeroed) \
     ({ \
-        TYPECHECK_VEC(parray); \
-        (TYPEOF((parray)->data))array_insert_generic((struct array_generic *)(parray), (index), \
-                                                     NULL, sizeof(*(parray)->data), (nelem), \
-                                                     (zeroed)); \
+        TYPECHECK_VEC(pvec); \
+        (TYPEOF((pvec)->data))vec_insert_generic((struct vec_generic *)(pvec), (index), \
+                                                 NULL, sizeof(*(pvec)->data), (nelem), \
+                                                 (zeroed)); \
     })
 
-#define VEC_EMPLACE_N(parray, index, nelem) \
-    VEC_EMPLACE_INTERNAL_DO_NOT_USE(parray, index, nelem, false)
+#define VEC_EMPLACE_N(pvec, index, nelem) \
+    VEC_EMPLACE_INTERNAL_DO_NOT_USE(pvec, index, nelem, false)
 
-#define VEC_EMPLACE(parray, index) \
-    VEC_EMPLACE_N(parray, index, 1)
+#define VEC_EMPLACE(pvec, index) \
+    VEC_EMPLACE_N(pvec, index, 1)
 
-#define VEC_EMPLACE_N_ZEROED(parray, index, nelem) \
-    VEC_EMPLACE_INTERNAL_DO_NOT_USE(parray, index, nelem, true)
+#define VEC_EMPLACE_N_ZEROED(pvec, index, nelem) \
+    VEC_EMPLACE_INTERNAL_DO_NOT_USE(pvec, index, nelem, true)
 
-#define VEC_EMPLACE_ZEROED(parray, index) \
-    VEC_EMPLACE_N_ZEROED(parray, index, 1)
+#define VEC_EMPLACE_ZEROED(pvec, index) \
+    VEC_EMPLACE_N_ZEROED(pvec, index, 1)
 
 /*
  * Appends elem_count elements, each of size elem_size, to the end of arr.
@@ -91,106 +91,105 @@ void *array_insert_generic(struct array_generic *arr, ptrdiff_t index,
  * If elems is NULL and zero_init is false, memory is NOT initialised.
  * Returns address of the first appended element.
  */
-void *array_append_generic(struct array_generic *arr, const void *elems,
-                           size_t elem_size, size_t elem_count, bool zero_init);
+void *vec_append_generic(struct vec_generic *arr, const void *elems,
+                         size_t elem_size, size_t elem_count, bool zero_init);
 
-#define VEC_APPEND_N(parray, pelem, nelem) \
+#define VEC_APPEND_N(pvec, pelem, nelem) \
     ({ \
-        TYPECHECK_VEC(parray); \
-        TYPECHECK(*(parray)->data, *(pelem)); \
-        array_append_generic((struct array_generic *)(parray), (pelem), \
-                             sizeof(*(parray)->data), (nelem), false); \
+        TYPECHECK_VEC(pvec); \
+        TYPECHECK(*(pvec)->data, *(pelem)); \
+        vec_append_generic((struct vec_generic *)(pvec), (pelem), \
+                           sizeof(*(pvec)->data), (nelem), false); \
     })
 
-#define VEC_APPEND(parray, pelem) \
-    VEC_APPEND_N(parray, pelem, 1)
+#define VEC_APPEND(pvec, pelem) \
+    VEC_APPEND_N(pvec, pelem, 1)
 
-#define VEC_EMPLACE_BACK_INTERNAL_DO_NOT_USE(parray, nelem, zeroed) \
+#define VEC_EMPLACE_BACK_INTERNAL_DO_NOT_USE(pvec, nelem, zeroed) \
     ({ \
-        TYPECHECK_VEC(parray); \
-        (TYPEOF((parray)->data))array_append_generic((struct array_generic *)(parray), NULL, \
-                                                     sizeof(*(parray)->data), (nelem), (zeroed)); \
+        TYPECHECK_VEC(pvec); \
+        (TYPEOF((pvec)->data))vec_append_generic((struct vec_generic *)(pvec), NULL, \
+                                                 sizeof(*(pvec)->data), (nelem), (zeroed)); \
     })
 
-#define VEC_EMPLACE_BACK_N(parray, nelem) \
-    VEC_EMPLACE_BACK_INTERNAL_DO_NOT_USE(parray, nelem, false)
+#define VEC_EMPLACE_BACK_N(pvec, nelem) \
+    VEC_EMPLACE_BACK_INTERNAL_DO_NOT_USE(pvec, nelem, false)
 
-#define VEC_EMPLACE_BACK(parray) \
-    VEC_EMPLACE_BACK_N(parray, 1)
+#define VEC_EMPLACE_BACK(pvec) \
+    VEC_EMPLACE_BACK_N(pvec, 1)
 
-#define VEC_EMPLACE_BACK_N_ZEROED(parray, nelem) \
-    VEC_EMPLACE_BACK_INTERNAL_DO_NOT_USE(parray, nelem, true)
+#define VEC_EMPLACE_BACK_N_ZEROED(pvec, nelem) \
+    VEC_EMPLACE_BACK_INTERNAL_DO_NOT_USE(pvec, nelem, true)
 
-#define VEC_EMPLACE_BACK_ZEROED(parray) \
-    VEC_EMPLACE_BACK_N_ZEROED(parray, 1)
+#define VEC_EMPLACE_BACK_ZEROED(pvec) \
+    VEC_EMPLACE_BACK_N_ZEROED(pvec, 1)
 
 /*
  * Removes elem_count elements, each of size elem_size, at index from arr.
  * Support python-style negative indexing.
  * Dumps core on OOB access.
  */
-void array_erase_generic(struct array_generic *arr, ptrdiff_t index,
+void vec_erase_generic(struct vec_generic *arr, ptrdiff_t index,
                          size_t elem_size, size_t elem_count);
 
-#define VEC_ERASE_N(parray, index, count) \
+#define VEC_ERASE_N(pvec, index, count) \
     ({ \
-        TYPECHECK_VEC(parray); \
-        array_erase_generic((struct array_generic *)(parray), (index), \
-                            sizeof(*(parray)->data), (count)); \
+        TYPECHECK_VEC(pvec); \
+        vec_erase_generic((struct vec_generic *)(pvec), \
+                          (index), sizeof(*(pvec)->data), (count)); \
     })
 
-#define VEC_ERASE(parray, index) \
-    VEC_ERASE_N(parray, index, 1)
+#define VEC_ERASE(pvec, index) \
+    VEC_ERASE_N(pvec, index, 1)
 
 /*
  * Returns pointer to element of arr at index.
  * Supports python-style negative indexing.
  * Dumps core on OOB access.
  */
-void *array_at_generic(struct array_generic *arr, ptrdiff_t index, size_t elem_size);
+void *vec_at_generic(struct vec_generic *arr, ptrdiff_t index, size_t elem_size);
 
-#define VEC_AT(parray, index) \
+#define VEC_AT(pvec, index) \
     ({ \
-        TYPECHECK_VEC(parray); \
-        (TYPEOF((parray)->data))array_at_generic((struct array_generic *)(parray), (index), \
-                                                 sizeof(*(parray)->data)); \
+        TYPECHECK_VEC(pvec); \
+        (TYPEOF((pvec)->data))vec_at_generic((struct vec_generic *)(pvec), \
+                                             (index), sizeof(*(pvec)->data)); \
     })
 
 /*
  * Sets size to 0 but does not free memory.
  */
-void array_clear_generic(struct array_generic *arr);
+void vec_clear_generic(struct vec_generic *arr);
 
-#define VEC_CLEAR(parray) \
+#define VEC_CLEAR(pvec) \
     ({ \
-        TYPECHECK_VEC(parray); \
-        array_clear_generic((struct array_generic *)(parray)); \
+        TYPECHECK_VEC(pvec); \
+        vec_clear_generic((struct vec_generic *)(pvec)); \
     })
 
 /*
- * Frees all memory and makes array ready for reuse.
+ * Frees all memory and makes vec ready for reuse.
  */
-void array_free_generic(struct array_generic *arr);
+void vec_free_generic(struct vec_generic *arr);
 
-#define VEC_FREE(parray) \
+#define VEC_FREE(pvec) \
     ({ \
-        TYPECHECK_VEC(parray); \
-        array_free_generic((struct array_generic *)(parray)); \
+        TYPECHECK_VEC(pvec); \
+        vec_free_generic((struct vec_generic *)(pvec)); \
     })
 
 /*
  * Reserves memory for elem_count elements, each of size elem_size.
  */
-void array_reserve_generic(struct array_generic *arr, size_t elem_size, size_t elem_count);
+void vec_reserve_generic(struct vec_generic *arr, size_t elem_size, size_t elem_count);
 
-#define VEC_RESERVE(parray, count) \
+#define VEC_RESERVE(pvec, count) \
     ({ \
-        TYPECHECK_VEC(parray); \
-        array_reserve_generic((struct array_generic *)(parray), \
-                              sizeof(*(parray)->data), (count)); \
+        TYPECHECK_VEC(pvec); \
+        vec_reserve_generic((struct vec_generic *)(pvec), sizeof(*(pvec)->data), (count)); \
     })
 
-#define VEC_FOREACH(parray, iter) for (size_t iter = 0; iter < (parray)->size; iter++)
+#define VEC_FOREACH(pvec, iter) for (size_t iter = 0; iter < (pvec)->size; iter++)
 
 #endif /* #ifndef SRC_COLLECTIONS_VEC_H */
 
