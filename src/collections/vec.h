@@ -41,13 +41,13 @@ struct vec_generic {
 #define VEC_DATA(pvec) ((pvec)->data)
 
 /* Accepts python-style array index and returns real index */
-size_t vec_normalise_index_generic(const struct vec_generic *arr, ptrdiff_t index);
+size_t vec_normalise_index_generic(const struct vec_generic *vec, ptrdiff_t index);
 
 #define VEC_NORMALISE_INDEX(pvec, index) \
     (vec_normalise_index_generic((struct vec_generic *)(pvec), index))
 
 /*
- * Insert elem_count elements, each of size elem_size, in arr at index.
+ * Insert elem_count elements, each of size elem_size, in vec at index.
  * If elems is not NULL, elements are initialised from elems.
  * If elems is NULL and zero_init is true, memory is zero-initialised.
  * If elems is NULL and zero_init is false, memory is NOT initialised.
@@ -55,7 +55,7 @@ size_t vec_normalise_index_generic(const struct vec_generic *arr, ptrdiff_t inde
  * Supports python-style negative indexing.
  * Dumps core on OOB access.
  */
-void *vec_insert_generic(struct vec_generic *arr, ptrdiff_t index,
+void *vec_insert_generic(struct vec_generic *vec, ptrdiff_t index,
                          const void *elems, size_t elem_size, size_t elem_count,
                          bool zero_init);
 
@@ -91,13 +91,13 @@ void *vec_insert_generic(struct vec_generic *arr, ptrdiff_t index,
     VEC_EMPLACE_N_ZEROED(pvec, index, 1)
 
 /*
- * Appends elem_count elements, each of size elem_size, to the end of arr.
+ * Appends elem_count elements, each of size elem_size, to the end of vec.
  * If elems is not NULL, elements are initialised from elems.
  * If elems is NULL and zero_init is true, memory is zero-initialised.
  * If elems is NULL and zero_init is false, memory is NOT initialised.
  * Returns address of the first appended element.
  */
-void *vec_append_generic(struct vec_generic *arr, const void *elems,
+void *vec_append_generic(struct vec_generic *vec, const void *elems,
                          size_t elem_size, size_t elem_count, bool zero_init);
 
 #define VEC_APPEND_N(pvec, pelem, nelem) \
@@ -131,11 +131,11 @@ void *vec_append_generic(struct vec_generic *arr, const void *elems,
     VEC_EMPLACE_BACK_N_ZEROED(pvec, 1)
 
 /*
- * Removes elem_count elements, each of size elem_size, at index from arr.
+ * Removes elem_count elements, each of size elem_size, at index from vec.
  * Support python-style negative indexing.
  * Dumps core on OOB access.
  */
-void vec_erase_generic(struct vec_generic *arr, ptrdiff_t index,
+void vec_erase_generic(struct vec_generic *vec, ptrdiff_t index,
                          size_t elem_size, size_t elem_count);
 
 #define VEC_ERASE_N(pvec, index, count) \
@@ -149,11 +149,11 @@ void vec_erase_generic(struct vec_generic *arr, ptrdiff_t index,
     VEC_ERASE_N(pvec, index, 1)
 
 /*
- * Returns pointer to element of arr at index.
+ * Returns pointer to element of vec at index.
  * Supports python-style negative indexing.
  * Dumps core on OOB access.
  */
-void *vec_at_generic(struct vec_generic *arr, ptrdiff_t index, size_t elem_size);
+void *vec_at_generic(struct vec_generic *vec, ptrdiff_t index, size_t elem_size);
 
 #define VEC_AT(pvec, index) \
     ({ \
@@ -165,7 +165,7 @@ void *vec_at_generic(struct vec_generic *arr, ptrdiff_t index, size_t elem_size)
 /*
  * Sets size to 0 but does not free memory.
  */
-void vec_clear_generic(struct vec_generic *arr);
+void vec_clear_generic(struct vec_generic *vec);
 
 #define VEC_CLEAR(pvec) \
     ({ \
@@ -176,7 +176,7 @@ void vec_clear_generic(struct vec_generic *arr);
 /*
  * Frees all memory and makes vec ready for reuse.
  */
-void vec_free_generic(struct vec_generic *arr);
+void vec_free_generic(struct vec_generic *vec);
 
 #define VEC_FREE(pvec) \
     ({ \
@@ -187,7 +187,7 @@ void vec_free_generic(struct vec_generic *arr);
 /*
  * Reserves memory for elem_count elements, each of size elem_size.
  */
-void vec_reserve_generic(struct vec_generic *arr, size_t elem_size, size_t elem_count);
+void vec_reserve_generic(struct vec_generic *vec, size_t elem_size, size_t elem_count);
 
 #define VEC_RESERVE(pvec, count) \
     ({ \
