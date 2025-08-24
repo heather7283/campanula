@@ -54,10 +54,7 @@ bool tui_menu_select_prev(struct tui_menu *list);
 
 void tui_menu_activate(struct tui_menu *list);
 
-void tui_menu_add_label(struct tui_menu *list,
-                        const char *label);
-void tui_menu_add_playlist_item(struct tui_menu *list,
-                                int index, bool current, const struct song *song);
+void tui_menu_append_item(struct tui_menu *list, const struct tui_menu_item *item);
 
 #endif /* #ifndef SRC_TUI_MENU_H */
 

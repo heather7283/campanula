@@ -117,7 +117,14 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
         const size_t current = playlist_get_current_song(NULL);
         tui_menu_clear(&tui.list);
         for (size_t i = 0; i < nsongs; i++) {
-            tui_menu_add_playlist_item(&tui.list, i, i == current, &songs[i]);
+            tui_menu_append_item(&tui.list, &(struct tui_menu_item){
+                .type = TUI_LIST_ITEM_TYPE_PLAYLIST_ITEM,
+                .as.playlist_item = {
+                    .index = i,
+                    .current = i == current,
+                    .song = (struct song *)&songs[i],
+                },
+            });
         }
         tui.list.selected = MIN(prev_selected, VEC_SIZE(&tui.list.items) - 1);
         tui_menu_draw(&tui.list);

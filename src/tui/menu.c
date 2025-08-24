@@ -36,6 +36,18 @@ static void tui_menu_item_playlist_item_activate(const struct tui_menu_item *sel
     player_play_nth(self->as.playlist_item.index);
 }
 
+static void tui_menu_item_playlist_item_copy(const struct tui_menu_item *self,
+                                             struct tui_menu_item *other) {
+    other->type = self->type;
+    const struct tui_menu_item_playlist_item *s = &self->as.playlist_item;
+    struct tui_menu_item_playlist_item *o = &other->as.playlist_item;
+
+    o->current = s->current;
+    o->index = s->index;
+    o->song = xmalloc(sizeof(*o->song));
+    song_deep_copy(o->song, s->song);
+}
+
 static void tui_menu_item_label_draw(const struct tui_menu_item *self,
                                      WINDOW *win, int ypos, int width) {
     const struct tui_menu_item_label *l = &self->as.label;
@@ -56,6 +68,15 @@ static void tui_menu_item_label_activate(const struct tui_menu_item *self) {
     /* no-op */
 }
 
+static void tui_menu_item_label_copy(const struct tui_menu_item *self,
+                                     struct tui_menu_item *other) {
+    other->type = self->type;
+    const struct tui_menu_item_label *s = &self->as.label;
+    struct tui_menu_item_label *o = &other->as.label;
+
+    o->str = xstrdup(s->str);
+}
+
 typedef void (*tui_menu_item_method_draw)(const struct tui_menu_item *self,
                                           WINDOW *win, int ypos, int width);
 
@@ -65,11 +86,15 @@ typedef bool (*tui_menu_item_method_is_selectable)(const struct tui_menu_item *s
 
 typedef void (*tui_menu_item_method_activate)(const struct tui_menu_item *self);
 
+typedef void (*tui_menu_item_method_copy)(const struct tui_menu_item *self,
+                                          struct tui_menu_item *other);
+
 struct tui_menu_item_methods {
     const tui_menu_item_method_draw draw;
     const tui_menu_item_method_free_contents free_contents;
     const tui_menu_item_method_is_selectable is_selectable;
     const tui_menu_item_method_activate activate;
+    const tui_menu_item_method_copy copy;
 };
 
 static const struct tui_menu_item_methods tui_menu_item_methods[] = {
@@ -78,12 +103,14 @@ static const struct tui_menu_item_methods tui_menu_item_methods[] = {
         .free_contents = tui_menu_item_label_free_contents,
         .is_selectable = tui_menu_item_label_is_selectable,
         .activate = tui_menu_item_label_activate,
+        .copy = tui_menu_item_label_copy,
     },
     [TUI_LIST_ITEM_TYPE_PLAYLIST_ITEM] = {
         .draw = tui_menu_item_playlist_item_draw,
         .free_contents = tui_menu_item_playlist_item_free_contents,
         .is_selectable = tui_menu_item_playlist_item_is_selectable,
         .activate = tui_menu_item_playlist_item_activate,
+        .copy = tui_menu_item_playlist_item_copy,
     }
 };
 static_assert(SIZEOF_VEC(tui_menu_item_methods) == TUI_LIST_ITEM_TYPE_COUNT);
@@ -242,28 +269,8 @@ void tui_menu_activate(struct tui_menu *list) {
     METHOD_CALL(VEC_AT(&list->items, list->selected), activate);
 }
 
-void tui_menu_add_label(struct tui_menu *list,
-                        const char *label) {
+void tui_menu_append_item(struct tui_menu *list, const struct tui_menu_item *item) {
     struct tui_menu_item *i = VEC_EMPLACE_BACK(&list->items);
-    *i = (struct tui_menu_item){
-        .type = TUI_LIST_ITEM_TYPE_LABEL,
-        .as.label = {
-            .str = xstrdup(label),
-        },
-    };
-}
-
-void tui_menu_add_playlist_item(struct tui_menu *list,
-                                int index, bool current, const struct song *song) {
-    struct tui_menu_item *i = VEC_EMPLACE_BACK(&list->items);
-    *i = (struct tui_menu_item){
-        .type = TUI_LIST_ITEM_TYPE_PLAYLIST_ITEM,
-        .as.playlist_item = {
-            .index = index,
-            .current = current,
-            .song = xmalloc(sizeof(struct song)),
-        },
-    };
-    song_deep_copy(i->as.playlist_item.song, song);
+    METHOD_CALL(item, copy, i);
 }
 
