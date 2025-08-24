@@ -40,6 +40,12 @@ struct vec_generic {
 #define VEC_SIZE(pvec) ((pvec)->size)
 #define VEC_DATA(pvec) ((pvec)->data)
 
+/* Accepts python-style array index and returns real index */
+size_t vec_normalise_index_generic(const struct vec_generic *arr, ptrdiff_t index);
+
+#define VEC_NORMALISE_INDEX(pvec, index) \
+    (vec_normalise_index_generic((struct vec_generic *)(pvec), index))
+
 /*
  * Insert elem_count elements, each of size elem_size, in arr at index.
  * If elems is not NULL, elements are initialised from elems.

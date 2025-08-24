@@ -24,7 +24,7 @@ static size_t vec_bound_check(const struct vec_generic *arr, size_t index) {
     return index;
 }
 
-static size_t vec_normalise_index(const struct vec_generic *arr, ptrdiff_t index) {
+size_t vec_normalise_index_generic(const struct vec_generic *arr, ptrdiff_t index) {
     if (index < 0) {
         return vec_bound_check(arr, arr->size - -index);
     } else {
@@ -35,7 +35,7 @@ static size_t vec_normalise_index(const struct vec_generic *arr, ptrdiff_t index
 void *vec_insert_generic(struct vec_generic *arr, ptrdiff_t _index,
                          const void *elems, size_t elem_size, size_t elem_count,
                          bool zero_init) {
-    size_t index = vec_normalise_index(arr, _index);
+    size_t index = vec_normalise_index_generic(arr, _index);
     vec_ensure_capacity(arr, elem_size, arr->size + elem_count);
 
     /* shift existing elements to make space for new ones */
@@ -71,7 +71,7 @@ void *vec_append_generic(struct vec_generic *arr, const void *elems,
 
 void vec_erase_generic(struct vec_generic *arr, ptrdiff_t _index,
                        size_t elem_size, size_t elem_count) {
-    const size_t index = vec_normalise_index(arr, _index);
+    const size_t index = vec_normalise_index_generic(arr, _index);
     vec_bound_check(arr, index + elem_count - 1);
 
     memmove((char *)arr->data + (index * elem_size),
@@ -81,7 +81,7 @@ void vec_erase_generic(struct vec_generic *arr, ptrdiff_t _index,
 }
 
 void *vec_at_generic(struct vec_generic *arr, ptrdiff_t _index, size_t elem_size) {
-    size_t index = vec_normalise_index(arr, _index);
+    size_t index = vec_normalise_index_generic(arr, _index);
     return (char *)arr->data + (index * elem_size);
 }
 
