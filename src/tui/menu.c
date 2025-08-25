@@ -4,6 +4,29 @@
 #include "macros.h"
 #include "log.h"
 
+static void tui_menu_item_empty_draw(const struct tui_menu_item *self,
+                                     WINDOW *win, int ypos, int width) {
+    wmove(win, ypos, 0);
+    wclrtoeol(win);
+}
+
+static void tui_menu_item_empty_free_contents(struct tui_menu_item *self) {
+    /* no-op */
+}
+
+static bool tui_menu_item_empty_is_selectable(const struct tui_menu_item *self) {
+    return false;
+}
+
+static void tui_menu_item_empty_activate(const struct tui_menu_item *self) {
+    /* no-op */
+}
+
+static void tui_menu_item_empty_copy(const struct tui_menu_item *self,
+                                     struct tui_menu_item *other) {
+    other->type = self->type;
+}
+
 static void tui_menu_item_playlist_item_draw(const struct tui_menu_item *self,
                                              WINDOW *win, int ypos, int width) {
     const struct tui_menu_item_playlist_item *i = &self->as.playlist_item;
@@ -98,6 +121,13 @@ struct tui_menu_item_methods {
 };
 
 static const struct tui_menu_item_methods tui_menu_item_methods[] = {
+    [TUI_MENU_ITEM_TYPE_EMPTY] = {
+        .draw = tui_menu_item_empty_draw,
+        .free_contents = tui_menu_item_empty_free_contents,
+        .is_selectable = tui_menu_item_empty_is_selectable,
+        .activate = tui_menu_item_empty_activate,
+        .copy = tui_menu_item_empty_copy,
+    },
     [TUI_MENU_ITEM_TYPE_LABEL] = {
         .draw = tui_menu_item_label_draw,
         .free_contents = tui_menu_item_label_free_contents,

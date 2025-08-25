@@ -7,10 +7,14 @@
 #include "types/song.h"
 
 enum tui_menu_item_type {
+    TUI_MENU_ITEM_TYPE_EMPTY,
     TUI_MENU_ITEM_TYPE_LABEL,
     TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM,
 
     TUI_MENU_ITEM_TYPE_COUNT,
+};
+
+struct tui_menu_item_empty {
 };
 
 struct tui_menu_item_label {
@@ -26,6 +30,7 @@ struct tui_menu_item_playlist_item {
 struct tui_menu_item {
     enum tui_menu_item_type type;
     union {
+        struct tui_menu_item_empty empty;
         struct tui_menu_item_label label;
         struct tui_menu_item_playlist_item playlist_item;
     } as;
