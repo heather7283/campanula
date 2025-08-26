@@ -94,7 +94,7 @@ size_t db_get_albums(struct album **palbums, size_t page, size_t albums_per_page
 
 size_t db_get_songs_in_album(struct song **psongs, const struct album *album) {
     struct sqlite3_stmt *const stmt = statements[STATEMENT_GET_SONGS_IN_ALBUM].stmt;
-    VEC(struct song) songs;
+    VEC(struct song) songs = {0};
 
     sqlite3_reset(stmt);
     sqlite3_clear_bindings(stmt);
@@ -133,7 +133,7 @@ size_t db_get_songs_in_album(struct song **psongs, const struct album *album) {
 
 size_t db_get_songs(struct song **psongs, size_t page, size_t songs_per_page) {
     struct sqlite3_stmt *const stmt = statements[STATEMENT_GET_SONGS_WITH_PAGINATION].stmt;
-    VEC(struct song) songs;
+    VEC(struct song) songs = {0};
 
     sqlite3_reset(stmt);
     sqlite3_clear_bindings(stmt);
