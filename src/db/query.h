@@ -19,5 +19,7 @@ size_t db_search_albums(struct album **albums, const char *query,
 
 size_t db_get_songs_in_album(struct song **songs, const struct album *album);
 
+size_t db_get_songs(struct song **songs, size_t page, size_t songs_per_page);
+
 #endif /* #ifndef SRC_DB_QUERY_H */
 

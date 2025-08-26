@@ -1,8 +1,51 @@
 #include "tui/menu.h"
 #include "player/control.h"
+#include "player/playlist.h"
 #include "xmalloc.h"
 #include "macros.h"
 #include "log.h"
+
+static void tui_menu_item_song_draw(const struct tui_menu_item *self,
+                                     WINDOW *win, int ypos, int width) {
+    const struct tui_menu_item_song *i = &self->as.song;
+    const struct song *s = i->song;
+
+    mvwprintw(win, ypos, 0, "%s - %s", s->artist, s->title);
+
+    wattron(win, A_DIM);
+    wprintw(win, " (%d:%02d)", s->duration / 60, s->duration % 60);
+    wattroff(win, A_DIM);
+
+    wclrtoeol(win);
+}
+
+static void tui_menu_item_song_free_contents(struct tui_menu_item *self) {
+    struct tui_menu_item_song *s = &self->as.song;
+
+    song_free_contents(s->song);
+    free(s->song);
+}
+
+static bool tui_menu_item_song_is_selectable(const struct tui_menu_item *self) {
+    return true;
+}
+
+static void tui_menu_item_song_activate(const struct tui_menu_item *self) {
+    const struct tui_menu_item_song *i = &self->as.song;
+    const struct song *s = i->song;
+
+    playlist_append_song(s);
+}
+
+static void tui_menu_item_song_copy(const struct tui_menu_item *self,
+                                    struct tui_menu_item *other) {
+    other->type = self->type;
+    const struct tui_menu_item_song *s = &self->as.song;
+    struct tui_menu_item_song *o = &other->as.song;
+
+    o->song = xmalloc(sizeof(*o->song));
+    song_deep_copy(o->song, s->song);
+}
 
 static void tui_menu_item_empty_draw(const struct tui_menu_item *self,
                                      WINDOW *win, int ypos, int width) {
@@ -149,7 +192,14 @@ static const struct tui_menu_item_methods tui_menu_item_methods[] = {
         .is_selectable = tui_menu_item_playlist_item_is_selectable,
         .activate = tui_menu_item_playlist_item_activate,
         .copy = tui_menu_item_playlist_item_copy,
-    }
+    },
+    [TUI_MENU_ITEM_TYPE_SONG] = {
+        .draw = tui_menu_item_song_draw,
+        .free_contents = tui_menu_item_song_free_contents,
+        .is_selectable = tui_menu_item_song_is_selectable,
+        .activate = tui_menu_item_song_activate,
+        .copy = tui_menu_item_song_copy,
+    },
 };
 static_assert(SIZEOF_VEC(tui_menu_item_methods) == TUI_MENU_ITEM_TYPE_COUNT);
 

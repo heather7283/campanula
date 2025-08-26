@@ -42,29 +42,29 @@ int main(int argc, char **argv) {
 
     //db_populate();
 
-    struct album *albums;
-    size_t nalbums = db_search_albums(&albums, "Miracle Milk", 0, 10);
-    for (size_t i = 0; i < nalbums; i++) {
-        struct album *a = &albums[i];
-        INFO("%2zu. album \"%s\" (%s)", i, a->name, a->id);
+    //struct album *albums;
+    //size_t nalbums = db_search_albums(&albums, "Miracle Milk", 0, 10);
+    //for (size_t i = 0; i < nalbums; i++) {
+    //    struct album *a = &albums[i];
+    //    INFO("%2zu. album \"%s\" (%s)", i, a->name, a->id);
 
-        struct song *songs;
-        size_t nsongs = db_get_songs_in_album(&songs, a);
-        for (size_t j = 0; j < nsongs; j++) {
-            struct song *s = &songs[j];
-            INFO("    %2zu. song \"%s\" (%s)", j, s->title, s->id);
+    //    struct song *songs;
+    //    size_t nsongs = db_get_songs_in_album(&songs, a);
+    //    for (size_t j = 0; j < nsongs; j++) {
+    //        struct song *s = &songs[j];
+    //        INFO("    %2zu. song \"%s\" (%s)", j, s->title, s->id);
 
-            playlist_append_song(s);
+    //        playlist_append_song(s);
 
-            song_free_contents(s);
-        }
-        free(songs);
+    //        song_free_contents(s);
+    //    }
+    //    free(songs);
 
-        album_free_contents(a);
+    //    album_free_contents(a);
 
-        break;
-    }
-    free(albums);
+    //    break;
+    //}
+    //free(albums);
 
     pollen_loop_run(event_loop);
 

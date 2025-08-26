@@ -16,14 +16,14 @@ void draw_tab_bar(void) {
     wmove(tui.tabbar_win, 0, 0);
 
     for (size_t i = 0; i < SIZEOF_VEC(tab_names); i++) {
-        if (i == tui.active_tab) {
+        if (i == tui.tab) {
             wattron(tui.tabbar_win, A_BOLD);
         }
 
         waddstr(tui.tabbar_win, tab_names[i]);
         waddch(tui.tabbar_win, ' ');
 
-        if (i == tui.active_tab) {
+        if (i == tui.tab) {
             wattroff(tui.tabbar_win, A_BOLD);
         }
     }

@@ -149,6 +149,15 @@ struct sqlite_statement statements[] = {
         "ORDER BY name ASC "
         "LIMIT $select_count OFFSET $select_offset"
     },
+    [STATEMENT_GET_SONGS_WITH_PAGINATION] = { .source =
+        "SELECT "
+            "id, title, artist, album, "
+            "track, year, duration, bitrate, size, filetype, "
+            "artist_id, album_id  "
+        "FROM songs "
+        "ORDER BY title ASC "
+        "LIMIT $select_count OFFSET $select_offset"
+    },
 
     [STATEMENT_GET_SONGS_IN_ALBUM] = { .source =
         "SELECT "

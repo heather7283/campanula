@@ -3,7 +3,6 @@
 
 #include <ncurses.h>
 
-#include "tui/pad.h"
 #include "tui/menu.h"
 #include "signals.h"
 
@@ -66,14 +65,23 @@ struct tui {
         uint64_t net_speed[2];
     } statusbar;
 
+    enum tui_tab tab;
     WINDOW *tabbar_win;
 
-    enum tui_tab active_tab;
-    int64_t playlist_active;
-    struct tui_menu menu;
+    struct {
+        struct tui_menu menu;
+        union {
+            struct {
+                int64_t current;
+            } playlist;
+        };
+    } mainwin;
 };
 
 extern struct tui tui;
+
+void tui_switch_tab_playlist(void);
+void tui_switch_tab_songs(void);
 
 #endif /* #ifndef SRC_TUI_INTERNAL_H */
 

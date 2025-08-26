@@ -17,8 +17,8 @@ void tui_handle_resize(int width, int height) {
     resize_term(height, width);
     wclear(newscr); /* ncurses nonsense */
 
-    tui_menu_position(&tui.menu, 0, 1, COLS, LINES - STATUSBAR_HEIGHT - 1);
-    tui_menu_draw(&tui.menu);
+    tui_menu_position(&tui.mainwin.menu, 0, 1, COLS, LINES - STATUSBAR_HEIGHT - 1);
+    tui_menu_draw(&tui.mainwin.menu);
 
     if (tui.statusbar.win != NULL) {
         delwin(tui.statusbar.win);
@@ -70,17 +70,17 @@ void tui_handle_key(uint32_t key) {
         player_toggle_pause();
         break;
     case 'k':
-        if (tui_menu_select_prev(&tui.menu)) {
+        if (tui_menu_select_prev(&tui.mainwin.menu)) {
             doupdate();
         }
         break;
     case 'j':
-        if (tui_menu_select_next(&tui.menu)) {
+        if (tui_menu_select_next(&tui.mainwin.menu)) {
             doupdate();
         }
         break;
     case '\n':
-        tui_menu_activate(&tui.menu);
+        tui_menu_activate(&tui.mainwin.menu);
         break;
     case 'q':
         player_quit();
@@ -119,22 +119,25 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
     case PLAYER_EVENT_PLAYLIST_POSITION: {
         const int64_t index = data->as.i64;
 
-        const struct song *songs;
-        playlist_get_songs(&songs);
+        if (tui.tab == TUI_TAB_PLAYLIST) {
+            const struct song *songs;
+            playlist_get_songs(&songs);
 
-        /* mark old one as not current */
-        struct tui_menu_item *old = tui_menu_get_item(&tui.menu, tui.playlist_active);
-        assert(old->type == TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM);
-        old->as.playlist_item.current = false;
-        tui_menu_draw_item(&tui.menu, tui.playlist_active);
+            /* mark old one as not current */
+            struct tui_menu_item *old = tui_menu_get_item(&tui.mainwin.menu,
+                                                          tui.mainwin.playlist.current);
+            assert(old->type == TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM);
+            old->as.playlist_item.current = false;
+            tui_menu_draw_item(&tui.mainwin.menu, tui.mainwin.playlist.current);
 
-        /* mark new one as current */
-        struct tui_menu_item *item = tui_menu_get_item(&tui.menu, index);
-        assert(item->type == TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM);
-        item->as.playlist_item.current = true;
-        tui_menu_draw_item(&tui.menu, index);
+            /* mark new one as current */
+            struct tui_menu_item *item = tui_menu_get_item(&tui.mainwin.menu, index);
+            assert(item->type == TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM);
+            item->as.playlist_item.current = true;
+            tui_menu_draw_item(&tui.mainwin.menu, index);
 
-        tui.playlist_active = index;
+            tui.mainwin.playlist.current = index;
+        }
 
         draw_status_bar();
         break;
@@ -142,18 +145,20 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
     case PLAYER_EVENT_PLAYLIST_SONG_ADDED: {
         const uint64_t index = data->as.u64;
 
-        const struct song *songs;
-        playlist_get_songs(&songs);
+        if (tui.tab == TUI_TAB_PLAYLIST) {
+            const struct song *songs;
+            playlist_get_songs(&songs);
 
-        const struct tui_menu_item item = {
-            .type = TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM,
-            .as.playlist_item = {
-                .index = index,
-                .current = (index == playlist_get_current_song(NULL)),
-                .song = (struct song *)&songs[index],
-            },
-        };
-        tui_menu_insert_or_replace_item(&tui.menu, index, &item);
+            const struct tui_menu_item item = {
+                .type = TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM,
+                .as.playlist_item = {
+                    .index = index,
+                    .current = (index == playlist_get_current_song(NULL)),
+                    .song = (struct song *)&songs[index],
+                },
+            };
+            tui_menu_insert_or_replace_item(&tui.mainwin.menu, index, &item);
+        }
 
         break;
     }
