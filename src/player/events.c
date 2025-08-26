@@ -64,60 +64,60 @@ static void process_property_change(const struct mpv_event_property *prop, uint6
         return;
     }
 
+    #define CHECK_FORMAT(fmt) \
+        if (prop->format != MPV_FORMAT_##fmt) { \
+            WARN("mpv event: property %s: unexpected format!", prop->name); \
+            break; \
+        }
+
     switch ((enum player_event)event) {
     case PLAYER_EVENT_PAUSE:
-        if (prop->format != MPV_FORMAT_FLAG) {
-            WARN("mpv event: property %s: unexpected format!", prop->name);
-            break;
-        }
-        bool pause = *(int *)prop->data;
+        CHECK_FORMAT(FLAG);
+        const bool pause = *(int *)prop->data;
         signal_emit_bool(&player.emitter, event, pause);
         break;
     case PLAYER_EVENT_PERCENT_POSITION:
-        if (prop->format != MPV_FORMAT_INT64) {
-            WARN("mpv event: property %s: unexpected format!", prop->name);
-            break;
-        }
-        int64_t percent_pos = *(int64_t *)prop->data;
+        CHECK_FORMAT(INT64);
+        const int64_t percent_pos = *(int64_t *)prop->data;
         signal_emit_i64(&player.emitter, event, percent_pos);
         break;
     case PLAYER_EVENT_PLAYLIST_POSITION:
-        if (prop->format != MPV_FORMAT_INT64) {
-            WARN("mpv event: property %s: unexpected format!", prop->name);
-            break;
-        }
-        int64_t playlist_pos = *(int64_t *)prop->data;
+        CHECK_FORMAT(INT64);
+        const int64_t playlist_pos = *(int64_t *)prop->data;
         player.playlist.current_song = playlist_pos;
         signal_emit_i64(&player.emitter, event, playlist_pos);
         break;
     case PLAYER_EVENT_VOLUME:
-        if (prop->format != MPV_FORMAT_INT64) {
-            WARN("mpv event: property %s: unexpected format!", prop->name);
-            break;
-        }
-        int64_t volume = *(int64_t *)prop->data;
+        CHECK_FORMAT(INT64);
+        const int64_t volume = *(int64_t *)prop->data;
         signal_emit_i64(&player.emitter, event, volume);
         break;
     case PLAYER_EVENT_MUTE:
-        if (prop->format != MPV_FORMAT_FLAG) {
-            WARN("mpv event: property %s: unexpected format!", prop->name);
-            break;
-        }
-        bool mute = *(int *)prop->data;
+        CHECK_FORMAT(FLAG);
+        const bool mute = *(int *)prop->data;
         signal_emit_bool(&player.emitter, event, mute);
         break;
     case PLAYER_EVENT_DURATION:
-        if (prop->format != MPV_FORMAT_INT64) {
-            WARN("mpv event: property %s: unexpected format!", prop->name);
-            break;
-        }
+        CHECK_FORMAT(INT64);
         const int64_t duration = *(int64_t *)prop->data;
         signal_emit_i64(&player.emitter, event, duration);
+        break;
+    case PLAYER_EVENT_TIME_POSITION:
+        CHECK_FORMAT(INT64);
+        const int64_t time_position = *(int64_t *)prop->data;
+        signal_emit_i64(&player.emitter, event, time_position);
+        break;
+    case PLAYER_EVENT_TIME_REMAINING:
+        CHECK_FORMAT(INT64);
+        const int64_t time_remaining = *(int64_t *)prop->data;
+        signal_emit_i64(&player.emitter, event, time_remaining);
         break;
     default:
         WARN("mpv event: property %s not asked for?", prop->name);
         break;
     }
+
+    #undef CHECK_FORMAT
 }
 
 void player_process_event(const struct mpv_event *ev) {

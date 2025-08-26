@@ -12,6 +12,8 @@ enum player_event: uint64_t {
     PLAYER_EVENT_VOLUME = 1 << 3, /* volume as i64 */
     PLAYER_EVENT_MUTE = 1 << 4, /* boolean */
     PLAYER_EVENT_DURATION = 1 << 5, /* duration as i64 */
+    PLAYER_EVENT_TIME_POSITION = 1 << 6, /* seconds as i64 */
+    PLAYER_EVENT_TIME_REMAINING = 1 << 7, /* seconds as i64 */
 
     PLAYER_EVENT_PLAYLIST_SONG_ADDED = 1 << 31, /* song index as u64 */
     PLAYER_EVENT_PLAYLIST_SONG_REMOVED = 1 << 32, /* song index as u64 */
