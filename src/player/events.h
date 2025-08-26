@@ -11,10 +11,11 @@ enum player_event: uint64_t {
     PLAYER_EVENT_PAUSE = 1 << 2, /* boolean, true if paused, false if not */
     PLAYER_EVENT_VOLUME = 1 << 3, /* volume as i64 */
     PLAYER_EVENT_MUTE = 1 << 4, /* boolean */
+    PLAYER_EVENT_DURATION = 1 << 5, /* duration as i64 */
 
-    PLAYER_EVENT_PLAYLIST_SONG_ADDED = 1 << 5, /* song index as u64 */
-    PLAYER_EVENT_PLAYLIST_SONG_REMOVED = 1 << 6, /* song index as u64 */
-    PLAYER_EVENT_PLAYLIST_CLEARED = 1 << 7, /* nothing */
+    PLAYER_EVENT_PLAYLIST_SONG_ADDED = 1 << 31, /* song index as u64 */
+    PLAYER_EVENT_PLAYLIST_SONG_REMOVED = 1 << 32, /* song index as u64 */
+    PLAYER_EVENT_PLAYLIST_CLEARED = 1 << 33, /* nothing */
 };
 
 void player_event_subscribe(struct signal_listener *listener, enum player_event events,

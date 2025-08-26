@@ -106,6 +106,14 @@ static void process_property_change(const struct mpv_event_property *prop, uint6
         bool mute = *(int *)prop->data;
         signal_emit_bool(&player.emitter, event, mute);
         break;
+    case PLAYER_EVENT_DURATION:
+        if (prop->format != MPV_FORMAT_INT64) {
+            WARN("mpv event: property %s: unexpected format!", prop->name);
+            break;
+        }
+        const int64_t duration = *(int64_t *)prop->data;
+        signal_emit_i64(&player.emitter, event, duration);
+        break;
     default:
         WARN("mpv event: property %s not asked for?", prop->name);
         break;
