@@ -48,9 +48,6 @@ void draw_status_bar(void) {
     }
     wclrtoeol(tui.statusbar.win);
 
-    swprintf(line, cols, L"%s %3li%%", tui.statusbar.pause ? "||" : "|>", tui.statusbar.pos);
-    mvwaddnwstr(tui.statusbar.win, 2, 1, line, cols);
-
     static const char units[][6] = { "bitps", "Kibps", "Mibps", "Gibps", "Tibps", "Pibps" };
     static const wchar_t labels[] = { [NET_SPEED_DL] = L'V', [NET_SPEED_UL] = L'Λ' };
     chars = swprintf(line, cols, L" NET %lu", tui.statusbar.net_conns);
@@ -71,20 +68,31 @@ void draw_status_bar(void) {
     }
     mvwaddnwstr(tui.statusbar.win, 1, COLS - chars - 1, line, cols);
 
+    mvwaddstr(tui.statusbar.win, 2, 1, tui.statusbar.pause ? "||" : "|>");
+
+    swprintf(line, cols, L"%02d:%02d", tui.statusbar.time_pos / 60, tui.statusbar.time_pos % 60);
+    mvwaddnwstr(tui.statusbar.win, 2, 4, line, cols);
+
+    swprintf(line, cols, L"%02d:%02d", tui.statusbar.duration / 60, tui.statusbar.duration % 60);
+    mvwaddnwstr(tui.statusbar.win, 2, COLS - 14, line, cols);
+
     if (tui.statusbar.mute) {
-        swprintf(line, cols, L"VOL MUTE");
+        swprintf(line, cols, L"VOL MUT");
     } else {
-        swprintf(line, cols, L"VOL %3li%%", tui.statusbar.volume);
+        swprintf(line, cols, L"VOL %3li", tui.statusbar.volume);
     }
-    mvwaddnwstr(tui.statusbar.win, 2, COLS - 9, line, cols);
+    mvwaddnwstr(tui.statusbar.win, 2, COLS - 8, line, cols);
 
-    mvwaddch(tui.statusbar.win, 2, 9, '[');
-    mvwaddch(tui.statusbar.win, 2, cols - 9, ']');
+    const int bar_start = 10;
+    const int bar_end = COLS - 14 - 2;
 
-    const int range = cols - 9 - 10;
+    mvwaddch(tui.statusbar.win, 2, bar_start, '[');
+    mvwaddch(tui.statusbar.win, 2, bar_end, ']');
+
+    const int range = bar_end - bar_start - 1;
     const int thresh = tui.statusbar.pos * range / 100;
-    for (int i = 0; i < cols - 9 - 10; i++) {
-        mvwaddch(tui.statusbar.win, 2, i + 10, (i <= thresh) ? '#' : '-');
+    for (int i = 0; i < range; i++) {
+        mvwaddch(tui.statusbar.win, 2, bar_start + i + 1, (i <= thresh) ? '#' : '-');
     }
 
     wborder(tui.statusbar.win, 0, 0, 0, 0, 0, 0, 0, 0);
