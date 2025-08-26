@@ -69,6 +69,7 @@ struct tui {
     WINDOW *tabbar_win;
 
     enum tui_tab active_tab;
+    int64_t playlist_active;
     struct tui_menu list;
 };
 

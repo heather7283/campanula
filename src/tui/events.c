@@ -1,3 +1,5 @@
+#include <assert.h>
+
 #include "tui/events.h"
 #include "tui/internal.h"
 #include "tui/draw.h"
@@ -106,30 +108,47 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
         tui.statusbar.pos = data->as.i64;
         draw_status_bar();
         break;
-    case PLAYER_EVENT_PLAYLIST_POSITION:
-        draw_status_bar();
-        break;
-    case PLAYER_EVENT_PLAYLIST:
-        /* FIXME: this is very retarded, ugly and inefficient but I have no idea what else to do */
-        const size_t prev_selected = tui.list.selected;
+    case PLAYER_EVENT_PLAYLIST_POSITION: {
+        const int64_t index = data->as.i64;
+
         const struct song *songs;
-        const size_t nsongs = playlist_get_songs(&songs);
-        const size_t current = playlist_get_current_song(NULL);
-        tui_menu_clear(&tui.list);
-        for (size_t i = 0; i < nsongs; i++) {
-            tui_menu_append_item(&tui.list, &(struct tui_menu_item){
-                .type = TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM,
-                .as.playlist_item = {
-                    .index = i,
-                    .current = i == current,
-                    .song = (struct song *)&songs[i],
-                },
-            });
-        }
-        tui.list.selected = MIN(prev_selected, VEC_SIZE(&tui.list.items) - 1);
-        tui_menu_draw(&tui.list);
+        playlist_get_songs(&songs);
+
+        /* mark old one as not current */
+        struct tui_menu_item *old = tui_menu_get_item(&tui.list, tui.playlist_active);
+        assert(old->type == TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM);
+        old->as.playlist_item.current = false;
+        tui_menu_draw_item(&tui.list, tui.playlist_active);
+
+        /* mark new one as current */
+        struct tui_menu_item *item = tui_menu_get_item(&tui.list, index);
+        assert(item->type == TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM);
+        item->as.playlist_item.current = true;
+        tui_menu_draw_item(&tui.list, index);
+
+        tui.playlist_active = index;
+
         draw_status_bar();
         break;
+    }
+    case PLAYER_EVENT_PLAYLIST_SONG_ADDED: {
+        const uint64_t index = data->as.u64;
+
+        const struct song *songs;
+        playlist_get_songs(&songs);
+
+        const struct tui_menu_item item = {
+            .type = TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM,
+            .as.playlist_item = {
+                .index = index,
+                .current = (index == playlist_get_current_song(NULL)),
+                .song = (struct song *)&songs[index],
+            },
+        };
+        tui_menu_insert_or_replace_item(&tui.list, index, &item);
+
+        break;
+    }
     }
 
     doupdate();

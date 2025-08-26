@@ -38,6 +38,7 @@ static void tui_menu_item_playlist_item_draw(const struct tui_menu_item *self,
 
     mvwprintw(win, ypos, 0, "%s%d. %s - %s",
               i->current ? "> " : "", i->index, s->artist, s->title);
+    wclrtoeol(win);
 
     if (i->current) {
         wattroff(win, A_BOLD);
@@ -76,6 +77,7 @@ static void tui_menu_item_label_draw(const struct tui_menu_item *self,
     const struct tui_menu_item_label *l = &self->as.label;
 
     mvwaddnstr(win, ypos, 0, l->str, width);
+    wclrtoeol(win);
 }
 
 static void tui_menu_item_label_free_contents(struct tui_menu_item *self) {
@@ -161,10 +163,12 @@ void tui_menu_position(struct tui_menu *menu, int screen_x, int screen_y, int wi
     scrollok(menu->win, true);
 }
 
-void tui_menu_draw_nth(struct tui_menu *menu, size_t index) {
+bool tui_menu_draw_item(struct tui_menu *menu, size_t index) {
     if (index < menu->scroll || index > menu->scroll + menu->height - 1) {
-        return;
+        TRACE("tui_menu_draw_nth: %zu is not visible", index);
+        return false;
     }
+    TRACE("tui_menu_draw_nth: %zu scroll %zu height %d", index, menu->scroll, menu->height);
 
     if (index == menu->selected) {
         wattron(menu->win, A_REVERSE);
@@ -176,17 +180,44 @@ void tui_menu_draw_nth(struct tui_menu *menu, size_t index) {
     if (index == menu->selected) {
         wattroff(menu->win, A_REVERSE);
     }
+
+    wnoutrefresh(menu->win);
+
+    return true;
 }
 
 void tui_menu_draw(struct tui_menu *menu) {
-    const size_t lim = MIN((size_t)menu->height, VEC_SIZE(&menu->items));
+    const size_t lim = MIN((size_t)menu->height, VEC_SIZE(&menu->items) - menu->scroll);
     for (size_t i = 0; i < lim; i++) {
-        tui_menu_draw_nth(menu, menu->scroll + i);
+        tui_menu_draw_item(menu, menu->scroll + i);
     }
-    wclrtobot(menu->win);
 
-    if (wnoutrefresh(menu->win) != OK) {
-        ERROR("wnoutrefresh");
+    wclrtobot(menu->win);
+    wnoutrefresh(menu->win);
+}
+
+struct tui_menu_item *tui_menu_get_item(struct tui_menu *menu, size_t index) {
+    return VEC_AT(&menu->items, index);
+}
+
+bool tui_menu_remove_item(struct tui_menu *menu, size_t index) {
+    struct tui_menu_item *i = VEC_AT(&menu->items, index);
+    METHOD_CALL(i, free_contents);
+
+    VEC_ERASE(&menu->items, index);
+    if (index >= VEC_SIZE(&menu->items)) {
+        menu->selected = VEC_SIZE(&menu->items) - 1;
+    }
+
+    if (index < menu->scroll + menu->height) {
+        const size_t count = MIN((menu->scroll + menu->height - index), VEC_SIZE(&menu->items));
+        for (size_t i = 0; i < count; i++) {
+            tui_menu_draw_item(menu, index + i);
+        }
+
+        return true;
+    } else {
+        return false;
     }
 }
 
@@ -210,7 +241,7 @@ static bool tui_menu_ensure_visible(struct tui_menu *menu, size_t index) {
         menu->scroll -= diff;
 
         for (size_t i = 0; i < MIN(diff, (size_t)menu->height); i++) {
-            tui_menu_draw_nth(menu, menu->scroll + i);
+            tui_menu_draw_item(menu, menu->scroll + i);
         }
 
         return true;
@@ -220,7 +251,7 @@ static bool tui_menu_ensure_visible(struct tui_menu *menu, size_t index) {
         menu->scroll += diff;
 
         for (size_t i = 0; i < MIN(diff, (size_t)menu->height); i++) {
-            tui_menu_draw_nth(menu, menu->scroll + menu->height - 1 - i);
+            tui_menu_draw_item(menu, menu->scroll + menu->height - 1 - i);
         }
 
         return true;
@@ -242,8 +273,9 @@ bool tui_menu_select_nth(struct tui_menu *menu, size_t index) {
 
         tui_menu_ensure_visible(menu, menu->selected);
 
-        tui_menu_draw_nth(menu, prev_selected);
-        tui_menu_draw_nth(menu, menu->selected);
+        tui_menu_draw_item(menu, prev_selected);
+        tui_menu_draw_item(menu, menu->selected);
+
         return true;
     } else {
         return false;
@@ -274,12 +306,8 @@ static bool tui_menu_select_prev_or_next(struct tui_menu *menu, int direction) {
     if (old_index != menu->selected) {
         tui_menu_ensure_visible(menu, menu->selected);
 
-        tui_menu_draw_nth(menu, old_index);
-        tui_menu_draw_nth(menu, menu->selected);
-
-        if (wnoutrefresh(menu->win) != OK) {
-            ERROR("wnoutrefresh");
-        }
+        tui_menu_draw_item(menu, old_index);
+        tui_menu_draw_item(menu, menu->selected);
 
         return true;
     } else {
@@ -299,8 +327,39 @@ void tui_menu_activate(struct tui_menu *menu) {
     METHOD_CALL(VEC_AT(&menu->items, menu->selected), activate);
 }
 
-void tui_menu_append_item(struct tui_menu *menu, const struct tui_menu_item *item) {
-    struct tui_menu_item *i = VEC_EMPLACE_BACK(&menu->items);
-    METHOD_CALL(item, copy, i);
+bool tui_menu_append_item(struct tui_menu *menu, const struct tui_menu_item *item) {
+    struct tui_menu_item *new_item = VEC_EMPLACE_BACK(&menu->items);
+    METHOD_CALL(item, copy, new_item);
+    return tui_menu_draw_item(menu, VEC_SIZE(&menu->items) - 1);
+}
+
+bool tui_menu_insert_or_replace_item(struct tui_menu *menu, size_t index,
+                                     const struct tui_menu_item *item) {
+    struct tui_menu_item *new_item = NULL;
+    bool ret = false;
+
+    if (index >= VEC_SIZE(&menu->items)) {
+        /* fill with blanks */
+        const size_t first_blank = VEC_SIZE(&menu->items) - 1;
+        const size_t n_blanks = index - VEC_SIZE(&menu->items);
+        struct tui_menu_item *blanks = VEC_EMPLACE_BACK_N(&menu->items, n_blanks);
+
+        for (size_t i = 0; i < n_blanks; i++) {
+            blanks[i].type = TUI_MENU_ITEM_TYPE_EMPTY;
+            ret = tui_menu_draw_item(menu, first_blank + i) || ret;
+        }
+
+        new_item = VEC_EMPLACE_BACK(&menu->items);
+    } else {
+        struct tui_menu_item *old_item = VEC_AT(&menu->items, index);
+        METHOD_CALL(old_item, free_contents);
+
+        new_item = old_item;
+    }
+
+    METHOD_CALL(item, copy, new_item);
+    ret = tui_menu_draw_item(menu, index) || ret;
+
+    return ret;
 }
 

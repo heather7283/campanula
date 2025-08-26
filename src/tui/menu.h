@@ -49,8 +49,11 @@ struct tui_menu {
 void tui_menu_position(struct tui_menu *menu, int screen_x, int screen_y, int width, int height);
 
 void tui_menu_draw(struct tui_menu *menu);
-void tui_menu_draw_nth(struct tui_menu *menu, size_t index);
+bool tui_menu_draw_item(struct tui_menu *menu, size_t index);
 
+struct tui_menu_item *tui_menu_get_item(struct tui_menu *menu, size_t index);
+
+bool tui_menu_remove_item(struct tui_menu *menu, size_t index);
 void tui_menu_clear(struct tui_menu *menu);
 
 bool tui_menu_select_nth(struct tui_menu *menu, size_t index);
@@ -59,7 +62,9 @@ bool tui_menu_select_prev(struct tui_menu *menu);
 
 void tui_menu_activate(struct tui_menu *menu);
 
-void tui_menu_append_item(struct tui_menu *menu, const struct tui_menu_item *item);
+bool tui_menu_append_item(struct tui_menu *menu, const struct tui_menu_item *item);
+bool tui_menu_insert_or_replace_item(struct tui_menu *menu, size_t index,
+                                     const struct tui_menu_item *item);
 
 #endif /* #ifndef SRC_TUI_MENU_H */
 

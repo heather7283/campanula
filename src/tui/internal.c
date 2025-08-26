@@ -1,4 +1,6 @@
 #include "tui/internal.h"
 
-struct tui tui = {0};
+struct tui tui = {
+    .playlist_active = -1,
+};
 
