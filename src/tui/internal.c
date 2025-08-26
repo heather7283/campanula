@@ -43,7 +43,7 @@ void tui_switch_tab_songs(void) {
     tui.tab = TUI_TAB_SONGS;
 
     struct song *songs;
-    const size_t nsongs = db_get_songs(&songs, 0, INT64_MAX);
+    const size_t nsongs = db_get_songs(&songs, 0, 100);
 
     tui_menu_clear(&tui.mainwin.menu);
     for (size_t i = 0; i < nsongs; i++) {

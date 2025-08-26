@@ -209,29 +209,64 @@ static_assert(SIZEOF_VEC(tui_menu_item_methods) == TUI_MENU_ITEM_TYPE_COUNT);
 void tui_menu_position(struct tui_menu *menu, int screen_x, int screen_y, int width, int height) {
     menu->screen_x = screen_x;
     menu->screen_y = screen_y;
-    menu->width = width;
+    menu->width = width - 1 /* scrollbar */;
     menu->height = height;
 
     if (menu->win != NULL) {
         delwin(menu->win);
+        menu->win = NULL;
     }
-    menu->win = newwin(height, width, screen_y, screen_x);
+    menu->win = newwin(menu->height, menu->width, menu->screen_y, menu->screen_x);
     scrollok(menu->win, true);
+
+    if (menu->scrollbar_win != NULL) {
+        delwin(menu->scrollbar_win);
+        menu->scrollbar_win = NULL;
+    }
+    menu->scrollbar_win = newwin(menu->height, 1, menu->screen_y, menu->screen_x + menu->width);
+}
+
+void tui_menu_draw_scrollbar(struct tui_menu *menu) {
+    const int n_items = VEC_SIZE(&menu->items);
+    if (n_items == 0) {
+        return;
+    }
+
+    const int n_visible = MIN(VEC_SIZE(&menu->items) - menu->scroll, menu->height);
+    TRACE("tui_menu_draw_scrollbar: n_items %d n_visible %d", n_items, n_visible);
+
+    int scrollbar_height;
+    int scrollbar_pos;
+    if (n_items <= n_visible) {
+        scrollbar_pos = 0;
+        scrollbar_height = menu->height;
+    } else {
+        const float h = ((float)n_visible / n_items) * menu->height;
+        scrollbar_height = MAX(1, h);
+
+        const float frac = (float)menu->scroll  / (n_items - n_visible);
+        scrollbar_pos = frac * (menu->height - scrollbar_height);
+    }
+    TRACE("tui_menu_draw_scrollbar: pos %d height %d", scrollbar_pos, scrollbar_height);
+
+    for (int i = 0; i < menu->height; i++) {
+        const char c = (i < scrollbar_pos || i >= scrollbar_pos + scrollbar_height) ? ' ' : '#';
+        mvwaddch(menu->scrollbar_win, i, 0, c);
+    }
+    wnoutrefresh(menu->scrollbar_win);
 }
 
 bool tui_menu_draw_item(struct tui_menu *menu, size_t index) {
     if (index < menu->scroll || index > menu->scroll + menu->height - 1) {
-        TRACE("tui_menu_draw_nth: %zu is not visible", index);
         return false;
     }
-    TRACE("tui_menu_draw_nth: %zu scroll %zu height %d", index, menu->scroll, menu->height);
 
     if (index == menu->selected) {
         wattron(menu->win, A_REVERSE);
     }
 
     const struct tui_menu_item *item = VEC_AT(&menu->items, index);
-    METHOD_CALL(item, draw, menu->win, index - menu->scroll, menu->width);
+    METHOD_CALL(item, draw, menu->win, index - menu->scroll, menu->width - 1 /* scrollbar */);
 
     if (index == menu->selected) {
         wattroff(menu->win, A_REVERSE);
@@ -252,6 +287,8 @@ void tui_menu_draw(struct tui_menu *menu) {
         wclrtobot(menu->win);
         wnoutrefresh(menu->win);
     }
+
+    tui_menu_draw_scrollbar(menu);
 }
 
 struct tui_menu_item *tui_menu_get_item(struct tui_menu *menu, size_t index) {
@@ -259,6 +296,8 @@ struct tui_menu_item *tui_menu_get_item(struct tui_menu *menu, size_t index) {
 }
 
 bool tui_menu_remove_item(struct tui_menu *menu, size_t index) {
+    bool ret = false;
+
     struct tui_menu_item *i = VEC_AT(&menu->items, index);
     METHOD_CALL(i, free_contents);
 
@@ -272,11 +311,12 @@ bool tui_menu_remove_item(struct tui_menu *menu, size_t index) {
         for (size_t i = 0; i < count; i++) {
             tui_menu_draw_item(menu, index + i);
         }
-
-        return true;
-    } else {
-        return false;
+        ret = true;
     }
+
+    tui_menu_draw_scrollbar(menu);
+
+    return ret;
 }
 
 void tui_menu_clear(struct tui_menu *menu) {
@@ -290,6 +330,8 @@ void tui_menu_clear(struct tui_menu *menu) {
     menu->selected = 0;
 
     wclear(menu->win);
+
+    tui_menu_draw_scrollbar(menu);
 }
 
 static bool tui_menu_ensure_visible(struct tui_menu *menu, size_t index) {
@@ -302,6 +344,8 @@ static bool tui_menu_ensure_visible(struct tui_menu *menu, size_t index) {
             tui_menu_draw_item(menu, menu->scroll + i);
         }
 
+        tui_menu_draw_scrollbar(menu);
+
         return true;
     } else if (index > menu->scroll + menu->height - 1) {
         const size_t diff = index + 1 - menu->height - menu->scroll;
@@ -311,6 +355,8 @@ static bool tui_menu_ensure_visible(struct tui_menu *menu, size_t index) {
         for (size_t i = 0; i < MIN(diff, (size_t)menu->height); i++) {
             tui_menu_draw_item(menu, menu->scroll + menu->height - 1 - i);
         }
+
+        tui_menu_draw_scrollbar(menu);
 
         return true;
     }
@@ -388,7 +434,11 @@ void tui_menu_activate(struct tui_menu *menu) {
 bool tui_menu_append_item(struct tui_menu *menu, const struct tui_menu_item *item) {
     struct tui_menu_item *new_item = VEC_EMPLACE_BACK(&menu->items);
     METHOD_CALL(item, copy, new_item);
-    return tui_menu_draw_item(menu, VEC_SIZE(&menu->items) - 1);
+
+    bool ret = tui_menu_draw_item(menu, VEC_SIZE(&menu->items) - 1);
+    tui_menu_draw_scrollbar(menu);
+
+    return ret;
 }
 
 bool tui_menu_insert_or_replace_item(struct tui_menu *menu, size_t index,
@@ -406,6 +456,8 @@ bool tui_menu_insert_or_replace_item(struct tui_menu *menu, size_t index,
             blanks[i].type = TUI_MENU_ITEM_TYPE_EMPTY;
             ret = tui_menu_draw_item(menu, first_blank + i) || ret;
         }
+
+        tui_menu_draw_scrollbar(menu);
 
         new_item = VEC_EMPLACE_BACK(&menu->items);
     } else {

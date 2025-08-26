@@ -47,6 +47,8 @@ struct tui_menu {
     int screen_x, screen_y;
     int width, height;
 
+    WINDOW *scrollbar_win;
+
     size_t scroll;
     size_t selected;
     VEC(struct tui_menu_item) items;
@@ -56,6 +58,7 @@ void tui_menu_position(struct tui_menu *menu, int screen_x, int screen_y, int wi
 
 void tui_menu_draw(struct tui_menu *menu);
 bool tui_menu_draw_item(struct tui_menu *menu, size_t index);
+void tui_menu_draw_scrollbar(struct tui_menu *menu);
 
 struct tui_menu_item *tui_menu_get_item(struct tui_menu *menu, size_t index);
 
