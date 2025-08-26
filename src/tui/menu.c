@@ -37,7 +37,13 @@ static void tui_menu_item_playlist_item_draw(const struct tui_menu_item *self,
     }
 
     mvwprintw(win, ypos, 0, "%s%d. %s - %s",
-              i->current ? "> " : "", i->index, s->artist, s->title);
+              i->current ? "> " : "",
+              i->index, s->artist, s->title);
+
+    wattron(win, A_DIM);
+    wprintw(win, " (%d:%02d)", s->duration / 60, s->duration % 60);
+    wattroff(win, A_DIM);
+
     wclrtoeol(win);
 
     if (i->current) {
