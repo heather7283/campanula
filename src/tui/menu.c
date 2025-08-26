@@ -192,8 +192,10 @@ void tui_menu_draw(struct tui_menu *menu) {
         tui_menu_draw_item(menu, menu->scroll + i);
     }
 
-    wclrtobot(menu->win);
-    wnoutrefresh(menu->win);
+    if (lim < (size_t)menu->height) {
+        wclrtobot(menu->win);
+        wnoutrefresh(menu->win);
+    }
 }
 
 struct tui_menu_item *tui_menu_get_item(struct tui_menu *menu, size_t index) {
