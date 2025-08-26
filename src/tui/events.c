@@ -17,8 +17,8 @@ void tui_handle_resize(int width, int height) {
     resize_term(height, width);
     wclear(newscr); /* ncurses nonsense */
 
-    tui_menu_position(&tui.list, 0, 1, COLS, LINES - STATUSBAR_HEIGHT - 1);
-    tui_menu_draw(&tui.list);
+    tui_menu_position(&tui.menu, 0, 1, COLS, LINES - STATUSBAR_HEIGHT - 1);
+    tui_menu_draw(&tui.menu);
 
     if (tui.statusbar.win != NULL) {
         delwin(tui.statusbar.win);
@@ -70,17 +70,17 @@ void tui_handle_key(uint32_t key) {
         player_toggle_pause();
         break;
     case 'k':
-        if (tui_menu_select_prev(&tui.list)) {
+        if (tui_menu_select_prev(&tui.menu)) {
             doupdate();
         }
         break;
     case 'j':
-        if (tui_menu_select_next(&tui.list)) {
+        if (tui_menu_select_next(&tui.menu)) {
             doupdate();
         }
         break;
     case '\n':
-        tui_menu_activate(&tui.list);
+        tui_menu_activate(&tui.menu);
         break;
     case 'q':
         player_quit();
@@ -123,16 +123,16 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
         playlist_get_songs(&songs);
 
         /* mark old one as not current */
-        struct tui_menu_item *old = tui_menu_get_item(&tui.list, tui.playlist_active);
+        struct tui_menu_item *old = tui_menu_get_item(&tui.menu, tui.playlist_active);
         assert(old->type == TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM);
         old->as.playlist_item.current = false;
-        tui_menu_draw_item(&tui.list, tui.playlist_active);
+        tui_menu_draw_item(&tui.menu, tui.playlist_active);
 
         /* mark new one as current */
-        struct tui_menu_item *item = tui_menu_get_item(&tui.list, index);
+        struct tui_menu_item *item = tui_menu_get_item(&tui.menu, index);
         assert(item->type == TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM);
         item->as.playlist_item.current = true;
-        tui_menu_draw_item(&tui.list, index);
+        tui_menu_draw_item(&tui.menu, index);
 
         tui.playlist_active = index;
 
@@ -153,7 +153,7 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
                 .song = (struct song *)&songs[index],
             },
         };
-        tui_menu_insert_or_replace_item(&tui.list, index, &item);
+        tui_menu_insert_or_replace_item(&tui.menu, index, &item);
 
         break;
     }
