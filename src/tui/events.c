@@ -26,14 +26,16 @@ void tui_handle_resize(int width, int height) {
         delwin(tui.statusbar.win);
     }
     tui.statusbar.win = newwin(STATUSBAR_HEIGHT, COLS, LINES - STATUSBAR_HEIGHT, 0);
-    nodelay(tui.statusbar.win, TRUE); /* makes getch() return ERR instead of blocking */
-    keypad(tui.statusbar.win, TRUE); /* enable recognition of escape sequences */
+    nodelay(tui.statusbar.win, true); /* makes getch() return ERR instead of blocking */
+    keypad(tui.statusbar.win, true); /* enable recognition of escape sequences */
+    leaveok(tui.statusbar.win, true);
     draw_status_bar();
 
     if (tui.tabbar_win != NULL) {
         delwin(tui.tabbar_win);
     }
     tui.tabbar_win = newwin(1, COLS, 0, 0);
+    leaveok(tui.tabbar_win, true);
     draw_tab_bar();
 
     doupdate();
