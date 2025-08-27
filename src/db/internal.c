@@ -139,14 +139,14 @@ struct sqlite_statement statements[] = {
     [STATEMENT_GET_ALBUMS_WITH_PAGINATION] = { .source =
         "SELECT id, name, artist, artist_id, song_count, duration "
         "FROM albums "
-        "ORDER BY name ASC "
+        "ORDER BY created DESC "
         "LIMIT $select_count OFFSET $select_offset"
     },
     [STATEMENT_SEARCH_ALBUMS_WITH_PAGINATION] = { .source =
         "SELECT id, name, artist, artist_id, song_count, duration "
         "FROM albums "
         "WHERE name LIKE '%' || $query || '%' "
-        "ORDER BY name ASC "
+        "ORDER BY created DESC "
         "LIMIT $select_count OFFSET $select_offset"
     },
     [STATEMENT_GET_SONGS_WITH_PAGINATION] = { .source =
