@@ -20,8 +20,7 @@ void draw_tab_bar(void) {
             wattron(tui.tabbar_win, A_BOLD);
         }
 
-        waddstr(tui.tabbar_win, tab_names[i]);
-        waddch(tui.tabbar_win, ' ');
+        wprintw(tui.tabbar_win, "(%zu) %s | ", i, tab_names[i]);
 
         if (i == tui.tab) {
             wattroff(tui.tabbar_win, A_BOLD);

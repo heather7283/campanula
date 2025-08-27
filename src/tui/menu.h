@@ -44,6 +44,7 @@ struct tui_menu_item {
 
 struct tui_menu {
     WINDOW *win;
+    bool hidden;
     int screen_x, screen_y;
     int width, height;
 
@@ -55,6 +56,8 @@ struct tui_menu {
 };
 
 void tui_menu_position(struct tui_menu *menu, int screen_x, int screen_y, int width, int height);
+void tui_menu_hide(struct tui_menu *menu);
+void tui_menu_show(struct tui_menu *menu);
 
 void tui_menu_draw(struct tui_menu *menu);
 bool tui_menu_draw_item(struct tui_menu *menu, size_t index);

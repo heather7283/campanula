@@ -13,42 +13,33 @@ enum {
     NET_SPEED_UL = 1,
 };
 
-enum tui_tab {
-    TUI_TAB_PLAYLIST,
-    TUI_TAB_ARTISTS,
-    TUI_TAB_ALBUMS,
-    TUI_TAB_SONGS,
-    TUI_TAB_ARTIST,
-    TUI_TAB_ALBUM,
+enum tui_tab_type {
+    TUI_TAB_PLAYLIST = 0,
+    TUI_TAB_ARTISTS = 1,
+    TUI_TAB_ALBUMS = 2,
+    TUI_TAB_SONGS = 3,
+    TUI_TAB_ARTIST = 4,
+    TUI_TAB_ALBUM = 5,
+
+    TUI_TAB_COUNT,
 };
 
-struct tui_tab_artists {
-    int page, items_per_page, scroll;
-    VEC(struct artist) artists;
-};
-
-struct tui_tab_albums {
-    int page, items_per_page, scroll;
-    VEC(struct album) albums;
-};
-
-struct tui_tab_songs {
-    int page, items_per_page, scroll;
-    VEC(struct song) songs;
-};
-
-struct tui_tab_artist {
-    int scroll;
-    struct artist *artist;
-    VEC(struct album) albums;
-    VEC(struct song) songs;
-};
-
-struct tui_tab_album {
-    int scroll;
-    struct artist *artist;
-    VEC(struct album) albums;
-    VEC(struct song) songs;
+struct tui_tab {
+    struct tui_menu menu;
+    union {
+        struct {
+            int current;
+        } playlist;
+        struct {
+            bool populated;
+        } songs;
+        struct {
+            struct artist *artist;
+        } artist;
+        struct {
+            struct album *album;
+        } album;
+    };
 };
 
 struct tui {
@@ -65,17 +56,10 @@ struct tui {
         uint64_t net_speed[2];
     } statusbar;
 
-    enum tui_tab tab;
     WINDOW *tabbar_win;
 
-    struct {
-        struct tui_menu menu;
-        union {
-            struct {
-                int64_t current;
-            } playlist;
-        };
-    } mainwin;
+    enum tui_tab_type tab;
+    struct tui_tab tabs[TUI_TAB_COUNT];
 };
 
 extern struct tui tui;

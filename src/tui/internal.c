@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <limits.h>
 
 #include "tui/internal.h"
@@ -6,59 +7,54 @@
 #include "db/query.h"
 
 struct tui tui = {
-    .mainwin = {
-        .playlist = {
-            .current = -1,
+    .tab = TUI_TAB_SONGS,
+    .tabs = {
+        [TUI_TAB_PLAYLIST] = {
+            .playlist = {
+                .current = -1,
+            },
         },
     },
 };
 
 void tui_switch_tab_playlist(void) {
+    tui_menu_hide(&tui.tabs[tui.tab].menu);
+
     tui.tab = TUI_TAB_PLAYLIST;
+    tui_menu_show(&tui.tabs[tui.tab].menu);
 
-    const struct song *songs;
-    const size_t nsongs = playlist_get_songs(&songs);
-    const size_t current = playlist_get_current_song(NULL);
-
-    tui_menu_clear(&tui.mainwin.menu);
-    for (size_t i = 0; i < nsongs; i++) {
-        const struct song *s = &songs[i];
-
-        tui_menu_append_item(&tui.mainwin.menu, &(struct tui_menu_item){
-            .type = TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM,
-            .as.playlist_item = {
-                .song = (struct song *)s,
-                .current = (i == current),
-                .index = i,
-            },
-        });
-    }
-
-    draw_status_bar();
-
+    draw_tab_bar();
     doupdate();
 }
 
 void tui_switch_tab_songs(void) {
+    tui_menu_hide(&tui.tabs[tui.tab].menu);
+
     tui.tab = TUI_TAB_SONGS;
+    tui_menu_show(&tui.tabs[tui.tab].menu);
 
-    struct song *songs;
-    const size_t nsongs = db_get_songs(&songs, 0, 100);
+    if (!tui.tabs[tui.tab].songs.populated) {
+        struct song *songs;
+        const size_t nsongs = db_get_songs(&songs, 0, 100);
 
-    tui_menu_clear(&tui.mainwin.menu);
-    for (size_t i = 0; i < nsongs; i++) {
-        const struct song *s = &songs[i];
+        tui_menu_clear(&tui.tabs[tui.tab].menu);
+        for (size_t i = 0; i < nsongs; i++) {
+            struct song *s = &songs[i];
 
-        tui_menu_append_item(&tui.mainwin.menu, &(struct tui_menu_item){
-            .type = TUI_MENU_ITEM_TYPE_SONG,
-            .as.song = {
-                .song = (struct song *)s,
-            },
-        });
+            tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
+                .type = TUI_MENU_ITEM_TYPE_SONG,
+                .as.song = {
+                    .song = s,
+                },
+            });
+            song_free_contents(s);
+        }
+        free(songs);
+
+        tui.tabs[tui.tab].songs.populated = true;
     }
 
-    draw_status_bar();
-
+    draw_tab_bar();
     doupdate();
 }
 
