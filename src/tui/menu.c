@@ -206,10 +206,6 @@ static_assert(SIZEOF_VEC(tui_menu_item_methods) == TUI_MENU_ITEM_TYPE_COUNT);
 #define METHOD_CALL(pobj, method, ...) \
     tui_menu_item_methods[(pobj)->type].method((pobj) __VA_OPT__(,) __VA_ARGS__)
 
-static void tui_menu_delete_windows(struct tui_menu *menu) {
-    TRACE("tui_menu_delete_windows: menu %p", menu);
-}
-
 void tui_menu_position(struct tui_menu *menu, int screen_x, int screen_y, int width, int height) {
     menu->screen_x = screen_x;
     menu->screen_y = screen_y;
