@@ -148,7 +148,7 @@ bool player_loadfile(const struct song *song) {
 }
 
 bool player_stop(void) {
-    int ret = mpv_command(player.mpv_handle, (const char *[]){ "stop" });
+    int ret = mpv_command(player.mpv_handle, (const char *[]){ "stop", NULL });
     if (ret != MPV_ERROR_SUCCESS) {
         ERROR("failed to clear playlist (stop cmd): %s", mpv_error_string(ret));
         return false;
@@ -158,7 +158,7 @@ bool player_stop(void) {
 }
 
 bool player_quit(void) {
-    int ret = mpv_command(player.mpv_handle, (const char *[]){ "quit" });
+    int ret = mpv_command(player.mpv_handle, (const char *[]){ "quit", NULL });
     if (ret != MPV_ERROR_SUCCESS) {
         ERROR("failed to quit player: %s", mpv_error_string(ret));
         return false;
