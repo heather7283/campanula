@@ -34,6 +34,9 @@ struct tui_tab {
             bool populated;
         } songs;
         struct {
+            bool populated;
+        } albums;
+        struct {
             struct artist *artist;
         } artist;
         struct {
@@ -66,6 +69,7 @@ extern struct tui tui;
 
 void tui_switch_tab_playlist(void);
 void tui_switch_tab_songs(void);
+void tui_switch_tab_albums(void);
 
 #endif /* #ifndef SRC_TUI_INTERNAL_H */
 

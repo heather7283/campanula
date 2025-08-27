@@ -11,6 +11,7 @@ enum tui_menu_item_type {
     TUI_MENU_ITEM_TYPE_LABEL,
     TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM,
     TUI_MENU_ITEM_TYPE_SONG,
+    TUI_MENU_ITEM_TYPE_ALBUM,
 
     TUI_MENU_ITEM_TYPE_COUNT,
 };
@@ -32,6 +33,10 @@ struct tui_menu_item_song {
     struct song *song;
 };
 
+struct tui_menu_item_album {
+    struct album *album;
+};
+
 struct tui_menu_item {
     enum tui_menu_item_type type;
     union {
@@ -39,6 +44,7 @@ struct tui_menu_item {
         struct tui_menu_item_label label;
         struct tui_menu_item_playlist_item playlist_item;
         struct tui_menu_item_song song;
+        struct tui_menu_item_album album;
     } as;
 };
 

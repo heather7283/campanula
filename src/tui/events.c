@@ -90,6 +90,10 @@ void tui_handle_key(uint32_t key) {
         tui_switch_tab_playlist();
         doupdate();
         break;
+    case '2':
+        tui_switch_tab_albums();
+        doupdate();
+        break;
     case '3':
         tui_switch_tab_songs();
         doupdate();
