@@ -37,6 +37,10 @@ struct tui_menu_item_album {
     struct album *album;
 };
 
+struct tui_menu_item_artist {
+    struct artist *artist;
+};
+
 struct tui_menu_item {
     enum tui_menu_item_type type;
     union {
@@ -45,6 +49,7 @@ struct tui_menu_item {
         struct tui_menu_item_playlist_item playlist_item;
         struct tui_menu_item_song song;
         struct tui_menu_item_album album;
+        struct tui_menu_item_artist artist;
     } as;
 };
 
@@ -78,11 +83,12 @@ bool tui_menu_select_nth(struct tui_menu *menu, size_t index);
 bool tui_menu_select_next(struct tui_menu *menu);
 bool tui_menu_select_prev(struct tui_menu *menu);
 
-void tui_menu_activate(struct tui_menu *menu);
-
 bool tui_menu_append_item(struct tui_menu *menu, const struct tui_menu_item *item);
 bool tui_menu_insert_or_replace_item(struct tui_menu *menu, size_t index,
                                      const struct tui_menu_item *item);
+
+void tui_menu_action_activate(struct tui_menu *menu);
+void tui_menu_action_append(struct tui_menu *menu);
 
 #endif /* #ifndef SRC_TUI_MENU_H */
 

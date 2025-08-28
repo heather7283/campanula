@@ -83,8 +83,11 @@ void tui_handle_key(uint32_t key) {
             doupdate();
         }
         break;
+    case 'a':
+        tui_menu_action_append(&tui.tabs[tui.tab].menu);
+        break;
     case '\n':
-        tui_menu_activate(&tui.tabs[tui.tab].menu);
+        tui_menu_action_activate(&tui.tabs[tui.tab].menu);
         break;
     case 'p':
         tui_switch_tab_playlist();

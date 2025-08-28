@@ -31,7 +31,7 @@ static bool tui_menu_item_album_is_selectable(const struct tui_menu_item *self) 
     return true;
 }
 
-static void tui_menu_item_album_activate(const struct tui_menu_item *self) {
+static void tui_menu_item_album_append(const struct tui_menu_item *self) {
     const struct tui_menu_item_album *i = &self->as.album;
     const struct album *a = i->album;
 
@@ -42,6 +42,10 @@ static void tui_menu_item_album_activate(const struct tui_menu_item *self) {
         song_free_contents(&songs[i]);
     }
     free(songs);
+}
+
+static void tui_menu_item_album_activate(const struct tui_menu_item *self) {
+    /* no-op (for now) */
 }
 
 static void tui_menu_item_album_copy(const struct tui_menu_item *self,
@@ -79,11 +83,15 @@ static bool tui_menu_item_song_is_selectable(const struct tui_menu_item *self) {
     return true;
 }
 
-static void tui_menu_item_song_activate(const struct tui_menu_item *self) {
+static void tui_menu_item_song_append(const struct tui_menu_item *self) {
     const struct tui_menu_item_song *i = &self->as.song;
     const struct song *s = i->song;
 
     playlist_append_song(s);
+}
+
+static void tui_menu_item_song_activate(const struct tui_menu_item *self) {
+    /* no-op (for now) */
 }
 
 static void tui_menu_item_song_copy(const struct tui_menu_item *self,
@@ -108,6 +116,10 @@ static void tui_menu_item_empty_free_contents(struct tui_menu_item *self) {
 
 static bool tui_menu_item_empty_is_selectable(const struct tui_menu_item *self) {
     return false;
+}
+
+static void tui_menu_item_empty_append(const struct tui_menu_item *self) {
+    /* no-op */
 }
 
 static void tui_menu_item_empty_activate(const struct tui_menu_item *self) {
@@ -154,6 +166,10 @@ static bool tui_menu_item_playlist_item_is_selectable(const struct tui_menu_item
     return true;
 }
 
+static void tui_menu_item_playlist_item_append(const struct tui_menu_item *self) {
+    /* no-op */
+}
+
 static void tui_menu_item_playlist_item_activate(const struct tui_menu_item *self) {
     player_play_nth(self->as.playlist_item.index);
 }
@@ -187,6 +203,10 @@ static bool tui_menu_item_label_is_selectable(const struct tui_menu_item *self) 
     return false;
 }
 
+static void tui_menu_item_label_append(const struct tui_menu_item *self) {
+    /* no-op */
+}
+
 static void tui_menu_item_label_activate(const struct tui_menu_item *self) {
     /* no-op */
 }
@@ -207,6 +227,8 @@ typedef void (*tui_menu_item_method_free_contents)(struct tui_menu_item *self);
 
 typedef bool (*tui_menu_item_method_is_selectable)(const struct tui_menu_item *self);
 
+typedef void (*tui_menu_item_method_append)(const struct tui_menu_item *self);
+
 typedef void (*tui_menu_item_method_activate)(const struct tui_menu_item *self);
 
 typedef void (*tui_menu_item_method_copy)(const struct tui_menu_item *self,
@@ -216,6 +238,7 @@ struct tui_menu_item_methods {
     const tui_menu_item_method_draw draw;
     const tui_menu_item_method_free_contents free_contents;
     const tui_menu_item_method_is_selectable is_selectable;
+    const tui_menu_item_method_append append;
     const tui_menu_item_method_activate activate;
     const tui_menu_item_method_copy copy;
 };
@@ -225,6 +248,7 @@ static const struct tui_menu_item_methods tui_menu_item_methods[] = {
         .draw = tui_menu_item_empty_draw,
         .free_contents = tui_menu_item_empty_free_contents,
         .is_selectable = tui_menu_item_empty_is_selectable,
+        .append = tui_menu_item_empty_append,
         .activate = tui_menu_item_empty_activate,
         .copy = tui_menu_item_empty_copy,
     },
@@ -232,6 +256,7 @@ static const struct tui_menu_item_methods tui_menu_item_methods[] = {
         .draw = tui_menu_item_label_draw,
         .free_contents = tui_menu_item_label_free_contents,
         .is_selectable = tui_menu_item_label_is_selectable,
+        .append = tui_menu_item_label_append,
         .activate = tui_menu_item_label_activate,
         .copy = tui_menu_item_label_copy,
     },
@@ -239,6 +264,7 @@ static const struct tui_menu_item_methods tui_menu_item_methods[] = {
         .draw = tui_menu_item_playlist_item_draw,
         .free_contents = tui_menu_item_playlist_item_free_contents,
         .is_selectable = tui_menu_item_playlist_item_is_selectable,
+        .append = tui_menu_item_playlist_item_append,
         .activate = tui_menu_item_playlist_item_activate,
         .copy = tui_menu_item_playlist_item_copy,
     },
@@ -246,6 +272,7 @@ static const struct tui_menu_item_methods tui_menu_item_methods[] = {
         .draw = tui_menu_item_song_draw,
         .free_contents = tui_menu_item_song_free_contents,
         .is_selectable = tui_menu_item_song_is_selectable,
+        .append = tui_menu_item_song_append,
         .activate = tui_menu_item_song_activate,
         .copy = tui_menu_item_song_copy,
     },
@@ -253,6 +280,7 @@ static const struct tui_menu_item_methods tui_menu_item_methods[] = {
         .draw = tui_menu_item_album_draw,
         .free_contents = tui_menu_item_album_free_contents,
         .is_selectable = tui_menu_item_album_is_selectable,
+        .append = tui_menu_item_album_append,
         .activate = tui_menu_item_album_activate,
         .copy = tui_menu_item_album_copy,
     },
@@ -507,10 +535,6 @@ bool tui_menu_select_prev(struct tui_menu *menu) {
     return tui_menu_select_prev_or_next(menu, -1);
 }
 
-void tui_menu_activate(struct tui_menu *menu) {
-    METHOD_CALL(VEC_AT(&menu->items, menu->selected), activate);
-}
-
 bool tui_menu_append_item(struct tui_menu *menu, const struct tui_menu_item *item) {
     struct tui_menu_item *new_item = VEC_EMPLACE_BACK(&menu->items);
     METHOD_CALL(item, copy, new_item);
@@ -551,5 +575,13 @@ bool tui_menu_insert_or_replace_item(struct tui_menu *menu, size_t index,
     ret = tui_menu_draw_item(menu, index) || ret;
 
     return ret;
+}
+
+void tui_menu_action_activate(struct tui_menu *menu) {
+    METHOD_CALL(VEC_AT(&menu->items, menu->selected), activate);
+}
+
+void tui_menu_action_append(struct tui_menu *menu) {
+    METHOD_CALL(VEC_AT(&menu->items, menu->selected), append);
 }
 
