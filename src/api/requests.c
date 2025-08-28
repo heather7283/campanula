@@ -170,24 +170,27 @@ static bool on_api_request_done(const char *errmsg, const struct response_header
                                 const void *data, ssize_t size, void *userdata) {
     struct api_request_callback_data *d = userdata;
 
+    [[gnu::cleanup(string_free)]] struct string err = {0};
+
     if (errmsg != NULL) {
-        d->callback(errmsg, NULL, d->callback_data);
+        string_appendf(&err, "network error: %s", errmsg);
+        d->callback(err.str, NULL, d->callback_data);
     } else {
         struct subsonic_response *response = api_parse_response(d->request_type, data, size);
 
         if (response == NULL) {
             d->callback("failed to parse server response", NULL, d->callback_data);
-        } else if (response->inner_object_type == API_TYPE_ERROR) {
+        } else if (response->status == RESPONSE_STATUS_FAILED) {
             const struct api_type_error *error = &response->inner_object.error;
-            const char *error_message;
 
             if (error->message != NULL) {
-                error_message = error->message;
+                string_appendf(&err, "server returned error: %s", error->message);
             } else {
-                error_message = error_code_to_string(error->code);
+                string_appendf(&err, "server returned error: %d (%s)",
+                               error->code, error_code_to_string(error->code));
             }
 
-            d->callback(error_message, NULL, d->callback_data);
+            d->callback(err.str, NULL, d->callback_data);
         } else {
             d->callback(NULL, response, d->callback_data);
         }
