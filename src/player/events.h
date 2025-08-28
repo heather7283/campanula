@@ -6,18 +6,18 @@
 #include "signals.h"
 
 enum player_event: uint64_t {
-    PLAYER_EVENT_PLAYLIST_POSITION = 1 << 0, /* position as i64 */
-    PLAYER_EVENT_PERCENT_POSITION = 1 << 1, /* percentage as i64 */
-    PLAYER_EVENT_PAUSE = 1 << 2, /* boolean, true if paused, false if not */
-    PLAYER_EVENT_VOLUME = 1 << 3, /* volume as i64 */
-    PLAYER_EVENT_MUTE = 1 << 4, /* boolean */
-    PLAYER_EVENT_DURATION = 1 << 5, /* duration as i64 */
-    PLAYER_EVENT_TIME_POSITION = 1 << 6, /* seconds as i64 */
-    PLAYER_EVENT_TIME_REMAINING = 1 << 7, /* seconds as i64 */
+    PLAYER_EVENT_PLAYLIST_POSITION = 1ULL << 0, /* position as i64 */
+    PLAYER_EVENT_PERCENT_POSITION = 1ULL << 1, /* percentage as i64 */
+    PLAYER_EVENT_PAUSE = 1ULL << 2, /* boolean, true if paused, false if not */
+    PLAYER_EVENT_VOLUME = 1ULL << 3, /* volume as i64 */
+    PLAYER_EVENT_MUTE = 1ULL << 4, /* boolean */
+    PLAYER_EVENT_DURATION = 1ULL << 5, /* duration as i64 */
+    PLAYER_EVENT_TIME_POSITION = 1ULL << 6, /* seconds as i64 */
+    PLAYER_EVENT_TIME_REMAINING = 1ULL << 7, /* seconds as i64 */
 
-    PLAYER_EVENT_PLAYLIST_SONG_ADDED = 1 << 31, /* song index as u64 */
-    PLAYER_EVENT_PLAYLIST_SONG_REMOVED = 1 << 32, /* song index as u64 */
-    PLAYER_EVENT_PLAYLIST_CLEARED = 1 << 33, /* nothing */
+    PLAYER_EVENT_PLAYLIST_SONG_ADDED = 1ULL << 31, /* song index as u64 */
+    PLAYER_EVENT_PLAYLIST_SONG_REMOVED = 1ULL << 32, /* song index as u64 */
+    PLAYER_EVENT_PLAYLIST_CLEARED = 1ULL << 33, /* nothing */
 };
 
 void player_event_subscribe(struct signal_listener *listener, enum player_event events,
