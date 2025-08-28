@@ -7,7 +7,6 @@ test_sources = [
     '../src/signals.c', '../src/eventloop.c', '../src/log.c',
     '../src/xmalloc.c', '../src/collections/vec.c'
   ]],
-  ['cmd_parse.c', ['../src/commands/parse.c', '../src/xmalloc.c', '../src/collections/vec.c']],
   ['xdg.c', ['../src/xdg.c', '../src/log.c', '../src/xmalloc.c']],
 ]
 

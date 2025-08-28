@@ -65,8 +65,6 @@ sources = files([
   'src/stream/file.c',
   'src/stream/network.c',
 
-  'src/commands/parse.c',
-
   'src/db/internal.c',
   'src/db/populate.c',
   'src/db/query.c',
