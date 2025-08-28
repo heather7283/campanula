@@ -6,6 +6,54 @@
 #include "macros.h"
 #include "log.h"
 
+static void tui_menu_item_artist_draw(const struct tui_menu_item *self,
+                                     WINDOW *win, int ypos, int width) {
+    const struct tui_menu_item_artist *i = &self->as.artist;
+    const struct artist *a = i->artist;
+
+    mvwprintw(win, ypos, 0, "%s", a->name);
+
+    wclrtoeol(win);
+}
+
+static void tui_menu_item_artist_free_contents(struct tui_menu_item *self) {
+    struct tui_menu_item_artist *s = &self->as.artist;
+
+    artist_free_contents(s->artist);
+    free(s->artist);
+}
+
+static bool tui_menu_item_artist_is_selectable(const struct tui_menu_item *self) {
+    return true;
+}
+
+static void tui_menu_item_artist_append(const struct tui_menu_item *self) {
+    const struct tui_menu_item_artist *i = &self->as.artist;
+    const struct artist *a = i->artist;
+
+    struct song *songs;
+    size_t nsongs = db_get_songs_for_artist(&songs, a);
+    for (size_t i = 0; i < nsongs; i++) {
+        playlist_append_song(&songs[i]);
+        song_free_contents(&songs[i]);
+    }
+    free(songs);
+}
+
+static void tui_menu_item_artist_activate(const struct tui_menu_item *self) {
+    /* no-op (for now) */
+}
+
+static void tui_menu_item_artist_copy(const struct tui_menu_item *self,
+                                    struct tui_menu_item *other) {
+    other->type = self->type;
+    const struct tui_menu_item_artist *s = &self->as.artist;
+    struct tui_menu_item_artist *o = &other->as.artist;
+
+    o->artist = xmalloc(sizeof(*o->artist));
+    artist_deep_copy(o->artist, s->artist);
+}
+
 static void tui_menu_item_album_draw(const struct tui_menu_item *self,
                                      WINDOW *win, int ypos, int width) {
     const struct tui_menu_item_album *i = &self->as.album;
@@ -283,6 +331,14 @@ static const struct tui_menu_item_methods tui_menu_item_methods[] = {
         .append = tui_menu_item_album_append,
         .activate = tui_menu_item_album_activate,
         .copy = tui_menu_item_album_copy,
+    },
+    [TUI_MENU_ITEM_TYPE_ARTIST] = {
+        .draw = tui_menu_item_artist_draw,
+        .free_contents = tui_menu_item_artist_free_contents,
+        .is_selectable = tui_menu_item_artist_is_selectable,
+        .append = tui_menu_item_artist_append,
+        .activate = tui_menu_item_artist_activate,
+        .copy = tui_menu_item_artist_copy,
     },
 };
 static_assert(SIZEOF_VEC(tui_menu_item_methods) == TUI_MENU_ITEM_TYPE_COUNT);

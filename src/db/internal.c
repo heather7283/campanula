@@ -168,6 +168,14 @@ struct sqlite_statement statements[] = {
         "WHERE album_id = $album_id "
         "ORDER BY track ASC"
     },
+    [STATEMENT_GET_SONGS_FOR_ARTIST] = { .source =
+        "SELECT "
+            "id, title, artist, album, "
+            "track, year, duration, bitrate, size, filetype, "
+            "artist_id, album_id  "
+        "FROM songs "
+        "WHERE artist_id = $artist_id"
+    },
 
     [STATEMENT_GET_CACHED_SONG] = { .source =
         "SELECT id, filename, filetype, bitrate, size "

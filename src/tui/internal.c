@@ -89,3 +89,34 @@ void tui_switch_tab_albums(void) {
     doupdate();
 }
 
+void tui_switch_tab_artists(void) {
+    tui_menu_hide(&tui.tabs[tui.tab].menu);
+
+    tui.tab = TUI_TAB_ARTISTS;
+    tui_menu_show(&tui.tabs[tui.tab].menu);
+
+    if (!tui.tabs[tui.tab].artists.populated) {
+        struct artist *artists;
+        const size_t nartists = db_get_artists(&artists, 0, INT64_MAX);
+
+        tui_menu_clear(&tui.tabs[tui.tab].menu);
+        for (size_t i = 0; i < nartists; i++) {
+            struct artist *s = &artists[i];
+
+            tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
+                .type = TUI_MENU_ITEM_TYPE_ARTIST,
+                .as.artist = {
+                    .artist = s,
+                },
+            });
+            artist_free_contents(s);
+        }
+        free(artists);
+
+        tui.tabs[tui.tab].artists.populated = true;
+    }
+
+    draw_tab_bar();
+    doupdate();
+}
+
