@@ -131,6 +131,37 @@ size_t db_get_songs_in_album(struct song **psongs, const struct album *album) {
     return VEC_SIZE(&songs);
 }
 
+size_t db_get_albums_for_artist(struct album **palbums, const struct artist *artist) {
+    struct sqlite3_stmt *const stmt = statements[STATEMENT_GET_ALBUMS_FOR_ARTIST].stmt;
+    VEC(struct album) albums = {0};
+
+    sqlite3_reset(stmt);
+    sqlite3_clear_bindings(stmt);
+
+    STMT_BIND(stmt, text, "$artist_id", artist->id, -1, SQLITE_STATIC);
+
+    int ret;
+    while ((ret = sqlite3_step(stmt)) == SQLITE_ROW) {
+        struct album *a = VEC_EMPLACE_BACK(&albums);
+
+        a->id = xstrdup((char *)sqlite3_column_text(stmt, 0));
+        a->name = xstrdup((char *)sqlite3_column_text(stmt, 1));
+        a->artist = xstrdup((char *)sqlite3_column_text(stmt, 2));
+        a->artist_id = xstrdup((char *)sqlite3_column_text(stmt, 3));
+        a->song_count = sqlite3_column_int(stmt, 4);
+        a->duration = sqlite3_column_int(stmt, 5);
+    }
+    if (ret != SQLITE_DONE) {
+        ERROR("failed to fetch albums from db: %s", sqlite3_errmsg(db));
+        VEC_FREE(&albums);
+        *palbums = NULL;
+        return 0;
+    }
+
+    *palbums = VEC_DATA(&albums);
+    return VEC_SIZE(&albums);
+}
+
 size_t db_get_songs_for_artist(struct song **psongs, const struct artist *artist) {
     struct sqlite3_stmt *const stmt = statements[STATEMENT_GET_SONGS_FOR_ARTIST].stmt;
     VEC(struct song) songs = {0};

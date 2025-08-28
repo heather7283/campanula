@@ -155,5 +155,64 @@ void tui_switch_tab_album(const struct album *album) {
     doupdate();
 }
 
-void tui_switch_tab_artist(const struct artist *artist);
+void tui_switch_tab_artist(const struct artist *artist) {
+    tui_menu_hide(&tui.tabs[tui.tab].menu);
+
+    tui.tab = TUI_TAB_ARTIST;
+    tui_menu_show(&tui.tabs[tui.tab].menu);
+
+    if (artist != NULL) {
+        tui_menu_clear(&tui.tabs[tui.tab].menu);
+
+        tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
+            .type = TUI_MENU_ITEM_TYPE_ARTIST,
+            .as.artist.artist = (struct artist *)artist,
+        });
+
+        tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
+            .type = TUI_MENU_ITEM_TYPE_EMPTY,
+        });
+
+        tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
+            .type = TUI_MENU_ITEM_TYPE_LABEL,
+            .as.label.str = "Albums:",
+        });
+
+        struct album *albums;
+        size_t nalbums = db_get_albums_for_artist(&albums, artist);
+        for (size_t i = 0; i < nalbums; i++) {
+            tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
+                .type = TUI_MENU_ITEM_TYPE_ALBUM,
+                .as.album.album = &albums[i],
+            });
+
+            album_free_contents(&albums[i]);
+        }
+        free(albums);
+
+        tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
+            .type = TUI_MENU_ITEM_TYPE_EMPTY,
+        });
+
+        tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
+            .type = TUI_MENU_ITEM_TYPE_LABEL,
+            .as.label.str = "Songs:",
+        });
+
+        struct song *songs;
+        size_t nsongs = db_get_songs_for_artist(&songs, artist);
+        for (size_t i = 0; i < nsongs; i++) {
+            tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
+                .type = TUI_MENU_ITEM_TYPE_SONG,
+                .as.song.song = &songs[i],
+            });
+
+            song_free_contents(&songs[i]);
+        }
+        free(songs);
+    }
+
+    draw_tab_bar();
+    doupdate();
+}
 
