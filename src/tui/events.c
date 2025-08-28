@@ -105,6 +105,10 @@ void tui_handle_key(uint32_t key) {
         tui_switch_tab_songs();
         doupdate();
         break;
+    case '5':
+        tui_switch_tab_album(NULL);
+        doupdate();
+        break;
     case 'q':
         player_quit();
         break;

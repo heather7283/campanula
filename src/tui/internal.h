@@ -75,5 +75,8 @@ void tui_switch_tab_songs(void);
 void tui_switch_tab_albums(void);
 void tui_switch_tab_artists(void);
 
+void tui_switch_tab_album(const struct album *album);
+void tui_switch_tab_artist(const struct artist *artist);
+
 #endif /* #ifndef SRC_TUI_INTERNAL_H */
 

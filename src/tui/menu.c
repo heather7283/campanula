@@ -1,4 +1,5 @@
 #include "tui/menu.h"
+#include "tui/internal.h"
 #include "player/control.h"
 #include "player/playlist.h"
 #include "db/query.h"
@@ -93,7 +94,7 @@ static void tui_menu_item_album_append(const struct tui_menu_item *self) {
 }
 
 static void tui_menu_item_album_activate(const struct tui_menu_item *self) {
-    /* no-op (for now) */
+    tui_switch_tab_album(self->as.album.album);
 }
 
 static void tui_menu_item_album_copy(const struct tui_menu_item *self,

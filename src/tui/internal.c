@@ -3,7 +3,7 @@
 
 #include "tui/internal.h"
 #include "tui/draw.h"
-#include "player/playlist.h"
+#include "collections/string.h"
 #include "db/query.h"
 
 struct tui tui = {
@@ -119,4 +119,41 @@ void tui_switch_tab_artists(void) {
     draw_tab_bar();
     doupdate();
 }
+
+void tui_switch_tab_album(const struct album *album) {
+    tui_menu_hide(&tui.tabs[tui.tab].menu);
+
+    tui.tab = TUI_TAB_ALBUM;
+    tui_menu_show(&tui.tabs[tui.tab].menu);
+
+    if (album != NULL) {
+        tui_menu_clear(&tui.tabs[tui.tab].menu);
+
+        tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
+            .type = TUI_MENU_ITEM_TYPE_ALBUM,
+            .as.album.album = (struct album *)album,
+        });
+
+        tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
+            .type = TUI_MENU_ITEM_TYPE_EMPTY,
+        });
+
+        struct song *songs;
+        size_t nsongs = db_get_songs_in_album(&songs, album);
+        for (size_t i = 0; i < nsongs; i++) {
+            tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
+                .type = TUI_MENU_ITEM_TYPE_SONG,
+                .as.song.song = &songs[i],
+            });
+
+            song_free_contents(&songs[i]);
+        }
+        free(songs);
+    }
+
+    draw_tab_bar();
+    doupdate();
+}
+
+void tui_switch_tab_artist(const struct artist *artist);
 
