@@ -1,6 +1,13 @@
-# campanula
+# (WIP) campanula
 TUI client for OpenSubsonic-compatible music streaming servers.
 Tested on [navidrome], might or might not work with other implementations.
+
+## TODOs
+- [ ] Support multiple servers
+- [ ] Size limit for songs cache
+- [ ] Make it configurable
+- [ ] Make it look good
+- [ ] MPRIS integration
 
 ## License
 This program is free software: you can redistribute it and/or modify
