@@ -6,14 +6,14 @@
 #include "stream/file.h"
 #include "stream/network.h"
 #include "db/cache.h"
-#include "destructors.h"
+#include "cleanup.h"
 #include "xmalloc.h"
 #include "config.h"
 #include "log.h"
 
 bool stream_open(const char *song_id, int bitrate, const char *filetype,
                  struct stream_functions *functions, void **userdata) {
-    [[gnu::cleanup(cleanup_cstr)]] char *filepath = NULL;
+    [[gnu::cleanup(cleanup_free)]] char *filepath = NULL;
     [[gnu::cleanup(cached_song_free_contents)]] struct cached_song cached_song = {0};
     size_t filesize = 0;
     int fd = -1;

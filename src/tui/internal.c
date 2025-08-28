@@ -3,7 +3,7 @@
 
 #include "tui/internal.h"
 #include "tui/draw.h"
-#include "collections/string.h"
+#include "cleanup.h"
 #include "db/query.h"
 
 struct tui tui = {
@@ -29,18 +29,16 @@ void tui_switch_tab_playlist(void) {
 
 void tui_switch_tab_songs(void) {
     tui_menu_hide(&tui.tabs[tui.tab].menu);
-
     tui.tab = TUI_TAB_SONGS;
     tui_menu_show(&tui.tabs[tui.tab].menu);
 
     if (!tui.tabs[tui.tab].songs.populated) {
-        struct song *songs;
+        [[gnu::cleanup(cleanup_free)]] struct song *songs = NULL;
         const size_t nsongs = db_get_songs(&songs, 0, INT64_MAX);
 
         tui_menu_clear(&tui.tabs[tui.tab].menu);
         for (size_t i = 0; i < nsongs; i++) {
             struct song *s = &songs[i];
-
             tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
                 .type = TUI_MENU_ITEM_TYPE_SONG,
                 .as.song = {
@@ -49,7 +47,6 @@ void tui_switch_tab_songs(void) {
             });
             song_free_contents(s);
         }
-        free(songs);
 
         tui.tabs[tui.tab].songs.populated = true;
     }
@@ -65,7 +62,7 @@ void tui_switch_tab_albums(void) {
     tui_menu_show(&tui.tabs[tui.tab].menu);
 
     if (!tui.tabs[tui.tab].albums.populated) {
-        struct album *albums;
+        [[gnu::cleanup(cleanup_free)]] struct album *albums = NULL;
         const size_t nalbums = db_get_albums(&albums, 0, INT64_MAX);
 
         tui_menu_clear(&tui.tabs[tui.tab].menu);
@@ -80,7 +77,6 @@ void tui_switch_tab_albums(void) {
             });
             album_free_contents(s);
         }
-        free(albums);
 
         tui.tabs[tui.tab].albums.populated = true;
     }
@@ -96,7 +92,7 @@ void tui_switch_tab_artists(void) {
     tui_menu_show(&tui.tabs[tui.tab].menu);
 
     if (!tui.tabs[tui.tab].artists.populated) {
-        struct artist *artists;
+        [[gnu::cleanup(cleanup_free)]] struct artist *artists = NULL;
         const size_t nartists = db_get_artists(&artists, 0, INT64_MAX);
 
         tui_menu_clear(&tui.tabs[tui.tab].menu);
@@ -111,7 +107,6 @@ void tui_switch_tab_artists(void) {
             });
             artist_free_contents(s);
         }
-        free(artists);
 
         tui.tabs[tui.tab].artists.populated = true;
     }
@@ -138,7 +133,7 @@ void tui_switch_tab_album(const struct album *album) {
             .type = TUI_MENU_ITEM_TYPE_EMPTY,
         });
 
-        struct song *songs;
+        [[gnu::cleanup(cleanup_free)]] struct song *songs = NULL;
         size_t nsongs = db_get_songs_in_album(&songs, album);
         for (size_t i = 0; i < nsongs; i++) {
             tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
@@ -148,7 +143,6 @@ void tui_switch_tab_album(const struct album *album) {
 
             song_free_contents(&songs[i]);
         }
-        free(songs);
     }
 
     draw_tab_bar();
@@ -178,7 +172,7 @@ void tui_switch_tab_artist(const struct artist *artist) {
             .as.label.str = "Albums:",
         });
 
-        struct album *albums;
+        [[gnu::cleanup(cleanup_free)]] struct album *albums = NULL;
         size_t nalbums = db_get_albums_for_artist(&albums, artist);
         for (size_t i = 0; i < nalbums; i++) {
             tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
@@ -188,7 +182,6 @@ void tui_switch_tab_artist(const struct artist *artist) {
 
             album_free_contents(&albums[i]);
         }
-        free(albums);
 
         tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
             .type = TUI_MENU_ITEM_TYPE_EMPTY,
@@ -199,7 +192,7 @@ void tui_switch_tab_artist(const struct artist *artist) {
             .as.label.str = "Songs:",
         });
 
-        struct song *songs;
+        [[gnu::cleanup(cleanup_free)]] struct song *songs = NULL;
         size_t nsongs = db_get_songs_for_artist(&songs, artist);
         for (size_t i = 0; i < nsongs; i++) {
             tui_menu_append_item(&tui.tabs[tui.tab].menu, &(struct tui_menu_item){
@@ -209,7 +202,6 @@ void tui_switch_tab_artist(const struct artist *artist) {
 
             song_free_contents(&songs[i]);
         }
-        free(songs);
     }
 
     draw_tab_bar();
