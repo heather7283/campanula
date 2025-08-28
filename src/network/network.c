@@ -11,6 +11,29 @@
 #include "xmalloc.h"
 #include "log.h"
 
+#if 0
+
+#define MTX_LOCK(mutex) \
+    do { \
+        TRACE("%s: trying to lock mutex", __func__); \
+        pthread_mutex_lock(mutex); \
+        TRACE("%s: locked mutex", __func__); \
+    } while (0)
+
+#define MTX_UNLOCK(mutex) \
+    do { \
+        TRACE("%s: trying to unlock mutex", __func__); \
+        pthread_mutex_unlock(mutex); \
+        TRACE("%s: unlocked mutex", __func__); \
+    } while (0)
+
+#else
+
+#define MTX_LOCK(mutex) pthread_mutex_lock(mutex)
+#define MTX_UNLOCK(mutex) pthread_mutex_unlock(mutex)
+
+#endif
+
 static struct network_state {
     CURLM *multi;
     struct pollen_callback *timer;
@@ -21,10 +44,16 @@ static struct network_state {
     size_t download, upload;
     struct timespec last_event_time;
 
-    /* libmpv might try to open network stream from foreign thread, which will call in here */
+    /* libcurl throws errors when its functions are called from within callbacks,
+     * which won't happen in single-threaded scenarios, but since libmpv lives in
+     * another thread and poisons my entire code with multithreadiness, I need to
+     * slap a mutex on callbacks and libcurl functions */
     pthread_mutex_t mutex;
 } state = {
-    .mutex = PTHREAD_MUTEX_INITIALIZER,
+    /* IMPORTANT: IT MUST BE RECURSIVE!!!
+     * curl_multi_add_handle internally calls multi_timerfunction, both of those
+     * lock the mutex. Using a regular mutex causes a DEADLOCK! */
+    .mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP,
 };
 
 struct connection_data {
@@ -85,7 +114,7 @@ static int timespec_cmp(const struct timespec *lhs, const struct timespec *rhs) 
 }
 
 static size_t easy_writefunction(void *ptr, size_t size, size_t nmemb, void *data) {
-    pthread_mutex_lock(&state.mutex);
+    MTX_LOCK(&state.mutex);
 
     struct connection_data *conn_data = data;
     size_t ret = size * nmemb;
@@ -125,7 +154,7 @@ static size_t easy_writefunction(void *ptr, size_t size, size_t nmemb, void *dat
         ret = CURL_WRITEFUNC_ERROR;
     }
 
-    pthread_mutex_unlock(&state.mutex);
+    MTX_UNLOCK(&state.mutex);
 
     return ret;
 }
@@ -133,6 +162,8 @@ static size_t easy_writefunction(void *ptr, size_t size, size_t nmemb, void *dat
 static int easy_xferinfofunction(void *data,
                                  curl_off_t dltotal, curl_off_t dlnow,
                                  curl_off_t ultotal, curl_off_t ulnow) {
+    MTX_LOCK(&state.mutex);
+
     struct connection_data *conn = data;
 
     state.download += dlnow - conn->prev_download;
@@ -164,6 +195,8 @@ static int easy_xferinfofunction(void *data,
         state.last_event_time = t;
     }
 
+    MTX_UNLOCK(&state.mutex);
+
     return 0;
 }
 
@@ -171,56 +204,68 @@ static void check_multi_info(struct network_state *global_data) {
     /* check for completed transfers */
     int msgs_left;
     CURLMsg *msg;
-    while ((msg = curl_multi_info_read(global_data->multi, &msgs_left))) {
-        if (msg->msg == CURLMSG_DONE) {
-            CURL *easy = msg->easy_handle;
-            CURLcode res = msg->data.result;
 
-            struct connection_data *conn_data;
-            const char *effective_url;
-            curl_easy_getinfo(easy, CURLINFO_PRIVATE, &conn_data);
-            curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &effective_url);
+    while (true) {
+        MTX_LOCK(&state.mutex);
+        msg = curl_multi_info_read(global_data->multi, &msgs_left);
+        MTX_UNLOCK(&state.mutex);
 
-            if (conn_data->cancelled) {
-                /* no need to do anything. user doesn't want any more callbacks. */
-            } else if (res != CURLE_OK) {
-                const char *errmsg = NULL;
-                if (conn_data->error[0] == '\0') {
-                    errmsg = curl_easy_strerror(res);
-                } else {
-                    errmsg = conn_data->error;
-                }
-
-                /* error, both stream and regular */
-                conn_data->callback(errmsg, &conn_data->headers,
-                                    NULL, -1,
-                                    conn_data->callback_data);
-            } else if (conn_data->stream) {
-                /* EOF, stream callback */
-                conn_data->callback(NULL, &conn_data->headers,
-                                    NULL, 0,
-                                    conn_data->callback_data);
-            } else {
-                /* EOF, regular callback */
-                conn_data->callback(NULL, &conn_data->headers,
-                                    VEC_DATA(&conn_data->received),
-                                    VEC_SIZE(&conn_data->received),
-                                    conn_data->callback_data);
-            }
-
-            curl_multi_remove_handle(global_data->multi, easy);
-            curl_easy_cleanup(easy);
-
-            VEC_FREE(&conn_data->received);
-            free(conn_data->url);
-            if (conn_data->headers.content_type.present) {
-                free(conn_data->headers.content_type.str);
-            }
-            free(conn_data);
-
-            signal_emit_u64(&state.emitter, NETWORK_EVENT_CONNECTIONS,
-                            --state.n_connections);
+        if (msg == NULL) {
+            break;
+        } else if (msg->msg != CURLMSG_DONE) {
+            WARN("curl_multi_info_read returned message other than CURLMSG_DONE! Check docs!");
+            continue;
         }
+
+        CURL *easy = msg->easy_handle;
+
+        MTX_LOCK(&state.mutex);
+        curl_multi_remove_handle(global_data->multi, easy);
+        MTX_UNLOCK(&state.mutex);
+
+        struct connection_data *conn_data;
+        const char *effective_url;
+        curl_easy_getinfo(easy, CURLINFO_PRIVATE, &conn_data);
+        curl_easy_getinfo(easy, CURLINFO_EFFECTIVE_URL, &effective_url);
+
+        const CURLcode res = msg->data.result;
+        if (conn_data->cancelled) {
+            /* no need to do anything. user doesn't want any more callbacks. */
+        } else if (res != CURLE_OK) {
+            const char *errmsg = NULL;
+            if (conn_data->error[0] == '\0') {
+                errmsg = curl_easy_strerror(res);
+            } else {
+                errmsg = conn_data->error;
+            }
+
+            /* error, both stream and regular */
+            conn_data->callback(errmsg, &conn_data->headers,
+                                NULL, -1,
+                                conn_data->callback_data);
+        } else if (conn_data->stream) {
+            /* EOF, stream callback */
+            conn_data->callback(NULL, &conn_data->headers,
+                                NULL, 0,
+                                conn_data->callback_data);
+        } else {
+            /* EOF, regular callback */
+            conn_data->callback(NULL, &conn_data->headers,
+                                VEC_DATA(&conn_data->received),
+                                VEC_SIZE(&conn_data->received),
+                                conn_data->callback_data);
+        }
+
+        curl_easy_cleanup(easy);
+
+        VEC_FREE(&conn_data->received);
+        free(conn_data->url);
+        if (conn_data->headers.content_type.present) {
+            free(conn_data->headers.content_type.str);
+        }
+        free(conn_data);
+
+        signal_emit_u64(&state.emitter, NETWORK_EVENT_CONNECTIONS, --state.n_connections);
     }
 }
 
@@ -232,8 +277,11 @@ static int socket_callback(struct pollen_callback *callback, int fd, uint32_t ev
         ((events & EPOLLIN) ? CURL_CSELECT_IN : 0) | ((events & EPOLLOUT) ? CURL_CSELECT_OUT : 0);
 
     /* notify curl that fd is available for reading/writing */
+    MTX_LOCK(&state.mutex);
     int remaining;
     rc = curl_multi_socket_action(global_data->multi, fd, action, &remaining);
+    MTX_UNLOCK(&state.mutex);
+
     if (rc != CURLM_OK) {
         ERROR("curl_multi_socket_action() failed: %s", curl_multi_strerror(rc));
         return -1;
@@ -253,8 +301,11 @@ static int timer_callback(struct pollen_callback *callback, void *data) {
     CURLMcode rc;
 
     /* notify curl that timeout has expired */
+    MTX_LOCK(&state.mutex);
     int remaining;
     rc = curl_multi_socket_action(global_data->multi, CURL_SOCKET_TIMEOUT, 0, &remaining);
+    MTX_UNLOCK(&state.mutex);
+
     if (rc != CURLM_OK) {
         ERROR("curl_multi_socket_action() failed: %s", curl_multi_strerror(rc));
         return -1;
@@ -266,7 +317,7 @@ static int timer_callback(struct pollen_callback *callback, void *data) {
 }
 
 static int multi_timerfunction(CURLM *multi, long timeout_ms, void *multi_timerdata) {
-    pthread_mutex_lock(&state.mutex);
+    MTX_LOCK(&state.mutex);
 
     struct network_state *global_data = multi_timerdata;
 
@@ -283,14 +334,14 @@ static int multi_timerfunction(CURLM *multi, long timeout_ms, void *multi_timerd
         pollen_timer_disarm(global_data->timer);
     }
 
-    pthread_mutex_unlock(&state.mutex);
+    MTX_UNLOCK(&state.mutex);
 
     return 0;
 }
 
 static int multi_socketfunction(CURL *easy, int fd, int what,
                                 void *multi_socketdata, void *private_socket_data) {
-    pthread_mutex_lock(&state.mutex);
+    MTX_LOCK(&state.mutex);
 
     struct network_state *global_data = multi_socketdata;
     struct socket_data *socket_data = private_socket_data;
@@ -317,7 +368,7 @@ static int multi_socketfunction(CURL *easy, int fd, int what,
         }
     }
 
-    pthread_mutex_unlock(&state.mutex);
+    MTX_UNLOCK(&state.mutex);
 
     return 0;
 }
@@ -354,7 +405,10 @@ bool make_request(const char *url, bool stream, request_callback_t callback, voi
     curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_TIME, 5L);
     curl_easy_setopt(conn->easy, CURLOPT_LOW_SPEED_LIMIT, 10L);
 
+    MTX_LOCK(&state.mutex);
     CURLMcode rc = curl_multi_add_handle(state.multi, conn->easy);
+    MTX_UNLOCK(&state.mutex);
+
     if (rc != CURLM_OK) {
         ERROR("curl_multi_add_handle() failed: %s", curl_multi_strerror(rc));
         goto err;
@@ -377,7 +431,6 @@ err:
 bool network_init(void) {
     CURLcode rc;
 
-    pthread_mutex_init(&state.mutex, NULL);
     signal_emitter_init(&state.emitter);
 
     rc = curl_global_init_mem(CURL_GLOBAL_ALL, xmalloc, free, xrealloc, xstrdup, xcalloc);
