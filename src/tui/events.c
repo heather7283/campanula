@@ -9,6 +9,7 @@
 #include "player/events.h"
 #include "player/playlist.h"
 #include "network/events.h"
+#include "db/populate.h"
 #include "log.h"
 
 void tui_handle_resize(int width, int height) {
@@ -73,6 +74,34 @@ void tui_handle_key(uint32_t key) {
     case ' ':
         player_toggle_pause();
         break;
+    case 'R':
+        db_populate();
+        break;
+    case 'r':
+        switch (tui.tab) {
+        case TUI_TAB_ARTISTS:
+            tui_tab_artists_populate();
+            break;
+        case TUI_TAB_ALBUMS:
+            tui_tab_albums_populate();
+            break;
+        case TUI_TAB_SONGS:
+            tui_tab_songs_populate();
+            break;
+        case TUI_TAB_ARTIST:
+            if (tui.tabs[TUI_TAB_ARTIST].artist.artist != NULL) {
+                tui_tab_artist_populate(tui.tabs[TUI_TAB_ARTIST].artist.artist);
+            }
+            break;
+        case TUI_TAB_ALBUM:
+            if (tui.tabs[TUI_TAB_ALBUM].album.album != NULL) {
+                tui_tab_album_populate(tui.tabs[TUI_TAB_ALBUM].album.album);
+            }
+            break;
+        default:
+        }
+        doupdate();
+        break;
     case 'k':
         if (tui_menu_select_prev(&tui.tabs[tui.tab].menu)) {
             doupdate();
@@ -90,27 +119,27 @@ void tui_handle_key(uint32_t key) {
         tui_menu_action_activate(&tui.tabs[tui.tab].menu);
         break;
     case 'p':
-        tui_switch_tab_playlist();
+        tui_tab_playlist_activate();
         doupdate();
         break;
     case '1':
-        tui_switch_tab_artists();
+        tui_tab_artists_activate();
         doupdate();
         break;
     case '2':
-        tui_switch_tab_albums();
+        tui_tab_albums_activate();
         doupdate();
         break;
     case '3':
-        tui_switch_tab_songs();
+        tui_tab_songs_activate();
         doupdate();
         break;
     case '4':
-        tui_switch_tab_artist(NULL);
+        tui_tab_artist_activate(NULL);
         doupdate();
         break;
     case '5':
-        tui_switch_tab_album(NULL);
+        tui_tab_album_activate(NULL);
         doupdate();
         break;
     case 'q':

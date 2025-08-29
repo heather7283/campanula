@@ -42,7 +42,7 @@ static void tui_menu_item_artist_append(const struct tui_menu_item *self) {
 }
 
 static void tui_menu_item_artist_activate(const struct tui_menu_item *self) {
-    tui_switch_tab_artist(self->as.artist.artist);
+    tui_tab_artist_activate(self->as.artist.artist);
 }
 
 static void tui_menu_item_artist_copy(const struct tui_menu_item *self,
@@ -94,7 +94,7 @@ static void tui_menu_item_album_append(const struct tui_menu_item *self) {
 }
 
 static void tui_menu_item_album_activate(const struct tui_menu_item *self) {
-    tui_switch_tab_album(self->as.album.album);
+    tui_tab_album_activate(self->as.album.album);
 }
 
 static void tui_menu_item_album_copy(const struct tui_menu_item *self,

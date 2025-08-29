@@ -75,7 +75,7 @@ bool tui_init(void) {
     /* trigger it manually to pick up initial size and draw everything */
     sigwinch_handler_deferred(NULL, 0, NULL);
 
-    tui_switch_tab_songs();
+    tui_tab_albums_activate();
 
     return true;
 }

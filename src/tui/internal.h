@@ -70,13 +70,19 @@ struct tui {
 
 extern struct tui tui;
 
-void tui_switch_tab_playlist(void);
-void tui_switch_tab_songs(void);
-void tui_switch_tab_albums(void);
-void tui_switch_tab_artists(void);
+void tui_tab_playlist_populate(void);
+void tui_tab_songs_populate(void);
+void tui_tab_albums_populate(void);
+void tui_tab_artists_populate(void);
+void tui_tab_album_populate(const struct album *album);
+void tui_tab_artist_populate(const struct artist *artist);
 
-void tui_switch_tab_album(const struct album *album);
-void tui_switch_tab_artist(const struct artist *artist);
+void tui_tab_playlist_activate(void);
+void tui_tab_songs_activate(void);
+void tui_tab_albums_activate(void);
+void tui_tab_artists_activate(void);
+void tui_tab_album_activate(const struct album *album);
+void tui_tab_artist_activate(const struct artist *artist);
 
 #endif /* #ifndef SRC_TUI_INTERNAL_H */
 
