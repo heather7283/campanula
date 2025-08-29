@@ -18,6 +18,9 @@ libsqlite_dep = dependency('sqlite3')
 # I will regret this (times I wanted to kill myself because ncurses is retarded: 7)
 libncursesw_dep = dependency('ncursesw')
 
+sdbus_dep = dependency(['libsystemd', 'libelogind', 'basu']) # mpris
+add_project_arguments('-DHAVE_' + sdbus_dep.name().to_upper() + '=1', language: 'c')
+
 pollen_dep = dependency('pollen', version: '>=3.0.0', fallback: ['pollen', 'pollen_dep'])
 
 dependencies = [
@@ -27,6 +30,7 @@ dependencies = [
   libjsonc_dep,
   libsqlite_dep,
   libncursesw_dep,
+  sdbus_dep,
   pollen_dep,
 ]
 
