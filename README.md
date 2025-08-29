@@ -21,6 +21,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
 ## References
+- https://specifications.freedesktop.org/mpris-spec/latest
 - https://curl.se/libcurl/c/ephiperfifo.html
 - https://www.subsonic.org/pages/api.jsp
 - https://opensubsonic.netlify.app/docs
