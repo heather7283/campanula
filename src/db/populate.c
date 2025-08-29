@@ -76,7 +76,7 @@ static bool insert_song(const struct api_type_child *s) {
 }
 
 struct db_populate_data {
-    enum { START, ARTISTS, ALBUMS, SONGS } state;
+    enum { START, ARTISTS, ALBUMS, SONGS, END } state;
     size_t count, offset;
 };
 
@@ -126,7 +126,7 @@ static void on_db_populate_response(const char *errmsg,
     case ARTISTS: {
         VEC_FOREACH(&sr3->artist, i) {
             struct api_type_artist_id3 *artist = VEC_AT(&sr3->artist, i);
-            if (!insert_artist(artist) && false) {
+            if (!insert_artist(artist)) {
                 goto err;
             }
         }
@@ -144,7 +144,7 @@ static void on_db_populate_response(const char *errmsg,
     case ALBUMS: {
         VEC_FOREACH(&sr3->album, i) {
             struct api_type_album_id3 *album = VEC_AT(&sr3->album, i);
-            if (!insert_album(album) && false) {
+            if (!insert_album(album)) {
                 goto err;
             }
         }
@@ -162,7 +162,7 @@ static void on_db_populate_response(const char *errmsg,
     case SONGS: {
         VEC_FOREACH(&sr3->song, i) {
             struct api_type_child *child = VEC_AT(&sr3->song, i);
-            if (!insert_song(child) && false) {
+            if (!insert_song(child)) {
                 goto err;
             }
         }
@@ -174,6 +174,9 @@ static void on_db_populate_response(const char *errmsg,
             goto songs;
         }
         break;
+    }
+    case END: {
+        assert(0 && "UNREACHABLE: END");
     }
     }
 
@@ -222,6 +225,9 @@ fin:
         ERROR("db_populate: failed to commit transaction: %s", sqlite3_errmsg(db));
         goto err;
     }
+
+    d->state = END;
+
     return;
 
 err:
@@ -230,17 +236,26 @@ err:
     if (sqlite3_step(statements[STATEMENT_ROLLBACK].stmt) != SQLITE_DONE) {
         ERROR("db_populate: failed to rollback transaction: %s", sqlite3_errmsg(db));
     }
+
+    d->state = END;
+
     return;
 }
 
-void db_populate(void) {
-    static struct db_populate_data data;
-    data = (struct db_populate_data){
-        .count = 10000,
+bool db_populate(void) {
+    static struct db_populate_data data = {
+        .count = 5000,
         .offset = 0,
-        .state = START,
+        .state = END,
     };
 
+    if (data.state != END) {
+        ERROR("state is not END (another db_populate is still not finished?)");
+        return false;
+    }
+
+    data.state = START;
     on_db_populate_response(NULL, NULL, &data); /* kickstart it */
+    return true;
 }
 
