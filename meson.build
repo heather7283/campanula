@@ -88,5 +88,7 @@ executable('campanula', sources,
            dependencies: dependencies,
            install: true)
 
-subdir('test')
+if get_option('test')
+  subdir('test')
+endif
 
