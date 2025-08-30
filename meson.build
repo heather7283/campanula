@@ -83,6 +83,9 @@ sources = files([
   'src/tui/pad.c',
   'src/tui/menu.c',
 
+  'src/mpris/init.c',
+  'src/mpris/interfaces.c',
+
   'src/collections/string.c',
   'src/collections/vec.c',
 ])

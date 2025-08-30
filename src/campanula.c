@@ -9,6 +9,7 @@
 #include "db/populate.h"
 #include "db/query.h"
 #include "tui/init.h"
+#include "mpris/init.h"
 
 static int sigint_handler(struct pollen_callback *callback, int signum, void *data) {
     player_quit();
@@ -39,9 +40,11 @@ int main(int argc, char **argv) {
     if (!tui_init()) {
         return 1;
     }
+    mpris_init();
 
     pollen_loop_run(event_loop);
 
+    mpris_cleanup();
     tui_cleanup();
     player_cleanup();
     network_cleanup();
