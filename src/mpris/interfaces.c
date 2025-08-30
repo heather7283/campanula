@@ -115,7 +115,7 @@ static const struct sd_bus_vtable player_vtable[] = {
                              NULL, player_property_rate_set,
                              offsetof(struct player_interface, rate),
                              SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
-    SD_BUS_WRITABLE_PROPERTY("Shuffle", "d",
+    SD_BUS_WRITABLE_PROPERTY("Shuffle", "b",
                              NULL, player_property_shuffle_set,
                              offsetof(struct player_interface, shuffle),
                              SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
