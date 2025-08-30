@@ -51,7 +51,7 @@ static void signal_emit_internal(const struct signal_emitter *emitter,
     ev->event = event;
     ev->data = *data;
 
-    pollen_efd_trigger(emitter->efd, 1);
+    pollen_efd_trigger(emitter->efd);
 }
 
 void signal_emit_ptr(const struct signal_emitter *emitter, uint64_t event, void *ptr) {

@@ -21,7 +21,7 @@ static int on_mpv_events(struct pollen_callback *, uint64_t, void *) {
 }
 
 static void mpv_wakeup_callback(void *) {
-    pollen_efd_trigger(player.mpv_events_callback, 1);
+    pollen_efd_trigger(player.mpv_events_callback);
 }
 
 bool player_init(void) {

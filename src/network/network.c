@@ -323,12 +323,12 @@ static int multi_timerfunction(CURLM *multi, long timeout_ms, void *multi_timerd
 
     if (timeout_ms > 0) {
         /* curl wants us to update timer timeout */
-        pollen_timer_arm(global_data->timer, timeout_ms, 0);
+        pollen_timer_arm_ms(global_data->timer, false, timeout_ms, 0);
     } else if (timeout_ms == 0) {
         /* curl wants us to trigger timeout immediately,
          * but setting timeout to 0 disarms the timer.
          * Schedule the timer to fire in 1 ns instead. */
-        pollen_timer_arm_ns(global_data->timer, 1, 0);
+        pollen_timer_arm_ns(global_data->timer, false, 1, 0);
     } else {
         /* curl wants us to disarm our timer */
         pollen_timer_disarm(global_data->timer);
@@ -450,7 +450,7 @@ bool network_init(void) {
     curl_multi_setopt(state.multi, CURLMOPT_TIMERFUNCTION, multi_timerfunction);
     curl_multi_setopt(state.multi, CURLMOPT_TIMERDATA, &state);
 
-    state.timer = pollen_loop_add_timer(event_loop, timer_callback, &state);
+    state.timer = pollen_loop_add_timer(event_loop, CLOCK_MONOTONIC, timer_callback, &state);
     if (state.timer == NULL) {
         ERROR("failed to create timer");
         return false;

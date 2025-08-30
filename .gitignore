@@ -3,3 +3,4 @@ build/
 *.opus
 *.log
 *.sqlite3
+*.wraplock

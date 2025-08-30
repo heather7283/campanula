@@ -23,7 +23,7 @@ static int sigwinch_handler_deferred(struct pollen_callback *, uint64_t, void *)
 }
 
 static void sigwinch_handler(int) {
-    pollen_efd_trigger(tui.resize_callback, 1);
+    pollen_efd_trigger(tui.resize_callback);
 }
 
 static int stdin_handler(struct pollen_callback *, int, uint32_t, void *) {

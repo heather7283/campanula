@@ -17,7 +17,8 @@ libjsonc_dep = dependency('json-c')
 libsqlite_dep = dependency('sqlite3')
 # I will regret this (times I wanted to kill myself because ncurses is retarded: 7)
 libncursesw_dep = dependency('ncursesw')
-pollen_dep = dependency('pollen', version: '>=2.1.0')
+
+pollen_dep = dependency('pollen', version: '>=3.0.0', fallback: ['pollen', 'pollen_dep'])
 
 dependencies = [
   libmpv_dep,
