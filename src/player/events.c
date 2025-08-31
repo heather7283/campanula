@@ -140,6 +140,12 @@ void player_process_event(const struct mpv_event *ev) {
             api_scrobble(s->id);
         }
         break;
+    case MPV_EVENT_SEEK:
+        int64_t pos;
+        mpv_get_property(player.mpv_handle, "time-pos", MPV_FORMAT_INT64, &pos);
+        signal_emit_i64(&player.emitter, PLAYER_EVENT_SEEK, pos);
+        DEBUG("player event SEEK: time-pos is %li", pos);
+        break;
     case MPV_EVENT_SHUTDOWN:
         DEBUG("got MPV_EVENT_SHUTDOWN, quitting application");
         pollen_loop_quit(event_loop, 0);

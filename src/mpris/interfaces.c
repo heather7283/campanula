@@ -5,26 +5,13 @@
 #include "mpris/dbus.h"
 #include "player/control.h"
 #include "collections/vec.h"
-#include "types/song.h"
 #include "xmalloc.h"
 #include "log.h"
-
-enum playback_status {
-    PLAYBACK_STATUS_PLAYING,
-    PLAYBACK_STATUS_PAUSED,
-    PLAYBACK_STATUS_STOPPED,
-};
 
 static const char *playback_status_values[] = {
     [PLAYBACK_STATUS_PLAYING] = "Playing",
     [PLAYBACK_STATUS_PAUSED] = "Paused",
     [PLAYBACK_STATUS_STOPPED] = "Stopped",
-};
-
-enum loop_status {
-    LOOP_STATUS_NONE,
-    LOOP_STATUS_TRACK,
-    LOOP_STATUS_PLAYLIST,
 };
 
 static const char *loop_status_values[] = {
@@ -164,6 +151,8 @@ static int player_property_volume_set(sd_bus *bus, const char *path, const char 
 
 static const struct sd_bus_vtable player_vtable[] = {
     SD_BUS_VTABLE_START(SD_BUS_VTABLE_UNPRIVILEGED),
+
+    SD_BUS_SIGNAL("Seeked", "x", 0),
 
     SD_BUS_PROPERTY("PlaybackStatus", "s",
                     player_property_playback_status_get,
@@ -362,6 +351,30 @@ bool mpris_update_metadata(const struct song *song) {
                                            "/org/mpris/MediaPlayer2",
                                            "org.mpris.MediaPlayer2.Player",
                                            "Metadata", NULL);
+    return r == 0;
+}
+
+bool mpris_update_playback_status(enum playback_status status) {
+    player_interface.playback_status = status;
+
+    int r = sd_bus_emit_properties_changed(dbus.bus,
+                                           "/org/mpris/MediaPlayer2",
+                                           "org.mpris.MediaPlayer2.Player",
+                                           "PlaybackStatus", NULL);
+    return r == 0;
+}
+
+bool mpris_update_position(int64_t pos_seconds) {
+    player_interface.position = pos_seconds * 1'000'000;
+    return true;
+}
+
+bool mpris_emit_seek(int64_t new_pos_seconds) {
+    const int64_t pos_us = new_pos_seconds * 1'000'000;
+    int r = sd_bus_emit_signal(dbus.bus,
+                               "/org/mpris/MediaPlayer2",
+                               "org.mpris.MediaPlayer2.Player",
+                               "Seeked", "x", pos_us, NULL);
     return r == 0;
 }
 

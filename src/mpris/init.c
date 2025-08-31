@@ -27,7 +27,20 @@ static void process_player_events(uint64_t event, const struct signal_data *data
             mpris_update_metadata(&songs[data->as.i64]);
         } else {
             mpris_update_metadata(NULL);
+            mpris_update_playback_status(PLAYBACK_STATUS_STOPPED);
         }
+        break;
+    case PLAYER_EVENT_PAUSE:
+        const bool paused = data->as.boolean;
+        mpris_update_playback_status(paused ? PLAYBACK_STATUS_PAUSED : PLAYBACK_STATUS_PLAYING);
+        break;
+    case PLAYER_EVENT_TIME_POSITION:
+        const int64_t pos_seconds = data->as.i64;
+        mpris_update_position(pos_seconds);
+        break;
+    case PLAYER_EVENT_SEEK:
+        const int64_t new_pos_seconds = data->as.i64;
+        mpris_emit_seek(new_pos_seconds);
         break;
     default:
     }
