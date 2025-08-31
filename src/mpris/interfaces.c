@@ -187,7 +187,7 @@ static const struct sd_bus_vtable player_vtable[] = {
                              SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
     SD_BUS_PROPERTY("Position", "x", NULL,
                     offsetof(struct player_interface, position),
-                    SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
+                    0),
     SD_BUS_PROPERTY("MinimumRate", "d", NULL,
                     offsetof(struct player_interface, minimum_rate),
                     SD_BUS_VTABLE_PROPERTY_EMITS_CHANGE),
