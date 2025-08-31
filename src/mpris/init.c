@@ -6,12 +6,32 @@
 #include "mpris/dbus.h"
 #include "mpris/interfaces.h"
 #include "collections/string.h"
+#include "player/events.h"
+#include "player/playlist.h"
 #include "eventloop.h"
 #include "log.h"
 
 struct dbus_state dbus = {
     .bus_fd = -1,
 };
+
+static struct signal_listener listener = {0};
+
+static void process_player_events(uint64_t event, const struct signal_data *data, void *) {
+    switch ((enum player_event)event) {
+    case PLAYER_EVENT_PLAYLIST_POSITION:
+        const int64_t index = data->as.i64;
+        if (index > -1) {
+            const struct song *songs;
+            playlist_get_songs(&songs);
+            mpris_update_metadata(&songs[data->as.i64]);
+        } else {
+            mpris_update_metadata(NULL);
+        }
+        break;
+    default:
+    }
+}
 
 static uint32_t poll_events_to_epoll_events(int poll_events) {
     if (poll_events == 0) {
@@ -119,6 +139,8 @@ bool mpris_init(void) {
                                                     dbus_timer_handler, NULL);
 
     dbus_process_events();
+
+    player_event_subscribe(&listener, (uint64_t)-1, process_player_events, NULL);
 
     return true;
 

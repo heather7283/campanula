@@ -1,10 +1,13 @@
+#include <stdlib.h>
 #include <stddef.h>
 
 #include "mpris/interfaces.h"
+#include "mpris/dbus.h"
 #include "player/control.h"
+#include "collections/vec.h"
+#include "types/song.h"
+#include "xmalloc.h"
 #include "log.h"
-
-typedef uint32_t dbus_bool;
 
 enum playback_status {
     PLAYBACK_STATUS_PLAYING,
@@ -30,12 +33,23 @@ static const char *loop_status_values[] = {
     [LOOP_STATUS_PLAYLIST] = "Playlist",
 };
 
+struct metadata {
+    char *key;
+    enum { I64, STR, STRARR, PATH } type;
+    union {
+        int64_t i64;
+        char *str;
+        VEC(char *) strarr;
+        char *path;
+    } val;
+};
+
 static struct player_interface {
     enum playback_status playback_status;
     enum loop_status loop_status; /* rw */
     double rate; /* rw */
     dbus_bool shuffle; /* rw */
-    /* a{sv} metadata */
+    VEC(struct metadata) metadata;
     double volume; /* rw */
     int64_t position;
 
@@ -93,7 +107,53 @@ static int player_property_shuffle_set(sd_bus *bus, const char *path, const char
 static int player_property_metadata_get(sd_bus *bus, const char *path, const char *interface,
                                         const char *property, sd_bus_message *reply,
                                         void *userdata, sd_bus_error *ret_error) {
-    return sd_bus_reply_method_errorf(reply, SD_BUS_ERROR_NOT_SUPPORTED, "TODO");
+    #define CHECK(v) \
+        do { \
+            int ret = (v); \
+            if (ret < 0) ERROR("%s: %s", #v, strerror(-ret)); \
+        } while (0)
+
+    CHECK(sd_bus_message_open_container(reply, 'a', "{sv}"));
+
+    VEC_FOREACH(&player_interface.metadata, i) {
+        CHECK(sd_bus_message_open_container(reply, 'e', "sv"));
+
+        const struct metadata *m = VEC_AT(&player_interface.metadata, i);
+
+        CHECK(sd_bus_message_append_basic(reply, 's', m->key));
+        switch (m->type) {
+        case I64:
+            CHECK(sd_bus_message_open_container(reply, 'v', "x"));
+            CHECK(sd_bus_message_append_basic(reply, 'x', &m->val.i64));
+            CHECK(sd_bus_message_close_container(reply));
+            break;
+        case STR:
+            CHECK(sd_bus_message_open_container(reply, 'v', "s"));
+            CHECK(sd_bus_message_append_basic(reply, 's', m->val.str));
+            CHECK(sd_bus_message_close_container(reply));
+            break;
+        case STRARR:
+            CHECK(sd_bus_message_open_container(reply, 'v', "as"));
+            CHECK(sd_bus_message_open_container(reply, 'a', "s"));
+            VEC_FOREACH(&m->val.strarr, j) {
+                CHECK(sd_bus_message_append_basic(reply, 's', *VEC_AT(&m->val.strarr, j)));
+            }
+            CHECK(sd_bus_message_close_container(reply));
+            CHECK(sd_bus_message_close_container(reply));
+            break;
+        case PATH:
+            CHECK(sd_bus_message_open_container(reply, 'v', "o"));
+            CHECK(sd_bus_message_append_basic(reply, 'o', m->val.path));
+            CHECK(sd_bus_message_close_container(reply));
+            break;
+        }
+
+        CHECK(sd_bus_message_close_container(reply));
+    }
+
+    CHECK(sd_bus_message_close_container(reply)); /* close a{sv} */
+
+    return 0;
 }
 
 static int player_property_volume_set(sd_bus *bus, const char *path, const char *interface,
@@ -235,6 +295,75 @@ static const struct sd_bus_vtable mpris_vtable[] = {
 
     SD_BUS_VTABLE_END
 };
+
+static void metadata_clear(void) {
+    VEC_FOREACH(&player_interface.metadata, i) {
+        struct metadata *m = VEC_AT(&player_interface.metadata, i);
+        switch (m->type) {
+        case I64:
+            break;
+        case STR:
+            free(m->val.str);
+            break;
+        case STRARR:
+            VEC_FOREACH(&m->val.strarr, j) {
+                char *s = *VEC_AT(&m->val.strarr, j);
+                free(s);
+            }
+            VEC_FREE(&m->val.strarr);
+            break;
+        case PATH:
+            free(m->val.path);
+            break;
+        }
+    }
+    VEC_CLEAR(&player_interface.metadata);
+}
+
+bool mpris_update_metadata(const struct song *song) {
+    metadata_clear();
+
+    if (song != NULL) {
+        char *trackid; xasprintf(&trackid, "/%s", song->id);
+        VEC_APPEND(&player_interface.metadata, &((struct metadata){
+            .key = "mpris:trackid",
+            .type = PATH,
+            .val.path = trackid,
+        }));
+        VEC_APPEND(&player_interface.metadata, &((struct metadata){
+            .key = "mpris:length",
+            .type = I64,
+            .val.i64 = song->duration * 1'000'000 /* in microseconds */,
+        }));
+        VEC_APPEND(&player_interface.metadata, &((struct metadata){
+            .key = "xesam:title",
+            .type = STR,
+            .val.str = xstrdup(song->title),
+        }));
+        if (song->artist != NULL) {
+            struct metadata *m = VEC_EMPLACE_BACK(&player_interface.metadata);
+            *m = (struct metadata){
+                .key = "xesam:artist",
+                .type = STRARR,
+            };
+            VEC_APPEND(&m->val.strarr, &(char *){ xstrdup(song->artist) });
+        }
+        if (song->album != NULL) {
+            struct metadata *m = VEC_EMPLACE_BACK(&player_interface.metadata);
+            *m = (struct metadata){
+                .key = "xesam:album",
+                .type = STRARR,
+            };
+            VEC_APPEND(&m->val.strarr, &(char *){ xstrdup(song->album) });
+        }
+    }
+
+    int r = sd_bus_emit_properties_changed(dbus.bus,
+                                           "/org/mpris/MediaPlayer2",
+                                           "org.mpris.MediaPlayer2.Player",
+                                           "Metadata", NULL);
+    return r == 0;
+}
 
 bool mpris_init_interfaces(struct dbus_state *dbus_state) {
     int ret;

@@ -22,5 +22,9 @@ struct dbus_state {
     struct pollen_callback *bus_timer_callback;
 };
 
+extern struct dbus_state dbus;
+
+typedef int dbus_bool;
+
 #endif /* #ifndef SRC_MPRIS_DBUS_H */
 
