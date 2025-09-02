@@ -99,19 +99,16 @@ static void process_property_change(const struct mpv_event_property *prop, uint6
         signal_emit_bool(&player.emitter, event, mute);
         break;
     case PLAYER_EVENT_DURATION:
-        CHECK_FORMAT(INT64);
-        const int64_t duration = *(int64_t *)prop->data;
-        signal_emit_i64(&player.emitter, event, duration);
+        CHECK_FORMAT(DOUBLE);
+        const double duration = *(double *)prop->data;
+        const uint64_t duration_ms = duration * 1'000;
+        signal_emit_u64(&player.emitter, event, duration_ms);
         break;
     case PLAYER_EVENT_TIME_POSITION:
         CHECK_FORMAT(INT64);
-        const int64_t time_position = *(int64_t *)prop->data;
-        signal_emit_i64(&player.emitter, event, time_position);
-        break;
-    case PLAYER_EVENT_TIME_REMAINING:
-        CHECK_FORMAT(INT64);
-        const int64_t time_remaining = *(int64_t *)prop->data;
-        signal_emit_i64(&player.emitter, event, time_remaining);
+        const uint64_t time_position = *(int64_t *)prop->data;
+        const uint64_t time_position_ms = time_position * 1'000;
+        signal_emit_u64(&player.emitter, event, time_position_ms);
         break;
     case PLAYER_EVENT_IDLE:
         CHECK_FORMAT(FLAG);
@@ -153,7 +150,7 @@ void player_process_event(const struct mpv_event *ev) {
         break;
     case MPV_EVENT_SEEK:
         int64_t pos;
-        mpv_get_property(player.mpv_handle, "time-pos", MPV_FORMAT_INT64, &pos);
+        mpv_get_property(player.mpv_handle, "time-pos/full", MPV_FORMAT_INT64, &pos);
         signal_emit_i64(&player.emitter, PLAYER_EVENT_SEEK, pos);
         break;
     case MPV_EVENT_SHUTDOWN:

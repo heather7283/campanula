@@ -169,11 +169,11 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
         draw_status_bar();
         break;
     case PLAYER_EVENT_DURATION:
-        tui.statusbar.duration = data->as.i64;
+        tui.statusbar.duration = data->as.u64;
         draw_status_bar();
         break;
     case PLAYER_EVENT_TIME_POSITION:
-        tui.statusbar.time_pos = data->as.i64;
+        tui.statusbar.time_pos = data->as.u64;
         draw_status_bar();
         break;
     case PLAYER_EVENT_PLAYLIST_POSITION: {

@@ -69,10 +69,12 @@ void draw_status_bar(void) {
 
     mvwaddstr(tui.statusbar.win, 2, 1, tui.statusbar.pause ? "||" : "|>");
 
-    swprintf(line, cols, L"%02d:%02d", tui.statusbar.time_pos / 60, tui.statusbar.time_pos % 60);
+    swprintf(line, cols, L"%02d:%02d",
+             (tui.statusbar.time_pos / 1'000) / 60, (tui.statusbar.time_pos / 1'000) % 60);
     mvwaddnwstr(tui.statusbar.win, 2, 4, line, cols);
 
-    swprintf(line, cols, L"%02d:%02d", tui.statusbar.duration / 60, tui.statusbar.duration % 60);
+    swprintf(line, cols, L"%02d:%02d",
+             (tui.statusbar.duration / 1'000) / 60, (tui.statusbar.duration / 1'000) % 60);
     mvwaddnwstr(tui.statusbar.win, 2, COLS - 14, line, cols);
 
     if (tui.statusbar.mute) {

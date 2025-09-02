@@ -391,7 +391,7 @@ bool mpris_update_metadata(const struct song *song) {
         VEC_APPEND(&player_interface.metadata, &((struct metadata){
             .key = "mpris:length",
             .type = I64,
-            .val.i64 = song->duration * 1'000'000 /* in microseconds */,
+            .val.i64 = song->duration * 1'000'000 /* s to us */,
         }));
         VEC_APPEND(&player_interface.metadata, &((struct metadata){
             .key = "xesam:title",
@@ -433,8 +433,8 @@ bool mpris_update_playback_status(enum playback_status status) {
     return r == 0;
 }
 
-bool mpris_update_position(int64_t pos_seconds) {
-    player_interface.position = pos_seconds * 1'000'000;
+bool mpris_update_position(int64_t pos_us) {
+    player_interface.position = pos_us;
     return true;
 }
 
@@ -497,12 +497,11 @@ bool mpris_update_playlist_stuff(const struct song *songs, size_t n_songs, ssize
     return r == 0;
 }
 
-bool mpris_emit_seek(int64_t new_pos_seconds) {
-    const int64_t pos_us = new_pos_seconds * 1'000'000;
+bool mpris_emit_seek(int64_t new_pos_us) {
     int r = sd_bus_emit_signal(dbus.bus,
                                "/org/mpris/MediaPlayer2",
                                "org.mpris.MediaPlayer2.Player",
-                               "Seeked", "x", pos_us, NULL);
+                               "Seeked", "x", new_pos_us, NULL);
     return r == 0;
 }
 

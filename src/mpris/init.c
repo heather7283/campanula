@@ -53,12 +53,12 @@ static void process_player_events(uint64_t event, const struct signal_data *data
         }
         break;
     case PLAYER_EVENT_TIME_POSITION:
-        const int64_t pos_seconds = data->as.i64;
-        mpris_update_position(pos_seconds);
+        const uint64_t pos_milliseconds = data->as.u64;
+        mpris_update_position(pos_milliseconds * 1'000);
         break;
     case PLAYER_EVENT_SEEK:
-        const int64_t new_pos_seconds = data->as.i64;
-        mpris_emit_seek(new_pos_seconds);
+        const uint64_t new_pos_milliseconds = data->as.u64;
+        mpris_emit_seek(new_pos_milliseconds * 1'000);
         break;
     default:
     }

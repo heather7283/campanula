@@ -55,7 +55,7 @@ struct tui {
 
         WINDOW *win;
 
-        int64_t pos, time_pos, duration, volume;
+        uint64_t pos, time_pos, duration, volume;
         bool pause, mute;
 
         uint64_t net_conns;
