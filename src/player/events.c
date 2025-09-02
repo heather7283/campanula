@@ -74,6 +74,7 @@ static void process_property_change(const struct mpv_event_property *prop, uint6
     case PLAYER_EVENT_PAUSE:
         CHECK_FORMAT(FLAG);
         const bool pause = *(int *)prop->data;
+        player.is_paused = pause;
         signal_emit_bool(&player.emitter, event, pause);
         break;
     case PLAYER_EVENT_PERCENT_POSITION:
@@ -112,6 +113,12 @@ static void process_property_change(const struct mpv_event_property *prop, uint6
         const int64_t time_remaining = *(int64_t *)prop->data;
         signal_emit_i64(&player.emitter, event, time_remaining);
         break;
+    case PLAYER_EVENT_IDLE:
+        CHECK_FORMAT(FLAG);
+        const bool is_idle = *(int *)prop->data;
+        player.is_idle = is_idle;
+        signal_emit_bool(&player.emitter, event, is_idle);
+        break;
     default:
         WARN("mpv event: property %s not asked for?", prop->name);
         break;
@@ -121,6 +128,10 @@ static void process_property_change(const struct mpv_event_property *prop, uint6
 }
 
 void player_process_event(const struct mpv_event *ev) {
+    if (ev->event_id != MPV_EVENT_PROPERTY_CHANGE && ev->event_id != MPV_EVENT_LOG_MESSAGE) {
+        TRACE("mpv event: %s", mpv_event_name(ev->event_id));
+    }
+
     switch (ev->event_id) {
     case MPV_EVENT_PROPERTY_CHANGE:
         const struct mpv_event_property *p = ev->data;
@@ -144,15 +155,12 @@ void player_process_event(const struct mpv_event *ev) {
         int64_t pos;
         mpv_get_property(player.mpv_handle, "time-pos", MPV_FORMAT_INT64, &pos);
         signal_emit_i64(&player.emitter, PLAYER_EVENT_SEEK, pos);
-        DEBUG("player event SEEK: time-pos is %li", pos);
         break;
     case MPV_EVENT_SHUTDOWN:
         DEBUG("got MPV_EVENT_SHUTDOWN, quitting application");
         pollen_loop_quit(event_loop, 0);
         break;
     default:
-        TRACE("mpv event: %s", mpv_event_name(ev->event_id));
-        break;
     }
 }
 

@@ -55,6 +55,7 @@ bool player_init(void) {
     SET_PROPERTY_STRING_OR_FAIL("audio-client-name", config.application_name);
     SET_PROPERTY_STRING_OR_FAIL("title", "${media-title}");
     SET_PROPERTY_STRING_OR_FAIL("keep-open", "yes");
+    SET_PROPERTY_STRING_OR_FAIL("clipboard-monitor", "no");
 
     #undef SET_PROPERTY_STRING_OR_FAIL
 
@@ -84,6 +85,7 @@ bool player_init(void) {
     OBSERVE_PROPERTY_OR_FAIL(PLAYER_EVENT_DURATION, "duration", MPV_FORMAT_INT64);
     OBSERVE_PROPERTY_OR_FAIL(PLAYER_EVENT_TIME_POSITION, "time-pos", MPV_FORMAT_INT64);
     OBSERVE_PROPERTY_OR_FAIL(PLAYER_EVENT_TIME_REMAINING, "time-remaining", MPV_FORMAT_INT64);
+    OBSERVE_PROPERTY_OR_FAIL(PLAYER_EVENT_IDLE, "idle-active", MPV_FORMAT_FLAG);
 
     #undef OBSERVE_PROPERTY_OR_FAIL
 

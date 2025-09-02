@@ -6,6 +6,7 @@
 #include "mpris/dbus.h"
 #include "mpris/interfaces.h"
 #include "collections/string.h"
+#include "player/control.h"
 #include "player/events.h"
 #include "player/playlist.h"
 #include "eventloop.h"
@@ -19,20 +20,37 @@ static struct signal_listener listener = {0};
 
 static void process_player_events(uint64_t event, const struct signal_data *data, void *) {
     switch ((enum player_event)event) {
-    case PLAYER_EVENT_PLAYLIST_POSITION:
-        const int64_t index = data->as.i64;
-        if (index > -1) {
-            const struct song *songs;
-            playlist_get_songs(&songs);
-            mpris_update_metadata(&songs[data->as.i64]);
-        } else {
-            mpris_update_metadata(NULL);
+    case PLAYER_EVENT_PLAYLIST_POSITION: {
+        const struct song *song;
+        playlist_get_current_song(&song);
+        mpris_update_metadata(song);
+    }
+    case PLAYER_EVENT_PLAYLIST_SONG_ADDED:
+    case PLAYER_EVENT_PLAYLIST_SONG_REMOVED:
+    case PLAYER_EVENT_PLAYLIST_CLEARED: {
+        const struct song *songs;
+        const size_t nsongs = playlist_get_songs(&songs);
+        const ssize_t current_song = playlist_get_current_song(NULL);
+        mpris_update_playlist_stuff(songs, nsongs, current_song);
+        break;
+    }
+    case PLAYER_EVENT_IDLE:
+        const bool idle = data->as.boolean;
+        if (idle) {
             mpris_update_playback_status(PLAYBACK_STATUS_STOPPED);
+        } else {
+            mpris_update_playback_status(player_is_paused()
+                                         ? PLAYBACK_STATUS_PAUSED
+                                         : PLAYBACK_STATUS_PLAYING);
         }
         break;
     case PLAYER_EVENT_PAUSE:
         const bool paused = data->as.boolean;
-        mpris_update_playback_status(paused ? PLAYBACK_STATUS_PAUSED : PLAYBACK_STATUS_PLAYING);
+        if (!player_is_idle()) {
+            mpris_update_playback_status(paused
+                                         ? PLAYBACK_STATUS_PAUSED
+                                         : PLAYBACK_STATUS_PLAYING);
+        }
         break;
     case PLAYER_EVENT_TIME_POSITION:
         const int64_t pos_seconds = data->as.i64;

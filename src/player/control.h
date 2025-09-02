@@ -16,5 +16,8 @@ void player_play_nth(int index);
 bool player_stop(void);
 bool player_quit(void);
 
+bool player_is_paused(void);
+bool player_is_idle(void);
+
 #endif /* #ifndef SRC_PLAYER_CONTROL_H */
 

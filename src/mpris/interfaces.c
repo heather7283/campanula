@@ -4,6 +4,7 @@
 #include "mpris/interfaces.h"
 #include "mpris/dbus.h"
 #include "player/control.h"
+#include "player/playlist.h"
 #include "collections/vec.h"
 #include "xmalloc.h"
 #include "log.h"
@@ -59,6 +60,63 @@ static struct player_interface {
     .can_control = true,
 };
 
+static int player_method_next(sd_bus_message *m, void *userdata, sd_bus_error *error) {
+    player_next();
+    return sd_bus_reply_method_return(m, NULL);
+}
+
+static int player_method_previous(sd_bus_message *m, void *userdata, sd_bus_error *error) {
+    player_prev();
+    return sd_bus_reply_method_return(m, NULL);
+}
+
+static int player_method_pause(sd_bus_message *m, void *userdata, sd_bus_error *error) {
+    player_set_pause(true);
+    return sd_bus_reply_method_return(m, NULL);
+}
+
+static int player_method_play_pause(sd_bus_message *m, void *userdata, sd_bus_error *error) {
+    player_toggle_pause();
+    return sd_bus_reply_method_return(m, NULL);
+}
+
+static int player_method_stop(sd_bus_message *m, void *userdata, sd_bus_error *error) {
+    player_set_pause(true);
+    player_seek(0, false);
+    return sd_bus_reply_method_return(m, NULL);
+}
+
+static int player_method_play(sd_bus_message *m, void *userdata, sd_bus_error *error) {
+    player_set_pause(false);
+    return sd_bus_reply_method_return(m, NULL);
+}
+
+static int player_method_seek(sd_bus_message *m, void *userdata, sd_bus_error *error) {
+    int64_t off = 0;
+    sd_bus_message_read_basic(m, 'x', &off);
+    player_seek(off / 1'000'000 /* microseconds */, true);
+    return sd_bus_reply_method_return(m, NULL);
+}
+
+static int player_method_set_position(sd_bus_message *m, void *userdata, sd_bus_error *error) {
+    const char *track_id = NULL;
+    int64_t off = 0;
+    sd_bus_message_read_basic(m, 'o', &track_id);
+    sd_bus_message_read_basic(m, 'x', &off);
+
+    const struct song *s;
+    playlist_get_current_song(&s);
+    if (track_id != NULL && s != NULL && track_id[0] == '/' && STREQ(&track_id[1], s->id)) {
+        player_seek(off / 1'000'000 /* microseconds */, false);
+    }
+    return sd_bus_reply_method_return(m, NULL);
+}
+
+static int player_method_open_uri(sd_bus_message *m, void *userdata, sd_bus_error *error) {
+    return sd_bus_reply_method_errorf(m, SD_BUS_ERROR_NOT_SUPPORTED,
+                                      "Not supported by this player");
+}
+
 static int player_property_playback_status_get(sd_bus *bus, const char *path, const char *interface,
                                                const char *property, sd_bus_message *reply,
                                                void *userdata, sd_bus_error *ret_error) {
@@ -82,7 +140,8 @@ static int player_property_loop_status_set(sd_bus *bus, const char *path, const 
 static int player_property_rate_set(sd_bus *bus, const char *path, const char *interface,
                                     const char *property, sd_bus_message *reply,
                                     void *userdata, sd_bus_error *ret_error) {
-    return sd_bus_reply_method_errorf(reply, SD_BUS_ERROR_NOT_SUPPORTED, "Not supported");
+    return sd_bus_reply_method_errorf(reply, SD_BUS_ERROR_NOT_SUPPORTED,
+                                      "Not supported by this player");
 }
 
 static int player_property_shuffle_set(sd_bus *bus, const char *path, const char *interface,
@@ -151,6 +210,16 @@ static int player_property_volume_set(sd_bus *bus, const char *path, const char 
 
 static const struct sd_bus_vtable player_vtable[] = {
     SD_BUS_VTABLE_START(SD_BUS_VTABLE_UNPRIVILEGED),
+
+    SD_BUS_METHOD("Next", "", "", player_method_next, 0),
+    SD_BUS_METHOD("Previous", "", "", player_method_previous, 0),
+    SD_BUS_METHOD("Pause", "", "", player_method_pause, 0),
+    SD_BUS_METHOD("PlayPause", "", "", player_method_play_pause, 0),
+    SD_BUS_METHOD("Stop", "", "", player_method_stop, 0),
+    SD_BUS_METHOD("Play", "", "", player_method_play, 0),
+    SD_BUS_METHOD("Seek", "x", "", player_method_seek, 0),
+    SD_BUS_METHOD("SetPosition", "ox", "", player_method_set_position, 0),
+    SD_BUS_METHOD("OpenUri", "s", "", player_method_open_uri, 0),
 
     SD_BUS_SIGNAL("Seeked", "x", 0),
 
@@ -367,6 +436,65 @@ bool mpris_update_playback_status(enum playback_status status) {
 bool mpris_update_position(int64_t pos_seconds) {
     player_interface.position = pos_seconds * 1'000'000;
     return true;
+}
+
+bool mpris_update_playlist_stuff(const struct song *songs, size_t n_songs, ssize_t current_song) {
+    INFO("mpris_update_playlist_stuff: %zu songs %zi current", n_songs, current_song);
+
+    static char *changed[16] = {0};
+    int nchanged = 0;
+
+    #define UPDATE(member, name, value) \
+        do { \
+            if (player_interface.member != (value)) { \
+                player_interface.member = (value); \
+                changed[nchanged++] = (name); \
+            } \
+        } while (0)
+
+    if (current_song < 0) {
+        UPDATE(can_go_next, "CanGoNext", false);
+        UPDATE(can_go_previous, "CanGoPrevious", false);
+        UPDATE(can_pause, "CanPause", false);
+        UPDATE(can_play, "CanPlay", false);
+        UPDATE(can_seek, "CanSeek", false);
+        UPDATE(playback_status, "CanSeek", PLAYBACK_STATUS_STOPPED);
+    } else {
+        if (current_song == 0) {
+            UPDATE(can_go_previous, "CanGoPrevious", false);
+        }
+        if (current_song == n_songs - 1) {
+            UPDATE(can_go_next, "CanGoNext", false);
+        }
+        if (current_song > 0) {
+            UPDATE(can_go_previous, "CanGoPrevious", true);
+        }
+        if (current_song < n_songs - 1) {
+            UPDATE(can_go_next, "CanGoNext", true);
+        }
+        if (current_song > 0 && current_song < n_songs - 1) {
+            UPDATE(can_go_previous, "CanGoPrevious", true);
+            UPDATE(can_go_next, "CanGoNext", true);
+        }
+        UPDATE(can_play, "CanPlay", true);
+        UPDATE(can_pause, "CanPause", true);
+        UPDATE(can_seek, "CanSeek", true);
+    }
+
+    changed[nchanged] = NULL;
+
+    for (int i = 0; i < nchanged; i++) {
+        TRACE("mpris_update_playlist_stuff: %s", changed[i]);
+    }
+
+    int r = 0;
+    if (nchanged > 0) {
+        r = sd_bus_emit_properties_changed_strv(dbus.bus,
+                                                    "/org/mpris/MediaPlayer2",
+                                                    "org.mpris.MediaPlayer2.Player",
+                                                    changed);
+    }
+    return r == 0;
 }
 
 bool mpris_emit_seek(int64_t new_pos_seconds) {

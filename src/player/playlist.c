@@ -1,6 +1,7 @@
 #include "player/playlist.h"
 #include "player/events.h"
 #include "player/internal.h"
+#include "player/control.h"
 
 void playlist_append_song(const struct song *song) {
     struct player_playlist *pl = &player.playlist;
@@ -8,6 +9,11 @@ void playlist_append_song(const struct song *song) {
     if (player_loadfile(song)) {
         struct song *new_song = VEC_EMPLACE_BACK(&pl->songs);
         song_deep_copy(new_song, song);
+
+        //if (VEC_SIZE(&pl->songs) == 1) {
+        //    player_play_nth(0);
+        //}
+
         signal_emit_i64(&player.emitter, PLAYER_EVENT_PLAYLIST_SONG_ADDED, VEC_SIZE(&pl->songs) - 1);
     }
 }
@@ -21,7 +27,7 @@ void playlist_clear(void) {
     }
 }
 
-size_t playlist_get_songs(const struct song **songs) {
+int playlist_get_songs(const struct song **songs) {
     struct player_playlist *pl = &player.playlist;
 
     if (songs != NULL) {
@@ -30,7 +36,7 @@ size_t playlist_get_songs(const struct song **songs) {
     return VEC_SIZE(&pl->songs);
 }
 
-size_t playlist_get_current_song(const struct song **song) {
+int playlist_get_current_song(const struct song **song) {
     struct player_playlist *pl = &player.playlist;
 
     if (song != NULL) {

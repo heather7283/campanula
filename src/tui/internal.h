@@ -27,22 +27,22 @@ enum tui_tab_type {
 struct tui_tab {
     struct tui_menu menu;
     union {
-        struct {
+        struct tui_tab_playlist {
             int current;
         } playlist;
-        struct {
+        struct tui_tab_songs {
             bool populated;
         } songs;
-        struct {
+        struct tui_tab_albums {
             bool populated;
         } albums;
-        struct {
+        struct tui_tab_artists {
             bool populated;
         } artists;
-        struct {
+        struct tui_tab_artist {
             struct artist *artist;
         } artist;
-        struct {
+        struct tui_tab_album {
             struct album *album;
         } album;
     };

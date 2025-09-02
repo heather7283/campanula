@@ -1,15 +1,12 @@
 #ifndef SRC_PLAYER_INTERNAL_H
 #define SRC_PLAYER_INTERNAL_H
 
+#include <sys/types.h>
+
 #include <mpv/stream_cb.h>
 
 #include "collections/vec.h"
 #include "signals.h"
-
-/*
- * Basically everything that should not be exposed to users goes here,
- * idk how else to do that honestly, a bit of a mess but eh whatever
- */
 
 #define MPV_PROTOCOL "campanula"
 
@@ -17,11 +14,11 @@ struct player {
     struct mpv_handle *mpv_handle;
     struct pollen_callback *mpv_events_callback;
 
+    bool is_paused, is_idle;
+
     struct player_playlist {
         VEC(struct song) songs;
-        size_t current_song;
-
-        bool loop;
+        int current_song;
     } playlist;
 
     struct signal_emitter emitter;

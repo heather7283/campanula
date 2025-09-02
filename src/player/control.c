@@ -116,7 +116,7 @@ bool player_loadfile(const struct song *song) {
             .values = (struct mpv_node[]){
                 { .format = MPV_FORMAT_STRING, .u.string = "loadfile" },
                 { .format = MPV_FORMAT_STRING, .u.string = url.str },
-                { .format = MPV_FORMAT_STRING, .u.string = "append-play" },
+                { .format = MPV_FORMAT_STRING, .u.string = "insert-at" },
                 { .format = MPV_FORMAT_INT64, .u.int64 = -1 },
                 {
                     .format = MPV_FORMAT_NODE_MAP,
@@ -165,5 +165,13 @@ bool player_quit(void) {
     }
 
     return true;
+}
+
+bool player_is_paused(void) {
+    return player.is_paused;
+}
+
+bool player_is_idle(void) {
+    return player.is_idle;
 }
 

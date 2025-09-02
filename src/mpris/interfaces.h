@@ -21,6 +21,7 @@ bool mpris_init_interfaces(struct dbus_state *dbus_state);
 bool mpris_update_metadata(const struct song *song);
 bool mpris_update_playback_status(enum playback_status status);
 bool mpris_update_position(int64_t pos_seconds);
+bool mpris_update_playlist_stuff(const struct song *songs, size_t n_songs, ssize_t current_song);
 
 bool mpris_emit_seek(int64_t new_pos_seconds);
 

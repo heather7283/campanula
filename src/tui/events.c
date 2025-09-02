@@ -177,36 +177,36 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
         draw_status_bar();
         break;
     case PLAYER_EVENT_PLAYLIST_POSITION: {
-        const int64_t index = data->as.i64;
-        if (index < 0) {
-            WARN("PLAYER_EVENT_PLAYLIST_POSITION: index is %li", index);
-            break;
-        }
+        const int new_index = (int)data->as.i64;
+        const int old_index = tui.tabs[TUI_TAB_PLAYLIST].playlist.current;
+        struct tui_tab *const tab = &tui.tabs[TUI_TAB_PLAYLIST];
 
         const struct song *songs;
         playlist_get_songs(&songs);
 
         /* mark old one as not current */
-        struct tui_menu_item *old = tui_menu_get_item(&tui.tabs[TUI_TAB_PLAYLIST].menu,
-                                                      tui.tabs[TUI_TAB_PLAYLIST].playlist.current);
-        assert(old->type == TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM);
-        old->as.playlist_item.current = false;
-        tui_menu_draw_item(&tui.tabs[TUI_TAB_PLAYLIST].menu,
-                           tui.tabs[TUI_TAB_PLAYLIST].playlist.current);
+        if (old_index >= 0) {
+            struct tui_menu_item *old = tui_menu_get_item(&tab->menu, old_index);
+            assert(old->type == TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM);
+            old->as.playlist_item.current = false;
+            tui_menu_draw_item(&tab->menu, old_index);
+        }
 
         /* mark new one as current */
-        struct tui_menu_item *item = tui_menu_get_item(&tui.tabs[TUI_TAB_PLAYLIST].menu, index);
-        assert(item->type == TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM);
-        item->as.playlist_item.current = true;
-        tui_menu_draw_item(&tui.tabs[TUI_TAB_PLAYLIST].menu, index);
+        if (new_index >= 0) {
+            struct tui_menu_item *new = tui_menu_get_item(&tab->menu, new_index);
+            assert(new->type == TUI_MENU_ITEM_TYPE_PLAYLIST_ITEM);
+            new->as.playlist_item.current = true;
+            tui_menu_draw_item(&tab->menu, new_index);
+        }
 
-        tui.tabs[TUI_TAB_PLAYLIST].playlist.current = index;
+        tab->playlist.current = new_index;
 
         draw_status_bar();
         break;
     }
     case PLAYER_EVENT_PLAYLIST_SONG_ADDED: {
-        const uint64_t index = data->as.u64;
+        const int index = (int)data->as.u64;
 
         const struct song *songs;
         playlist_get_songs(&songs);
