@@ -15,7 +15,7 @@ libcurl_dep = dependency('libcurl')
 libopenssl_dep = dependency('OpenSSL') # needed for md5, curl links against it anyway
 libjsonc_dep = dependency('json-c')
 libsqlite_dep = dependency('sqlite3')
-# I will regret this (times I wanted to kill myself because ncurses is retarded: 7)
+# I will regret this (times I wanted to kill myself because ncurses is retarded: 8)
 libncursesw_dep = dependency('ncursesw')
 
 sdbus_dep = dependency(['libsystemd', 'libelogind', 'basu']) # mpris

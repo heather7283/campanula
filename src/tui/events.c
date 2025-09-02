@@ -154,27 +154,21 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
     switch ((enum player_event)event) {
     case PLAYER_EVENT_VOLUME:
         tui.statusbar.volume = data->as.i64;
-        draw_status_bar();
         break;
     case PLAYER_EVENT_MUTE:
         tui.statusbar.mute = data->as.boolean;
-        draw_status_bar();
         break;
     case PLAYER_EVENT_PAUSE:
         tui.statusbar.pause = data->as.boolean;
-        draw_status_bar();
         break;
     case PLAYER_EVENT_PERCENT_POSITION:
         tui.statusbar.pos = data->as.i64;
-        draw_status_bar();
         break;
     case PLAYER_EVENT_DURATION:
         tui.statusbar.duration = data->as.u64;
-        draw_status_bar();
         break;
     case PLAYER_EVENT_TIME_POSITION:
         tui.statusbar.time_pos = data->as.u64;
-        draw_status_bar();
         break;
     case PLAYER_EVENT_PLAYLIST_POSITION: {
         const int new_index = (int)data->as.i64;
@@ -202,7 +196,6 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
 
         tab->playlist.current = new_index;
 
-        draw_status_bar();
         break;
     }
     case PLAYER_EVENT_PLAYLIST_SONG_ADDED: {
@@ -220,11 +213,11 @@ void tui_handle_player_events(uint64_t event, const struct signal_data *data, vo
             },
         };
         tui_menu_insert_or_replace_item(&tui.tabs[TUI_TAB_PLAYLIST].menu, index, &item);
-
         break;
     }
     }
 
+    draw_status_bar();
     doupdate();
 }
 

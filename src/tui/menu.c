@@ -380,11 +380,11 @@ void tui_menu_show(struct tui_menu *menu) {
 
 void tui_menu_draw_scrollbar(struct tui_menu *menu) {
     const int n_items = VEC_SIZE(&menu->items);
-    if (n_items == 0) {
+    if (menu->hidden || n_items == 0) {
         return;
     }
 
-    const int n_visible = MIN(VEC_SIZE(&menu->items) - menu->scroll, menu->height);
+    const int n_visible = MIN(n_items - menu->scroll, menu->height);
 
     int scrollbar_height;
     int scrollbar_pos;
@@ -409,7 +409,7 @@ void tui_menu_draw_scrollbar(struct tui_menu *menu) {
 }
 
 bool tui_menu_draw_item(struct tui_menu *menu, size_t index) {
-    if (index < menu->scroll || index > menu->scroll + menu->height - 1) {
+    if (menu->hidden || index < menu->scroll || index > menu->scroll + menu->height - 1) {
         return false;
     }
 

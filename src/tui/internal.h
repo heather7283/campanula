@@ -49,6 +49,8 @@ struct tui_tab {
 };
 
 struct tui {
+    int saved_fdflags;
+
     struct pollen_callback *resize_callback;
     struct {
         struct signal_listener player_listener, network_listener;
