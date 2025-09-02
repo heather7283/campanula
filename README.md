@@ -7,7 +7,8 @@ Tested on [navidrome], might or might not work with other implementations.
 - [ ] Size limit for songs cache
 - [ ] Make it configurable
 - [ ] Make it look good
-- [ ] MPRIS integration
+- [x] MPRIS integration
+- [ ] Drop ncurses and use a library that doesn't cause severe irreversible brain damage
 
 ## License
 This program is free software: you can redistribute it and/or modify
