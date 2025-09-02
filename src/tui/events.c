@@ -116,6 +116,7 @@ void tui_handle_key(uint32_t key) {
         tui_menu_action_append(&tui.tabs[tui.tab].menu);
         break;
     case '\n':
+    case '\r':
         tui_menu_action_activate(&tui.tabs[tui.tab].menu);
         break;
     case 'p':

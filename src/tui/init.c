@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <locale.h>
+#include <wctype.h>
 
 #include "tui/init.h"
 #include "tui/utils.h"
@@ -54,7 +55,11 @@ static int stdin_handler(struct pollen_callback *, int, uint32_t, void *) {
 
         for (size_t i = 0; i < nwide; i++) {
             const uint32_t wchar = wbuf[i];
-            TRACE("stdin_handler: got wchar %lc (dec %d hex %x)", wchar, wchar, wchar);
+            if (iswalnum(wchar)) {
+                TRACE("stdin_handler: got wchar %lc (dec %d hex %x)", wchar, wchar, wchar);
+            } else {
+                TRACE("stdin_handler: got wchar NONPRINT (dec %d hex %x)", wchar, wchar);
+            }
             tui_handle_key(wchar);
         }
     }
