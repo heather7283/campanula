@@ -7,11 +7,17 @@
 #include "log.h"
 
 struct config config = {
-    .server_address = "10.200.200.10:4533/music",
+    //.server_address = "10.200.200.10:4533/music",
+    .server_address = "https://demo.navidrome.org",
+    //.username = "heather",
+    .username = "demo",
+
+    .server_id = -1,
+
     .application_name = "campanula",
+
     .preferred_audio_format = "raw",
     .preferred_audio_bitrate = 128,
-    .username = "heather",
 };
 
 bool load_config(void) {

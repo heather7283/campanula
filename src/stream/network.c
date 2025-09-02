@@ -7,6 +7,7 @@
 #include "api/requests.h"
 #include "collections/vec.h"
 #include "db/cache.h"
+#include "cleanup.h"
 #include "xmalloc.h"
 #include "config.h"
 #include "log.h"
@@ -30,14 +31,15 @@ struct network_stream_data {
 static void network_stream_finalise(struct network_stream_data *d) {
     /* TODO: do this asynchronously? this can potentially block for a long time on slow storage */
     int fd = -1;
-    char *filepath = NULL;
+    [[gnu::cleanup(cleanup_free)]] char *filepath = NULL;
+    [[gnu::cleanup(cleanup_free)]] char *filename = NULL;
 
     if (!d->eof) {
         TRACE("network stream closed before entire file was received; not saving into cache");
         goto out;
     }
 
-    char *filename = d->id;
+    xasprintf(&filename, "%li_%s", config.server_id, d->id);
     xasprintf(&filepath, "%s/%s", config.music_cache_dir, filename);
     TRACE("opening file at %s", filepath);
     fd = open(filepath, O_TRUNC | O_CREAT | O_WRONLY | O_CLOEXEC, 0644);
@@ -68,7 +70,6 @@ out:
     if (fd >= 0) {
         close(fd);
     }
-    free(filepath);
 
     VEC_FREE(&d->data);
     free(d->id);

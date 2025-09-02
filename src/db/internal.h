@@ -4,7 +4,7 @@
     sqlite3_bind_##type((stmt), sqlite3_bind_parameter_index((stmt), (name)), ##__VA_ARGS__)
 
 struct sqlite_statement {
-    const char *source;
+    const char *src;
     struct sqlite3_stmt *stmt;
 };
 
@@ -15,10 +15,16 @@ enum sqlite_statement_type {
     STATEMENT_COMMIT,
     STATEMENT_ROLLBACK,
 
+    STATEMENT_CREATE_TABLE_SERVERS,
     STATEMENT_CREATE_TABLE_ARTISTS,
     STATEMENT_CREATE_TABLE_ALBUMS,
     STATEMENT_CREATE_TABLE_SONGS,
-    STATEMENT_CREATE_TABLE_SONGS_CACHE,
+    STATEMENT_CREATE_TABLE_CACHED_SONGS,
+
+    STATEMENT_INSERT_SERVER,
+    STATEMENT_GET_SERVER_ID,
+    STATEMENT_GET_SERVER_LAST_SYNC,
+    STATEMENT_UPDATE_SERVER_LAST_SYNC,
 
     STATEMENT_MARK_ARTISTS_AS_DELETED,
     STATEMENT_MARK_ALBUMS_AS_DELETED,

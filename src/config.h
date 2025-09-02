@@ -1,9 +1,13 @@
 #ifndef SRC_CONFIG_H
 #define SRC_CONFIG_H
 
+#include <stdint.h>
+
 struct config {
     /* server url (without /rest) */
     char *server_address;
+    /* server ID, filled by sqlite query, -1 initially */
+    int64_t server_id;
     /* server username */
     char *username;
     /* server passord */

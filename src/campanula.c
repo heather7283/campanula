@@ -25,12 +25,22 @@ int main(int argc, char **argv) {
 
     log_init(fopen("campanula.log", "w"), LOG_TRACE, true);
 
-    event_loop = pollen_loop_create();
-    pollen_loop_add_signal(event_loop, SIGINT, sigint_handler, &event_loop);
-
     if (!db_init()) {
         return 1;
     }
+    /* retrieve server id right after connecting to the db to avoid surprises later */
+    int64_t server_id = db_get_server_id(config.server_address);
+    if (server_id < 0) {
+        server_id = db_add_server(config.server_address);
+    }
+    if (server_id < 0) {
+        return 1;
+    }
+    config.server_id = server_id;
+
+    event_loop = pollen_loop_create();
+    pollen_loop_add_signal(event_loop, SIGINT, sigint_handler, &event_loop);
+
     if (!network_init()) {
         return 1;
     }

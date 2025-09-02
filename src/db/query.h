@@ -2,10 +2,18 @@
 #define SRC_DB_QUERY_H
 
 #include <stddef.h>
+#include <stdint.h>
+#include <time.h>
 
 #include "types/artist.h"
 #include "types/album.h"
 #include "types/song.h"
+
+int64_t db_get_server_id(const char *url);
+int64_t db_add_server(const char *url);
+
+time_t db_get_server_last_sync(void);
+bool db_update_server_last_sync(void);
 
 size_t db_get_artists(struct artist **artists, size_t page, size_t artists_per_page);
 

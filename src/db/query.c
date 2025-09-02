@@ -2,7 +2,44 @@
 #include "db/internal.h"
 #include "collections/vec.h"
 #include "xmalloc.h"
+#include "config.h"
 #include "log.h"
+
+int64_t db_add_server(const char *url) {
+    [[gnu::cleanup(statement_resetp)]]
+    struct sqlite3_stmt *stmt = statements[STATEMENT_INSERT_SERVER].stmt;
+
+    STMT_BIND(stmt, text, "$url", url, -1, SQLITE_STATIC);
+
+    int ret = sqlite3_step(stmt);
+    if (ret != SQLITE_ROW) {
+        ERROR("failed to add server with url %s to the db: %s", url, sqlite3_errmsg(db));
+        return -1;
+    }
+
+    int64_t id = sqlite3_column_int64(stmt, 0);
+    INFO("server with url %s now has id %li", url, id);
+
+    return id;
+}
+
+int64_t db_get_server_id(const char *url) {
+    [[gnu::cleanup(statement_resetp)]]
+    struct sqlite3_stmt *stmt = statements[STATEMENT_GET_SERVER_ID].stmt;
+
+    STMT_BIND(stmt, text, "$url", url, -1, SQLITE_STATIC);
+
+    int ret = sqlite3_step(stmt);
+    if (ret != SQLITE_ROW) {
+        WARN("server with url %s does not exist in the db", url);
+        return -1;
+    }
+
+    int64_t id = sqlite3_column_int64(stmt, 0);
+    INFO("server with url %s found in the db; id %li", url, id);
+
+    return id;
+}
 
 size_t db_search_artists(struct artist **partists, const char *query,
                          size_t page, size_t artists_per_page) {
@@ -16,6 +53,8 @@ size_t db_search_artists(struct artist **partists, const char *query,
     } else {
         stmt = statements[STATEMENT_SEARCH_ARTISTS_WITH_PAGINATION].stmt;
     }
+
+    STMT_BIND(stmt, int64, "$server_id", config.server_id);
 
     STMT_BIND(stmt, int64, "$select_count", artists_per_page);
     STMT_BIND(stmt, int64, "$select_offset", page * artists_per_page);
@@ -58,6 +97,8 @@ size_t db_search_albums(struct album **palbums, const char *query,
         stmt = statements[STATEMENT_SEARCH_ALBUMS_WITH_PAGINATION].stmt;
     }
 
+    STMT_BIND(stmt, int64, "$server_id", config.server_id);
+
     STMT_BIND(stmt, int64, "$select_count", albums_per_page);
     STMT_BIND(stmt, int64, "$select_offset", page * albums_per_page);
     if (query != NULL) {
@@ -96,6 +137,7 @@ size_t db_get_songs_in_album(struct song **psongs, const struct album *album) {
 
     VEC(struct song) songs = {0};
 
+    STMT_BIND(stmt, int64, "$server_id", config.server_id);
     STMT_BIND(stmt, text, "$album_id", album->id, -1, SQLITE_STATIC);
 
     int ret;
@@ -134,6 +176,7 @@ size_t db_get_albums_for_artist(struct album **palbums, const struct artist *art
 
     VEC(struct album) albums = {0};
 
+    STMT_BIND(stmt, int64, "$server_id", config.server_id);
     STMT_BIND(stmt, text, "$artist_id", artist->id, -1, SQLITE_STATIC);
 
     int ret;
@@ -164,6 +207,7 @@ size_t db_get_songs_for_artist(struct song **psongs, const struct artist *artist
 
     VEC(struct song) songs = {0};
 
+    STMT_BIND(stmt, int64, "$server_id", config.server_id);
     STMT_BIND(stmt, text, "$artist_id", artist->id, -1, SQLITE_STATIC);
 
     int ret;
@@ -202,6 +246,7 @@ size_t db_get_songs(struct song **psongs, size_t page, size_t songs_per_page) {
 
     VEC(struct song) songs = {0};
 
+    STMT_BIND(stmt, int64, "$server_id", config.server_id);
     STMT_BIND(stmt, int64, "$select_count", songs_per_page);
     STMT_BIND(stmt, int64, "$select_offset", page * songs_per_page);
 
