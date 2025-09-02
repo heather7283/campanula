@@ -10,6 +10,7 @@
 #include "network/events.h"
 #include "log.h"
 #include "eventloop.h"
+#include "macros.h"
 
 static int sigwinch_handler_deferred(struct pollen_callback *, uint64_t, void *) {
     struct winsize winsize;
@@ -32,7 +33,8 @@ static int stdin_handler(struct pollen_callback *, int, uint32_t, void *) {
      * because they for some fucking reason call refresh() internally
      * which causes immense amounts of brain damage and ass pain.
      * I wish all ncurses developers a very slow and painful death. */
-    static char buf[64];
+    static char buf[512];
+    static wchar_t wbuf[512];
     while (true) {
         ssize_t ret = read(0 /* stdin */, buf, sizeof(buf));
         if (ret < 0) {
@@ -44,9 +46,15 @@ static int stdin_handler(struct pollen_callback *, int, uint32_t, void *) {
             }
         }
 
-        for (size_t i = 0; i < (size_t)ret; i++) {
-            const uint32_t wchar = buf[i];
-            TRACE("stdin_handler: got char %c (dec %d hex %x)", buf[i], wchar, wchar);
+        size_t nwide = mbstowcs(wbuf, buf, sizeof(wbuf) / sizeof(wbuf[0]));
+        if (nwide == (size_t)-1) {
+            ERROR("invalid multibyte sequence on stdin");
+            return 0;
+        }
+
+        for (size_t i = 0; i < nwide; i++) {
+            const uint32_t wchar = wbuf[i];
+            TRACE("stdin_handler: got wchar %lc (dec %d hex %x)", wchar, wchar, wchar);
             tui_handle_key(wchar);
         }
     }
