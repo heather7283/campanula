@@ -54,3 +54,8 @@ extern struct sqlite_statement statements[SQLITE_STATEMENT_TYPE_COUNT];
 
 extern struct sqlite3 *db;
 
+/* for use with [[gnu::cleanup()]] */
+void statement_resetp(struct sqlite3_stmt *const *stmt);
+/* for running simple statements that dont take arguments and dont return anything */
+bool statement_execute(enum sqlite_statement_type index);
+

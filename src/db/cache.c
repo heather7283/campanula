@@ -4,10 +4,8 @@
 #include "log.h"
 
 bool db_get_cached_song(struct cached_song *song, const char *id) {
+    [[gnu::cleanup(statement_resetp)]]
     struct sqlite3_stmt *const stmt = statements[STATEMENT_GET_CACHED_SONG].stmt;
-
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
 
     STMT_BIND(stmt, text, "$id", id, -1, SQLITE_STATIC);
 
@@ -27,10 +25,8 @@ bool db_get_cached_song(struct cached_song *song, const char *id) {
 }
 
 bool db_delete_cached_song(const char *id) {
+    [[gnu::cleanup(statement_resetp)]]
     struct sqlite3_stmt *const stmt = statements[STATEMENT_DELETE_CACHED_SONG].stmt;
-
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
 
     STMT_BIND(stmt, text, "$id", id, -1, SQLITE_STATIC);
 
@@ -44,10 +40,8 @@ bool db_delete_cached_song(const char *id) {
 }
 
 bool db_add_cached_song(const struct cached_song *song) {
+    [[gnu::cleanup(statement_resetp)]]
     struct sqlite3_stmt *const stmt = statements[STATEMENT_ADD_CACHED_SONG].stmt;
-
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
 
     STMT_BIND(stmt, text, "$id", song->id, -1, SQLITE_STATIC);
     STMT_BIND(stmt, text, "$filename", song->filename, -1, SQLITE_STATIC);
@@ -65,10 +59,8 @@ bool db_add_cached_song(const struct cached_song *song) {
 }
 
 bool db_touch_cached_song(const char *song_id) {
+    [[gnu::cleanup(statement_resetp)]]
     struct sqlite3_stmt *const stmt = statements[STATEMENT_TOUCH_CACHED_SONG].stmt;
-
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
 
     STMT_BIND(stmt, text, "$id", song_id, -1, SQLITE_STATIC);
 

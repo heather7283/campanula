@@ -6,7 +6,9 @@
 
 size_t db_search_artists(struct artist **partists, const char *query,
                          size_t page, size_t artists_per_page) {
-    struct sqlite3_stmt *stmt;
+    [[gnu::cleanup(statement_resetp)]]
+    struct sqlite3_stmt *stmt = NULL;
+
     VEC(struct artist) artists = {0};
 
     if (query == NULL) {
@@ -14,9 +16,6 @@ size_t db_search_artists(struct artist **partists, const char *query,
     } else {
         stmt = statements[STATEMENT_SEARCH_ARTISTS_WITH_PAGINATION].stmt;
     }
-
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
 
     STMT_BIND(stmt, int64, "$select_count", artists_per_page);
     STMT_BIND(stmt, int64, "$select_offset", page * artists_per_page);
@@ -48,7 +47,9 @@ size_t db_get_artists(struct artist **artists, size_t page, size_t artists_per_p
 
 size_t db_search_albums(struct album **palbums, const char *query,
                         size_t page, size_t albums_per_page) {
-    struct sqlite3_stmt *stmt;
+    [[gnu::cleanup(statement_resetp)]]
+    struct sqlite3_stmt *stmt = NULL;
+
     VEC(struct album) albums = {0};
 
     if (query == NULL) {
@@ -56,9 +57,6 @@ size_t db_search_albums(struct album **palbums, const char *query,
     } else {
         stmt = statements[STATEMENT_SEARCH_ALBUMS_WITH_PAGINATION].stmt;
     }
-
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
 
     STMT_BIND(stmt, int64, "$select_count", albums_per_page);
     STMT_BIND(stmt, int64, "$select_offset", page * albums_per_page);
@@ -93,11 +91,10 @@ size_t db_get_albums(struct album **palbums, size_t page, size_t albums_per_page
 }
 
 size_t db_get_songs_in_album(struct song **psongs, const struct album *album) {
+    [[gnu::cleanup(statement_resetp)]]
     struct sqlite3_stmt *const stmt = statements[STATEMENT_GET_SONGS_IN_ALBUM].stmt;
-    VEC(struct song) songs = {0};
 
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
+    VEC(struct song) songs = {0};
 
     STMT_BIND(stmt, text, "$album_id", album->id, -1, SQLITE_STATIC);
 
@@ -132,11 +129,10 @@ size_t db_get_songs_in_album(struct song **psongs, const struct album *album) {
 }
 
 size_t db_get_albums_for_artist(struct album **palbums, const struct artist *artist) {
+    [[gnu::cleanup(statement_resetp)]]
     struct sqlite3_stmt *const stmt = statements[STATEMENT_GET_ALBUMS_FOR_ARTIST].stmt;
-    VEC(struct album) albums = {0};
 
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
+    VEC(struct album) albums = {0};
 
     STMT_BIND(stmt, text, "$artist_id", artist->id, -1, SQLITE_STATIC);
 
@@ -163,11 +159,10 @@ size_t db_get_albums_for_artist(struct album **palbums, const struct artist *art
 }
 
 size_t db_get_songs_for_artist(struct song **psongs, const struct artist *artist) {
+    [[gnu::cleanup(statement_resetp)]]
     struct sqlite3_stmt *const stmt = statements[STATEMENT_GET_SONGS_FOR_ARTIST].stmt;
-    VEC(struct song) songs = {0};
 
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
+    VEC(struct song) songs = {0};
 
     STMT_BIND(stmt, text, "$artist_id", artist->id, -1, SQLITE_STATIC);
 
@@ -202,11 +197,10 @@ size_t db_get_songs_for_artist(struct song **psongs, const struct artist *artist
 }
 
 size_t db_get_songs(struct song **psongs, size_t page, size_t songs_per_page) {
+    [[gnu::cleanup(statement_resetp)]]
     struct sqlite3_stmt *const stmt = statements[STATEMENT_GET_SONGS_WITH_PAGINATION].stmt;
-    VEC(struct song) songs = {0};
 
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
+    VEC(struct song) songs = {0};
 
     STMT_BIND(stmt, int64, "$select_count", songs_per_page);
     STMT_BIND(stmt, int64, "$select_offset", page * songs_per_page);

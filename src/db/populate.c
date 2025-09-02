@@ -3,10 +3,8 @@
 #include "api/requests.h"
 
 static bool insert_artist(const struct api_type_artist_id3 *a) {
+    [[gnu::cleanup(statement_resetp)]]
     struct sqlite3_stmt *stmt = statements[STATEMENT_INSERT_ARTIST].stmt;
-
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
 
     STMT_BIND(stmt, text, "$id", a->id, -1, SQLITE_STATIC);
     STMT_BIND(stmt, text, "$name", a->name, -1, SQLITE_STATIC);
@@ -21,10 +19,8 @@ static bool insert_artist(const struct api_type_artist_id3 *a) {
 }
 
 static bool insert_album(const struct api_type_album_id3 *a) {
+    [[gnu::cleanup(statement_resetp)]]
     struct sqlite3_stmt *stmt = statements[STATEMENT_INSERT_ALBUM].stmt;
-
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
 
     STMT_BIND(stmt, text, "$id", a->id, -1, SQLITE_STATIC);
     STMT_BIND(stmt, text, "$name", a->name, -1, SQLITE_STATIC);
@@ -44,10 +40,8 @@ static bool insert_album(const struct api_type_album_id3 *a) {
 }
 
 static bool insert_song(const struct api_type_child *s) {
+    [[gnu::cleanup(statement_resetp)]]
     struct sqlite3_stmt *stmt = statements[STATEMENT_INSERT_SONG].stmt;
-
-    sqlite3_reset(stmt);
-    sqlite3_clear_bindings(stmt);
 
     STMT_BIND(stmt, text, "$id", s->id, -1, SQLITE_STATIC);
     STMT_BIND(stmt, text, "$title", s->title, -1, SQLITE_STATIC);
@@ -93,29 +87,21 @@ static void on_db_populate_response(const char *errmsg,
     switch (d->state) {
     case START: {
         TRACE("db_populate: starting transaction");
-        sqlite3_reset(statements[STATEMENT_BEGIN].stmt);
-        int ret = sqlite3_step(statements[STATEMENT_BEGIN].stmt);
-        if (ret != SQLITE_DONE) {
+        if (!statement_execute(STATEMENT_BEGIN)) {
             ERROR("failed to start transaction: %s", sqlite3_errmsg(db));
             return;
         }
 
         TRACE("db_populate: marking all entries as deleted");
-        sqlite3_reset(statements[STATEMENT_MARK_ARTISTS_AS_DELETED].stmt);
-        ret = sqlite3_step(statements[STATEMENT_MARK_ARTISTS_AS_DELETED].stmt);
-        if (ret != SQLITE_DONE) {
+        if (!statement_execute(STATEMENT_MARK_ARTISTS_AS_DELETED)) {
             ERROR("failed to mark artists as deleted: %s", sqlite3_errmsg(db));
             goto err;
         }
-        sqlite3_reset(statements[STATEMENT_MARK_ALBUMS_AS_DELETED].stmt);
-        ret = sqlite3_step(statements[STATEMENT_MARK_ALBUMS_AS_DELETED].stmt);
-        if (ret != SQLITE_DONE) {
+        if (!statement_execute(STATEMENT_MARK_ALBUMS_AS_DELETED)) {
             ERROR("failed to mark albums as deleted: %s", sqlite3_errmsg(db));
             goto err;
         }
-        sqlite3_reset(statements[STATEMENT_MARK_SONGS_AS_DELETED].stmt);
-        ret = sqlite3_step(statements[STATEMENT_MARK_SONGS_AS_DELETED].stmt);
-        if (ret != SQLITE_DONE) {
+        if (!statement_execute(STATEMENT_MARK_SONGS_AS_DELETED)) {
             ERROR("failed to mark albums as deleted: %s", sqlite3_errmsg(db));
             goto err;
         }
@@ -198,30 +184,26 @@ songs:
 fin:
     TRACE("db_populate: deleting deleted entries");
 
-    sqlite3_reset(statements[STATEMENT_DELETE_DELETED_SONGS].stmt);
-    if (sqlite3_step(statements[STATEMENT_DELETE_DELETED_SONGS].stmt) != SQLITE_DONE) {
+    if (!statement_execute(STATEMENT_DELETE_DELETED_SONGS)) {
         ERROR("db_populate: failed to delete deleted songs: %s", sqlite3_errmsg(db));
         goto err;
     }
     TRACE("db_populate: deleted %lli songs", sqlite3_changes64(db));
 
-    sqlite3_reset(statements[STATEMENT_DELETE_DELETED_ALBUMS].stmt);
-    if (sqlite3_step(statements[STATEMENT_DELETE_DELETED_ALBUMS].stmt) != SQLITE_DONE) {
+    if (!statement_execute(STATEMENT_DELETE_DELETED_ALBUMS)) {
         ERROR("db_populate: failed to delete deleted albums: %s", sqlite3_errmsg(db));
         goto err;
     }
     TRACE("db_populate: deleted %lli albums", sqlite3_changes64(db));
 
-    sqlite3_reset(statements[STATEMENT_DELETE_DELETED_ARTISTS].stmt);
-    if (sqlite3_step(statements[STATEMENT_DELETE_DELETED_ARTISTS].stmt) != SQLITE_DONE) {
+    if (!statement_execute(STATEMENT_DELETE_DELETED_ARTISTS)) {
         ERROR("db_populate: failed to delete deleted artists: %s", sqlite3_errmsg(db));
         goto err;
     }
     TRACE("db_populate: deleted %lli artists", sqlite3_changes64(db));
 
     TRACE("db_populate: committing transaction");
-    sqlite3_reset(statements[STATEMENT_COMMIT].stmt);
-    if (sqlite3_step(statements[STATEMENT_COMMIT].stmt) != SQLITE_DONE) {
+    if (!statement_execute(STATEMENT_COMMIT)) {
         ERROR("db_populate: failed to commit transaction: %s", sqlite3_errmsg(db));
         goto err;
     }
@@ -232,8 +214,7 @@ fin:
 
 err:
     TRACE("db_populate: rolling back transaction");
-    sqlite3_reset(statements[STATEMENT_ROLLBACK].stmt);
-    if (sqlite3_step(statements[STATEMENT_ROLLBACK].stmt) != SQLITE_DONE) {
+    if (!statement_execute(STATEMENT_ROLLBACK)) {
         ERROR("db_populate: failed to rollback transaction: %s", sqlite3_errmsg(db));
     }
 

@@ -192,6 +192,26 @@ static_assert(SIZEOF_VEC(statements) == SQLITE_STATEMENT_TYPE_COUNT);
 
 struct sqlite3 *db = NULL;
 
+void statement_resetp(struct sqlite3_stmt *const *pstmt) {
+    struct sqlite3_stmt *const stmt = *pstmt;
+    if (stmt != NULL) {
+        sqlite3_reset(stmt);
+        sqlite3_clear_bindings(stmt);
+    }
+}
+
+bool statement_execute(enum sqlite_statement_type index) {
+    [[gnu::cleanup(statement_resetp)]]
+    struct sqlite3_stmt *const stmt = statements[index].stmt;
+
+    int ret = sqlite3_step(stmt);
+    if (ret != SQLITE_DONE) {
+        return false;
+    }
+
+    return true;
+}
+
 bool db_init(void) {
     int ret = 0;
     [[gnu::cleanup(cleanup_free)]] char *db_path = NULL;
