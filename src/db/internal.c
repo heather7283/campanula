@@ -79,25 +79,22 @@ struct sqlite_statement statements[] = {
     [STATEMENT_DELETE_DELETED_ALBUMS] = { .source = "DELETE FROM albums WHERE deleted = TRUE" },
     [STATEMENT_DELETE_DELETED_SONGS] = { .source = "DELETE FROM songs WHERE deleted = TRUE" },
 
+    /* The following will break if, let's say, a song "foo" with ID "123" is deleted
+     * on the remote server, and then another song "bar" is added with the same ID.
+     * The old song will remain in our database and new one will never be picked up. */
     [STATEMENT_INSERT_ARTIST] = { .source =
         "INSERT INTO artists ( "
             "id, name "
         ") VALUES ( "
             "$id, $name "
-        ") ON CONFLICT (id) DO UPDATE SET "
-            "id = excluded.id, name = excluded.name, "
-            "deleted = FALSE"
+        ") ON CONFLICT DO UPDATE SET deleted = FALSE"
     },
     [STATEMENT_INSERT_ALBUM] = { .source =
         "INSERT INTO albums ( "
             "id, name, artist, artist_id, song_count, duration, created "
         ") VALUES ( "
             "$id, $name, $artist, $artist_id, $song_count, $duration, unixepoch($created) "
-        ") ON CONFLICT (id) DO UPDATE SET "
-            "id = excluded.id, name = excluded.name, "
-            "artist = excluded.artist, artist_id = excluded.artist_id, "
-            "song_count = excluded.song_count, duration = excluded.duration, "
-            "deleted = FALSE "
+        ") ON CONFLICT DO UPDATE SET deleted = FALSE"
     },
     [STATEMENT_INSERT_SONG] = { .source =
         "INSERT INTO songs ( "
@@ -108,19 +105,7 @@ struct sqlite_statement statements[] = {
             "$id, $title, $artist, $album, "
             "$track, $year, $duration, $bitrate, $size, $filetype, "
             "$artist_id, $album_id "
-        ") ON CONFLICT (id) DO UPDATE SET "
-            "title = excluded.title, "
-            "artist = excluded.artist, "
-            "album = excluded.album, "
-            "track = excluded.track, "
-            "year = excluded.year, "
-            "duration = excluded.duration, "
-            "bitrate = excluded.bitrate, "
-            "size = excluded.size, "
-            "filetype = excluded.filetype, "
-            "artist_id = excluded.artist_id, "
-            "album_id = excluded.album_id, "
-            "deleted = FALSE "
+        ") ON CONFLICT DO UPDATE SET deleted = FALSE"
     },
 
     [STATEMENT_GET_ARTISTS_WITH_PAGINATION] = { .source =
