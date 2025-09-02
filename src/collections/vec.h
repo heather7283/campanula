@@ -199,7 +199,7 @@ void vec_reserve_generic(struct vec_generic *vec, size_t elem_size, size_t elem_
     for (size_t iter = 0; iter < (pvec)->size; iter++)
 
 #define VEC_FOREACH_REVERSE(pvec, iter) \
-    for (size_t r##iter = 0, iter = (pvec)->size - 1; r##iter < (pvec)->size; r##iter++, iter--)
+    for (size_t iter = (pvec)->size; iter-- > 0; )
 
 #endif /* #ifndef SRC_COLLECTIONS_VEC_H */
 
