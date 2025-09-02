@@ -1,4 +1,5 @@
 #include <sys/stat.h>
+#include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
 
@@ -9,7 +10,26 @@
 #include "cleanup.h"
 #include "xmalloc.h"
 #include "config.h"
+#include "macros.h"
 #include "log.h"
+
+static bool should_fetch_again(const char *cached_filetype, int cached_bitrate,
+                               const char *requested_filetype, int requested_bitrate) {
+    /* TODO: this function is retarded, make it better */
+    if (STREQ(requested_filetype, "raw")) {
+        if (STREQ(cached_filetype, "raw")) {
+            return false;
+        } else {
+            return true;
+        }
+    } else {
+        if (requested_bitrate > cached_bitrate) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
 
 bool stream_open(const char *song_id, int bitrate, const char *filetype,
                  struct stream_functions *functions, void **userdata) {
@@ -18,14 +38,18 @@ bool stream_open(const char *song_id, int bitrate, const char *filetype,
     size_t filesize = 0;
     int fd = -1;
 
-    TRACE("opening stream for song %s, bitrate %d filetype %s", song_id, bitrate, filetype);
+    DEBUG("opening stream for song %s, bitrate %d filetype %s", song_id, bitrate, filetype);
 
     if (!db_get_cached_song(&cached_song, song_id)) {
         DEBUG("song %s is not in cache, will fetch from server", song_id);
         goto from_network;
     }
 
-    /* TODO: check bitrate and filetype of cached song */
+    DEBUG("requested filetype %s with bitrate %d, have filetype %s with bitrate %d",
+          cached_song.filetype, cached_song.bitrate, filetype, bitrate);
+    if (should_fetch_again(cached_song.filetype, cached_song.bitrate, filetype, bitrate)) {
+        goto from_network;
+    }
 
     xasprintf(&filepath, "%s/%s", config.music_cache_dir, cached_song.filename);
     TRACE("opening file %s", filepath);

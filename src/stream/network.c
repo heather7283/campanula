@@ -58,13 +58,15 @@ static void network_stream_finalise(struct network_stream_data *d) {
         written += ret;
     }
 
-    db_add_cached_song(&(struct cached_song){
+    if (db_add_cached_song(&(struct cached_song){
         .id = d->id,
         .filetype = d->filetype,
         .bitrate = d->bitrate,
         .filename = filename,
         .size = VEC_SIZE(&d->data),
-    });
+    })) {
+        DEBUG("saved song %s into cache at %s", d->id, filepath);
+    }
 
 out:
     if (fd >= 0) {
