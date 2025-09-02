@@ -133,6 +133,15 @@ int main(void) {
     fprintf(stderr, "%.*ls\n", (int)VEC_SIZE(&str), VEC_DATA(&str)); fflush(stderr);
     assert(wmemcmp(VEC_DATA(&str), L"mkeal012fj", VEC_SIZE(&str)) == 0);
 
+    int j = 0;
+    VEC_FOREACH(&str, i) {
+        assert(L"mkeal012fj"[j++] == *VEC_AT(&str, i));
+    }
+    j = VEC_SIZE(&str) - 1;
+    VEC_FOREACH_REVERSE(&str, i) {
+        assert(L"mkeal012fj"[j--] == *VEC_AT(&str, i));
+    }
+
     VEC_FREE(&str);
 }
 

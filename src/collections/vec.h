@@ -195,7 +195,11 @@ void vec_reserve_generic(struct vec_generic *vec, size_t elem_size, size_t elem_
         vec_reserve_generic((struct vec_generic *)(pvec), sizeof(*(pvec)->data), (count)); \
     })
 
-#define VEC_FOREACH(pvec, iter) for (size_t iter = 0; iter < (pvec)->size; iter++)
+#define VEC_FOREACH(pvec, iter) \
+    for (size_t iter = 0; iter < (pvec)->size; iter++)
+
+#define VEC_FOREACH_REVERSE(pvec, iter) \
+    for (size_t r##iter = 0, iter = (pvec)->size - 1; r##iter < (pvec)->size; r##iter++, iter--)
 
 #endif /* #ifndef SRC_COLLECTIONS_VEC_H */
 
