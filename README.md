@@ -3,7 +3,7 @@ TUI client for OpenSubsonic-compatible music streaming servers.
 Tested on [navidrome], might or might not work with other implementations.
 
 ## TODOs
-- [ ] Support multiple servers
+- [x] Support multiple servers
 - [ ] Size limit for songs cache
 - [ ] Make it configurable
 - [ ] Make it look good
