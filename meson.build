@@ -60,6 +60,7 @@ sources = files([
   'src/api/types.c',
 
   'src/player/internal.c',
+  'src/player/init.c',
   'src/player/control.c',
   'src/player/playlist.c',
   'src/player/events.c',
