@@ -1,13 +1,17 @@
 # (WIP) campanula
 TUI client for OpenSubsonic-compatible music streaming servers.
 Tested on [navidrome], might or might not work with other implementations.
+Work in progress, don't use.
 
 ## TODOs
 - [x] Support multiple servers
-- [ ] Size limit for songs cache
+- [ ] Size limit for songs cache, automatically prune
+- [ ] Make the database less of a mess (don't look at the schema lmao)
+- [ ] Make TUI code less of a mess (please don't look at it either)
 - [ ] Make it configurable
 - [ ] Make it look good
 - [x] MPRIS integration
+- [ ] Fetch and cache cover art (useful for MPRIS)
 - [ ] Drop ncurses and use a library that doesn't cause severe irreversible brain damage
 
 ## License
